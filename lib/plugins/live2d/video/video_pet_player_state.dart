@@ -175,12 +175,26 @@ class VideoPetPlaybackState {
   VideoPetPlaybackRequest? setMovement(
     String? animationId, {
     bool loop = true,
+    bool interrupt = false,
   }) {
     final id = _valid(animationId);
-    if (id == _movementId && loop == _movementLoop) return current;
+    if (id == _movementId && loop == _movementLoop && !interrupt) {
+      return current;
+    }
     _movementId = id;
     _movementLoop = loop;
     _movementCompleted = false;
+    if (interrupt) {
+      // 强制打断：清掉一次性点播/悬停动画（拖拽除外），
+      // 让 movement 立即成为活动动画，而不是等当前动画播完。
+      _onceId = null;
+      _onceStartFrame = null;
+      _onceEndFrame = null;
+      _onceLoop = false;
+      _hoverId = null;
+    }
+    // interrupt 清空后 busy 必为 false，自然走 _bump() 立即切换；
+    // 非 interrupt 时保持原语义：busy 期间只更新目标，不打断当前动画。
     return _dragId != null || busy ? current : _bump();
   }
 

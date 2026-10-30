@@ -734,8 +734,8 @@ class _PersonalAssistantScreenState extends State<PersonalAssistantScreen> {
     );
   }
 
-  /// 消息流：左右头像 + 气泡；最新 AI 消息的 bot 头像为 grok 动态表情，
-  /// 随处理状态切换（thinking/happy/idle），历史 AI 消息为静态图标
+  /// 消息流：头像在上、气泡在下的上下布局；最新 AI 消息的 bot 头像为
+  /// grok 动态表情，随处理状态切换（thinking/happy/idle），历史 AI 消息为静态图标
   Widget _buildMessageList(
     AppThemeData theme,
     ChatController controller,
@@ -751,7 +751,7 @@ class _PersonalAssistantScreenState extends State<PersonalAssistantScreen> {
         controller.isSending && (messages.isEmpty || messages.last.isUser);
     return LayoutBuilder(
       builder: (context, constraints) {
-        // 气泡最大宽度：列表可视宽度的 80%，余量留给头像与留白
+        // 气泡最大宽度：列表可视宽度的 80%，余量留作两侧留白
         final bubbleMaxWidth = constraints.maxWidth * 0.8;
         return ScrollConfiguration(
           behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
@@ -787,36 +787,53 @@ class _PersonalAssistantScreenState extends State<PersonalAssistantScreen> {
               return Padding(
                 key: ValueKey('msg_${message.id}_${message.isSessionDivider}'),
                 padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: message.isUser
-                      ? [
-                          Expanded(
-                            child: _buildUserBubble(
-                              theme,
-                              message,
-                              maxWidth: bubbleMaxWidth,
-                            ),
+                child: message.isUser
+                    ? Column(
+                        // 用户消息整体右对齐：脚注与头像同行，气泡在下
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _buildBubbleFooter(theme, message),
+                              SizedBox(width: theme.spacing.sm),
+                              _buildUserAvatar(theme),
+                            ],
                           ),
-                          SizedBox(width: theme.spacing.sm),
-                          _buildUserAvatar(theme),
-                        ]
-                      : [
-                          _buildBotAvatar(
+                          const SizedBox(height: 4),
+                          _buildUserBubble(
                             theme,
-                            live: !showPlaceholder && message.id == lastAiId,
-                          ),
-                          SizedBox(width: theme.spacing.sm),
-                          Expanded(
-                            child: _buildAiBubble(
-                              theme,
-                              controller,
-                              message,
-                              maxWidth: bubbleMaxWidth,
-                            ),
+                            message,
+                            maxWidth: bubbleMaxWidth,
                           ),
                         ],
-                ),
+                      )
+                    : Column(
+                        // AI 消息整体左对齐：头像与脚注同行，气泡在下
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _buildBotAvatar(
+                                theme,
+                                live: !showPlaceholder && message.id == lastAiId,
+                              ),
+                              SizedBox(width: theme.spacing.sm),
+                              _buildBubbleFooter(theme, message),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          _buildAiBubble(
+                            theme,
+                            controller,
+                            message,
+                            maxWidth: bubbleMaxWidth,
+                          ),
+                        ],
+                      ),
               );
             },
           ),
@@ -825,7 +842,7 @@ class _PersonalAssistantScreenState extends State<PersonalAssistantScreen> {
     );
   }
 
-  /// AI 处理中的占位气泡：动态 grok 头像（thinking）+ 当前执行步骤的 muted 小文本
+  /// AI 处理中的占位气泡：动态 grok 头像（thinking，置于气泡上方）+ 加载墨点
   Widget _buildPlaceholderRow(
     AppThemeData theme,
     ChatController controller, {
@@ -833,28 +850,27 @@ class _PersonalAssistantScreenState extends State<PersonalAssistantScreen> {
   }) {
     return Padding(
       padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           _buildBotAvatar(theme, live: true),
-          SizedBox(width: theme.spacing.sm),
-          Expanded(
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Container(
-                constraints: const BoxConstraints(maxWidth: 520),
-                child: DsSketchPanel(
-                  theme: theme,
-                  hachure: false,
-                  radius: BorderRadius.circular(18),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 12,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [DSLoadingDots(size: 6, color: theme.textSub)],
-                  ),
+          SizedBox(height: theme.spacing.sm),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 520),
+              child: DsSketchPanel(
+                theme: theme,
+                hachure: false,
+                radius: BorderRadius.circular(18),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [DSLoadingDots(size: 6, color: theme.textSub)],
                 ),
               ),
             ),
@@ -925,30 +941,23 @@ class _PersonalAssistantScreenState extends State<PersonalAssistantScreen> {
     ChatMessage message, {
     required double maxWidth,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _buildBubbleFooter(theme, message),
-        // 长按气泡弹出更多选项（与脚注 ⋯ 入口一致）
-        GestureDetector(
-          onLongPress: () => _showMessageOptions(theme, message),
-          child: Container(
-            constraints: BoxConstraints(maxWidth: maxWidth),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: dsSketchDecoration(
-              theme: theme,
-              fillColor: theme.primary,
-              radius: BorderRadius.circular(18),
-            ),
-            child: AgentMessageContent(
-              message: message,
-              textColor: theme.onPrimary,
-              messageService: _messageService,
-            ),
-          ),
+    return GestureDetector(
+      // 长按气泡弹出更多选项（与脚注 ⋯ 入口一致）
+      onLongPress: () => _showMessageOptions(theme, message),
+      child: Container(
+        constraints: BoxConstraints(maxWidth: maxWidth),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: dsSketchDecoration(
+          theme: theme,
+          fillColor: theme.primary,
+          radius: BorderRadius.circular(18),
         ),
-      ],
+        child: AgentMessageContent(
+          message: message,
+          textColor: theme.onPrimary,
+          messageService: _messageService,
+        ),
+      ),
     );
   }
 
@@ -958,57 +967,47 @@ class _PersonalAssistantScreenState extends State<PersonalAssistantScreen> {
     ChatMessage message, {
     required double maxWidth,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return GestureDetector(
+      // 长按气泡弹出更多选项（与脚注 ⋯ 入口一致）
+      onLongPress: () => _showMessageOptions(theme, message),
+      child: Container(
+        constraints: BoxConstraints(maxWidth: maxWidth),
+        child: DsSketchPanel(
+          theme: theme,
+          hachure: false,
+          radius: BorderRadius.circular(18),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          child: AgentMessageContent(
+            message: message,
+            textColor: theme.text,
+            messageService: _messageService,
+            getAgentName: (_) => controller.currentAgent?.name,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 消息头行脚注：消息时间 + 更多选项入口（⋯），与头像同行置于气泡上方
+  Widget _buildBubbleFooter(AppThemeData theme, ChatMessage message) {
+    return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _buildBubbleFooter(theme, message),
-        // 长按气泡弹出更多选项（与脚注 ⋯ 入口一致）
-        GestureDetector(
-          onLongPress: () => _showMessageOptions(theme, message),
-          child: Container(
-            constraints: BoxConstraints(maxWidth: maxWidth),
-            child: DsSketchPanel(
-              theme: theme,
-              hachure: false,
-              radius: BorderRadius.circular(18),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              child: AgentMessageContent(
-                message: message,
-                textColor: theme.text,
-                messageService: _messageService,
-                getAgentName: (_) => controller.currentAgent?.name,
-              ),
+        Text(
+          _formatMessageTime(message.timestamp),
+          style: DsTypography.caption.copyWith(color: theme.textSub),
+        ),
+        SizedBox(
+          width: 26,
+          height: 22,
+          child: Pressable(
+            onPressed: () => _showMessageOptions(theme, message),
+            builder: (context, states) => Center(
+              child: DsIcon(DsIconKind.more, size: 15, color: theme.textSub),
             ),
           ),
         ),
       ],
-    );
-  }
-
-  /// 气泡脚注：消息时间 + 更多选项入口（⋯），置于消息上方
-  Widget _buildBubbleFooter(AppThemeData theme, ChatMessage message) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            _formatMessageTime(message.timestamp),
-            style: DsTypography.caption.copyWith(color: theme.textSub),
-          ),
-          SizedBox(
-            width: 26,
-            height: 22,
-            child: Pressable(
-              onPressed: () => _showMessageOptions(theme, message),
-              builder: (context, states) => Center(
-                child: DsIcon(DsIconKind.more, size: 15, color: theme.textSub),
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 

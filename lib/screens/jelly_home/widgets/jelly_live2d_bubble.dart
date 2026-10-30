@@ -19,10 +19,19 @@ const List<String> _bubbleAssets = [
 
 const String _bubbleOffsetXPrefKey = 'jelly_live2d.bubbleOffsetX';
 const String _bubbleOffsetYPrefKey = 'jelly_live2d.bubbleOffsetY';
+const String _bubbleScalePrefKey = 'jelly_live2d.bubbleScale';
 
 /// 气泡展示时长
 const Duration _minimumBubbleDuration = Duration(seconds: 6);
 const Duration _maximumBubbleDuration = Duration(seconds: 30);
+
+/// 气泡大小倍数可调范围
+const double _bubbleScaleMin = 0.5;
+const double _bubbleScaleMax = 2.0;
+
+/// 气泡最小显示尺寸（逻辑像素）
+const double _bubbleMinWidth = 320.0;
+const double _bubbleMinHeight = 100.0;
 
 /// 随机台词池：命中头部 / 命中身体 / 点空（未命中任何区域）。
 /// 翻译需运行时解析，用 getter 每次取当前语言
@@ -58,6 +67,9 @@ extension _JellyLive2DBubble on _JellyLive2DState {
       _bubbleOffsetY = (prefs.getDouble(_bubbleOffsetYPrefKey) ?? 0)
           .clamp(-0.45, 0.45)
           .toDouble();
+      _bubbleScale = (prefs.getDouble(_bubbleScalePrefKey) ?? 1.0)
+          .clamp(_bubbleScaleMin, _bubbleScaleMax)
+          .toDouble();
     });
   }
 
@@ -65,6 +77,7 @@ extension _JellyLive2DBubble on _JellyLive2DState {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble(_bubbleOffsetXPrefKey, _bubbleOffsetX);
     await prefs.setDouble(_bubbleOffsetYPrefKey, _bubbleOffsetY);
+    await prefs.setDouble(_bubbleScalePrefKey, _bubbleScale);
   }
 
   /// 按命中区域挑一条随机台词，避免和上一条重复。
@@ -154,22 +167,34 @@ extension _JellyLive2DBubble on _JellyLive2DState {
     const bubbleBaseHeight = 150.0;
     final availableWidth = math.max(0.0, width - margin * 2);
     final availableHeight = math.max(0.0, height);
-    final bubbleWidth = math.min(
+    final baseWidth = math.min(
       math.min(_displaySize * 0.8, availableWidth),
       availableHeight * bubbleBaseWidth / bubbleBaseHeight,
     );
-    if (bubbleWidth <= 0) return const SizedBox.shrink();
-    final bubbleScale = bubbleWidth / bubbleBaseWidth;
-    final bubbleHeight = bubbleBaseHeight * bubbleScale;
+    if (baseWidth <= 0) return const SizedBox.shrink();
+    // 基础尺寸 × 用户倍数；任一维不足最小尺寸时，整体锁定为最小宽高
+    final baseScale = baseWidth / bubbleBaseWidth;
+    final scaledWidth = baseWidth * _bubbleScale;
+    final scaledHeight = bubbleBaseHeight * baseScale * _bubbleScale;
+    final atMinimum =
+        scaledWidth < _bubbleMinWidth || scaledHeight < _bubbleMinHeight;
+    final bubbleWidth = atMinimum
+        ? _bubbleMinWidth
+        : scaledWidth.clamp(0.0, availableWidth).toDouble();
+    final bubbleHeight = atMinimum
+        ? _bubbleMinHeight
+        : scaledHeight.clamp(0.0, availableHeight).toDouble();
     final top =
         ((height - bubbleHeight) / 2 + height * _bubbleOffsetY)
             .clamp(0.0, math.max(0.0, height - bubbleHeight))
             .toDouble() +
         topInset;
-    final left = ((width - bubbleWidth) / 2 + width * _bubbleOffsetX).clamp(
-      margin,
-      width - margin - bubbleWidth,
-    );
+    // 最小宽度可能超出可用宽度，上限兜底避免 clamp 区间倒置
+    final left = (((width - bubbleWidth) / 2 + width * _bubbleOffsetX).clamp(
+          margin,
+          math.max(margin, width - margin - bubbleWidth),
+        ))
+        .toDouble();
 
     return Positioned(
       left: left,
@@ -262,7 +287,7 @@ extension _JellyLive2DBubble on _JellyLive2DState {
     try {
       await SmoothBottomSheet.showWithTitle<void>(
         context: context,
-        title: '气泡位置',
+        title: '气泡位置与大小',
         minHeight: MediaQuery.sizeOf(context).height * 0.3,
         child: Builder(
           builder: (sheetContext) {
@@ -302,6 +327,28 @@ extension _JellyLive2DBubble on _JellyLive2DState {
                       value: ((_bubbleOffsetY + 0.45) / 0.9).clamp(0.0, 1.0),
                       onChanged: (value) {
                         setState(() => _bubbleOffsetY = value * 0.9 - 0.45);
+                        setSheetState(() {});
+                      },
+                      onChangeEnd: (_) => _saveBubblePosition(),
+                    ),
+                    SizedBox(height: theme.spacing.md),
+                    Text(
+                      '大小倍数（${_bubbleScale.toStringAsFixed(1)}×）',
+                      style: DsTypography.label.copyWith(color: theme.text),
+                    ),
+                    SizedBox(height: theme.spacing.sm),
+                    DSSlider(
+                      value:
+                          ((_bubbleScale - _bubbleScaleMin) /
+                              (_bubbleScaleMax - _bubbleScaleMin))
+                              .clamp(0.0, 1.0),
+                      onChanged: (value) {
+                        setState(
+                          () => _bubbleScale =
+                              value *
+                                  (_bubbleScaleMax - _bubbleScaleMin) +
+                              _bubbleScaleMin,
+                        );
                         setSheetState(() {});
                       },
                       onChangeEnd: (_) => _saveBubblePosition(),

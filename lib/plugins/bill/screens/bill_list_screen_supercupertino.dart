@@ -23,10 +23,14 @@ class BillListScreenSupercupertino extends StatefulWidget {
   final BillPlugin billPlugin;
   final String accountId;
 
+  /// 日历选中日期的对外通知（供父级 FAB 新建账单时取初始日期）
+  final ValueNotifier<DateTime>? selectedDateNotifier;
+
   const BillListScreenSupercupertino({
     super.key,
     required this.billPlugin,
     required this.accountId,
+    this.selectedDateNotifier,
   });
 
   @override
@@ -73,6 +77,7 @@ class _BillListScreenSupercupertinoState
     _calendarController = CalendarController();
     _calendarController.displayDate = DateTime.now();
     _calendarController.selectedDate = DateTime.now();
+    widget.selectedDateNotifier?.value = _selectedDay!;
 
     // 监听插件数据变化，自动刷新
     _billPluginListener = () {
@@ -700,6 +705,7 @@ class _BillListScreenSupercupertinoState
                     _focusedDay = details.date!;
                     _calendarController.selectedDate = details.date;
                   });
+                  widget.selectedDateNotifier?.value = details.date!;
                   // 更新路由上下文到具体日期
                   _updateRouteContext(_focusedDay, selectedDay: _selectedDay);
                 }

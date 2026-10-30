@@ -113,9 +113,10 @@ const Map<String, String> live2dTranslationsEn = {
   'videoPet_test': 'Test',
   'videoPet_turnLeft': 'Turn left',
   'videoPet_turnRight': 'Turn right',
-  'videoPet_walkNow': 'Walk now',
+  'videoPet_walkLeft': 'Walk left',
   'videoPet_walkOff': 'Walk off',
   'videoPet_walkOn': 'Walk on',
+  'videoPet_walkRight': 'Walk right',
   'videoPet_wallBump': 'Wall bump animation',
   'videoPet_width': 'Width',
 };

@@ -414,6 +414,10 @@ class _BillMainViewState extends State<BillMainView>
   DateTime? _statsEndDate;
   final GlobalKey _bottomBarKey = GlobalKey(debugLabel: 'bill_bottom_bar');
 
+  /// 账单列表页日历选中日期（FAB 新建账单时作为初始日期）
+  final ValueNotifier<DateTime> _billSelectedDate =
+      ValueNotifier<DateTime>(DateTime.now());
+
   @override
   void initState() {
     super.initState();
@@ -481,6 +485,7 @@ class _BillMainViewState extends State<BillMainView>
 
   @override
   void dispose() {
+    _billSelectedDate.dispose();
     _tabController.dispose();
     super.dispose();
   }
@@ -548,6 +553,8 @@ class _BillMainViewState extends State<BillMainView>
             builder: (context) => BillEditScreen(
               billPlugin: billPlugin,
               accountId: billPlugin.selectedAccount?.id ?? '',
+              // 日历选中的日期作为新建账单初始日期
+              initialDate: _billSelectedDate.value,
             ),
           );
         },
@@ -585,6 +592,7 @@ class _BillMainViewState extends State<BillMainView>
           BillListScreenSupercupertino(
             billPlugin: billPlugin,
             accountId: accountId,
+            selectedDateNotifier: _billSelectedDate,
           ),
           SubscriptionListScreen(billPlugin: billPlugin),
           BillStatsScreenSupercupertino(

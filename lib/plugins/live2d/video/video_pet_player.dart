@@ -50,6 +50,7 @@ class VideoPetPlayer extends StatefulWidget {
     this.movementAnimationId,
     this.dragAnimationId,
     this.movementLoop = true,
+    this.movementInterrupt = 0,
     this.onMovementComplete,
     this.onAnimationFrame,
     this.onPlaybackBusyChanged,
@@ -76,6 +77,10 @@ class VideoPetPlayer extends StatefulWidget {
   final String? movementAnimationId;
   final String? dragAnimationId;
   final bool movementLoop;
+
+  /// 走动打断令牌：变化时强制打断当前一次性/悬停动画，
+  /// 让 movement 动画立即上场（用于“向左/向右走动”按钮）。
+  final int movementInterrupt;
   final VoidCallback? onMovementComplete;
   final ValueChanged<VideoPetAnimationFrame>? onAnimationFrame;
   final ValueChanged<bool>? onPlaybackBusyChanged;
@@ -233,10 +238,13 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
     final movementChanged =
         oldWidget.movementAnimationId != widget.movementAnimationId ||
         oldWidget.movementLoop != widget.movementLoop;
-    if (movementChanged) {
+    final interruptChanged =
+        oldWidget.movementInterrupt != widget.movementInterrupt;
+    if (movementChanged || interruptChanged) {
       _playback.setMovement(
         widget.movementAnimationId,
         loop: widget.movementLoop,
+        interrupt: interruptChanged,
       );
     }
     final dragChanged = oldWidget.dragAnimationId != widget.dragAnimationId;
@@ -244,7 +252,10 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
     if (oldWidget.active != widget.active ||
         oldWidget.paused != widget.paused) {
       _lifecycle();
-    } else if (interactionChanged || movementChanged || dragChanged) {
+    } else if (interactionChanged ||
+        movementChanged ||
+        dragChanged ||
+        interruptChanged) {
       unawaited(_present(_playback.current));
     }
     if (oldWidget.animationRequest != widget.animationRequest) _manual();

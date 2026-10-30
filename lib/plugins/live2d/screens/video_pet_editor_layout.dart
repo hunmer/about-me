@@ -135,10 +135,24 @@ extension _VideoPetEditorLayout on _VideoPetEditorScreenState {
                                     _stageKey.currentState?.resetPosition(),
                               ),
                               DSMenuItem(
-                                icon: DsIconKind.play,
-                                label: _text('videoPet_walkNow', '立即走动'),
-                                onTap: () =>
-                                    _stageKey.currentState?.walkNow(),
+                                icon: DsIconKind.chevronLeft,
+                                label: _text(
+                                  'videoPet_walkLeft',
+                                  '向左走动',
+                                ),
+                                onTap: () => _stageKey.currentState?.walkNow(
+                                  left: true,
+                                ),
+                              ),
+                              DSMenuItem(
+                                icon: DsIconKind.chevronRight,
+                                label: _text(
+                                  'videoPet_walkRight',
+                                  '向右走动',
+                                ),
+                                onTap: () => _stageKey.currentState?.walkNow(
+                                  left: false,
+                                ),
                               ),
                             ],
                             child: DSIconButton(
@@ -168,6 +182,7 @@ extension _VideoPetEditorLayout on _VideoPetEditorScreenState {
                                     modelId: 'editor:${_draft.id}',
                                     movement: _draft.movement,
                                     animations: _draft.animations,
+                                    regions: _draft.regions,
                                     enabled: _walkEnabled,
                                     petSize: Size(
                                       _draft.canvasWidth,
@@ -206,6 +221,8 @@ extension _VideoPetEditorLayout on _VideoPetEditorScreenState {
                                           dragAnimationId:
                                               playback.dragAnimationId,
                                           movementLoop: playback.loop,
+                                          movementInterrupt:
+                                              playback.movementInterrupt,
                                           onMovementComplete:
                                               playback.onComplete,
                                           onAnimationFrame:

@@ -23,10 +23,14 @@ class JellyVideoPetPlayback {
     required this.onDragUpdate,
     required this.onDragEnd,
     required this.onDragCancel,
+    this.movementInterrupt = 0,
   });
   final String? animationId;
   final String? dragAnimationId;
   final bool loop;
+
+  /// 走动打断令牌：递增时播放器强制打断当前动画立即切到 movement。
+  final int movementInterrupt;
 
   /// 一次性点播请求（撞墙动画），由舞台发出、播放器消费。
   final ValueListenable<VideoPetManualAnimation?> frameRequest;
@@ -48,6 +52,7 @@ class JellyVideoPetStage extends StatefulWidget {
     required this.petSize,
     required this.builder,
     this.animations = const [],
+    this.regions = const [],
     this.topInset = 0,
     this.bottomInset = 0,
     this.initialBottomGap = 0,
@@ -58,6 +63,10 @@ class JellyVideoPetStage extends StatefulWidget {
   final String modelId;
   final VideoPetMovement movement;
   final List<VideoPetAnimation> animations;
+
+  /// 人物交互区域：启用区域的联合水平包围盒决定水平活动边界
+  /// （人物一边顶到容器边缘即视为到达）；空 = 按整画布计算。
+  final List<VideoPetRegion> regions;
   final ValueNotifier<bool> enabled;
   final Size petSize;
   final Widget Function(BuildContext, JellyVideoPetPlayback) builder;
@@ -97,6 +106,9 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
   int _generation = 0;
   int _phase = 0;
   bool _facingLeft = false;
+
+  /// 走动打断令牌：递增时通知播放器强制打断当前动画立即切到 movement。
+  int _interruptToken = 0;
 
   /// 撞墙动画等一次性点播请求（nonce 每次递增去重）。
   final ValueNotifier<VideoPetManualAnimation?> _frameRequest =
@@ -290,22 +302,31 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
     );
   }
 
-  /// 立即选择目标并开始（转向 +）行走，跳过空闲等待。
-  /// 供外部（如编辑器测试区“立即走动”按钮）经 GlobalKey 调用。
-  void walkNow() {
-    if (!widget.movement.enabled || !widget.enabled.value) {
+  /// 立即朝指定方向走到边界并开始（转向 +）行走，跳过空闲等待。
+  /// [left] 为 null 时随机选目标；true/false 分别走向左/右边界。
+  /// 打断当前一次性/悬停动画（busy），供编辑器「向左/向右走动」按钮调用。
+  void walkNow({bool? left}) {
+    if (!_loaded ||
+        !widget.enabled.value ||
+        !widget.movement.enabled ||
+        !widget.active ||
+        !_foreground ||
+        _dragging ||
+        _range.width <= 1) {
       _logStatus();
       return;
     }
     // 强制干净重启：清掉可能卡住的 _turning/_walking/_frameGeneration
     // （如播放器重新 prepare 后 generation 重置导致帧被闸门拒绝），
     // 与「切换走动开关」的 _stop 等效，保证按钮每次都能触发。
-    setState(_stop);
-    if (!_canWalk) {
-      _logStatus();
-      return;
-    }
-    _beginWalk();
+    // 置 _busy=false 使打断后播放器上报 busy=false 不会再次杀掉走动，
+    // 并递增打断令牌让 movement 动画立即替换当前动画。
+    setState(() {
+      _busy = false;
+      _stop();
+      ++_interruptToken;
+    });
+    _beginWalk(left: left);
   }
 
   /// 外部帧区间点播（编辑器 AB 循环预览等）：直接注入点播请求。
@@ -331,17 +352,22 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
     });
   }
 
-  void _beginWalk() {
-    _target = _minX + _random.nextDouble() * _range.width;
-    final minDistance = math.min(80.0, _range.width / 2);
-    if ((_target - _position.dx).abs() < minDistance) {
-      // Keep this walk opportunity even when randomness picks our position.
-      _target = _position.dx - _minX >= _maxX - _position.dx
-          ? _minX
-          : _maxX;
+  void _beginWalk({bool? left}) {
+    if (left == null) {
+      _target = _minX + _random.nextDouble() * _range.width;
+      final minDistance = math.min(80.0, _range.width / 2);
+      if ((_target - _position.dx).abs() < minDistance) {
+        // Keep this walk opportunity even when randomness picks our position.
+        _target = _position.dx - _minX >= _maxX - _position.dx
+            ? _minX
+            : _maxX;
+      }
+    } else {
+      // 指定方向：直接走到该侧边界（触发撞墙/反向逻辑）。
+      _target = left ? _minX : _maxX;
     }
     _log(
-      'target selected x=$_target from=${_position.dx} minDistance=$minDistance xBounds=[$_minX,$_maxX]',
+      'target selected x=$_target from=${_position.dx} left=$left xBounds=[$_minX,$_maxX]',
     );
     _departToward();
   }
@@ -364,6 +390,8 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
   /// 朝 [_target] 发起走动：按需先请求转身动画，再启动位移。
   void _departToward() {
     final movement = widget.movement;
+    // bounds 可能因 regions/容器变化而缩小，目标夹回界内避免永远走不到。
+    _target = _target.clamp(_minX, _maxX).toDouble();
     final left = _target < _position.dx;
     final turn = left
         ? movement.turnLeftAnimationId
@@ -518,14 +546,38 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
         widget.petSize.width * scale,
         widget.petSize.height * scale,
       );
-      // Full-width transparent canvases move by their center anchor. Smaller
-      // pets retain the original whole-canvas bounds.
+      // 人物区域边界：regions 启用项的联合水平包围盒（归一化）。
+      // 人物一边顶到容器边缘即视为到达边界，画布透明留白可移出容器；
+      // 未配置 regions 时沿用旧规则：full-width 画布按中心锚点 ±w/2，
+      // 小画布保持整画布在容器内。
+      var bodyLeft = 0.0;
+      var bodyRight = 1.0;
+      var hasBody = false;
+      for (final region in widget.regions) {
+        if (!region.enabled) continue;
+        if (!hasBody) {
+          bodyLeft = region.x;
+          bodyRight = region.x + region.width;
+          hasBody = true;
+        } else {
+          bodyLeft = math.min(bodyLeft, region.x);
+          bodyRight = math.max(bodyRight, region.x + region.width);
+        }
+      }
       final fullWidth =
           size.width > 0 && (size.width - constraints.maxWidth).abs() < 0.01;
-      final minX = fullWidth ? -size.width / 2 : 0.0;
-      final maxX = fullWidth
-          ? constraints.maxWidth - size.width / 2
-          : math.max(0.0, constraints.maxWidth - size.width);
+      final double minX;
+      final double maxX;
+      if (hasBody) {
+        minX = -bodyLeft * size.width;
+        maxX = math.max(minX, constraints.maxWidth - bodyRight * size.width);
+      } else if (fullWidth) {
+        minX = -size.width / 2;
+        maxX = constraints.maxWidth - size.width / 2;
+      } else {
+        minX = 0.0;
+        maxX = math.max(0.0, constraints.maxWidth - size.width);
+      }
       final range = Size(
         maxX - minX,
         math.max(0, availableHeight - size.height),
@@ -535,7 +587,7 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
         _range = range;
         _minX = minX;
         _log(
-          'range changed range=$range xBounds=[$minX,$maxX] centerAnchor=$fullWidth pet=$size requestedPet=${widget.petSize} constraints=$constraints',
+          'range changed range=$range xBounds=[$minX,$maxX] centerAnchor=$fullWidth body=[$bodyLeft,$bodyRight] pet=$size requestedPet=${widget.petSize} constraints=$constraints',
         );
       }
       _position = _normalized == null
@@ -570,6 +622,7 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
                       : null,
                   loop: !_turning,
                   frameRequest: _frameRequest,
+                  movementInterrupt: _interruptToken,
                   onComplete: () {
                     if (mounted && phase == _phase && _turning && _canWalk) {
                       _log('turn complete phase=$phase');

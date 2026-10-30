@@ -208,6 +208,9 @@ class _JellyLive2DState extends State<JellyLive2D>
   double _bubbleOffsetX = 0;
   double _bubbleOffsetY = 0;
 
+  /// 气泡显示大小倍数（用户设置，SharedPreferences 持久化）
+  double _bubbleScale = 1.0;
+
   bool get _hasAppearanceResources => _isVideo
       ? (_videoManifest ?? _selectedModel.videoManifest)
                 ?.animations
@@ -662,6 +665,7 @@ class _JellyLive2DState extends State<JellyLive2D>
                                     '${_selectedModel.modelDir}:${_videoManifest!.id}',
                                 movement: _videoManifest!.movement,
                                 animations: _videoManifest!.animations,
+                                regions: _videoManifest!.regions,
                                 enabled: _videoWalkingEnabled,
                                 active: _routeVisible && !_videoControlsOpen,
                                 topInset: widget.topInset,
@@ -690,6 +694,7 @@ class _JellyLive2DState extends State<JellyLive2D>
                                   movementAnimationId: playback.animationId,
                                   dragAnimationId: playback.dragAnimationId,
                                   movementLoop: playback.loop,
+                                  movementInterrupt: playback.movementInterrupt,
                                   onMovementComplete: playback.onComplete,
                                   onAnimationFrame: playback.onAnimationFrame,
                                   onPlaybackBusyChanged: playback.onBusyChanged,

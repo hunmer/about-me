@@ -85,27 +85,37 @@ class DecisionService {
         '[Live2D][Jev] 发起请求 | model=$model baseUrl=$baseUrl '
         'replyLength=${reply.length}',
       );
+      debugPrint(
+        '[Live2D][Jev] 请求候选 | expressions(${expressions.length})=$expressions '
+        'motions(${motions.length})=$motions',
+      );
+      debugPrint(
+        '[Live2D][Jev] 请求头 | Authorization=Bearer '
+        '${key.length > 8 ? key.substring(0, 8) : key}***',
+      );
+      final payload = {
+        'model': model,
+        'state': 'Live2D模型注释：$note\nAI回复：$reply',
+        'questions': {
+          if (expressions.isNotEmpty)
+            'expression': {
+              'type': 'choice',
+              'instructions': '选择最符合回复情绪的表情；没有合适时选择不改变',
+              'criteria': {for (final item in expressions) item: item, '不改变': '保持当前表情'},
+            },
+          if (motions.isNotEmpty)
+            'motion': {
+              'type': 'choice',
+              'instructions': '选择最符合回复语气的动作；没有合适时选择不改变',
+              'criteria': {for (final item in motions) item: item, '不改变': '保持当前动作'},
+            },
+        },
+      };
+      debugPrint('[Live2D][Jev] 请求体 | ${jsonEncode(payload)}');
       final response = await _dio.post<Map<String, dynamic>>(
         baseUrl,
         options: Options(headers: {'Authorization': 'Bearer $key', 'Content-Type': 'application/json'}),
-        data: {
-          'model': model,
-          'state': 'Live2D模型注释：$note\nAI回复：$reply',
-          'questions': {
-            if (expressions.isNotEmpty)
-              'expression': {
-                'type': 'choice',
-                'instructions': '选择最符合回复情绪的表情；没有合适时选择不改变',
-                'criteria': {for (final item in expressions) item: item, '不改变': '保持当前表情'},
-              },
-            if (motions.isNotEmpty)
-              'motion': {
-                'type': 'choice',
-                'instructions': '选择最符合回复语气的动作；没有合适时选择不改变',
-                'criteria': {for (final item in motions) item: item, '不改变': '保持当前动作'},
-              },
-          },
-        },
+        data: payload,
       );
       final answers = response.data?['answers'];
       if (answers is! Map) {
@@ -129,6 +139,14 @@ class DecisionService {
       }
       debugPrint('[Live2D][Jev] 决策完成 | result=$result');
       return result;
+    } on DioException catch (error) {
+      final status = error.response?.statusCode;
+      final body = error.response?.data;
+      debugPrint(
+        '[Live2D][Jev] 表情动作决策失败 | status=$status '
+        'type=${error.type.name} body=$body',
+      );
+      return fallback;
     } catch (error) {
       debugPrint('[Live2D][Jev] 表情动作决策失败: $error');
       return fallback;

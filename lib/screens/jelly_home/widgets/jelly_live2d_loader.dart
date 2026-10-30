@@ -20,7 +20,19 @@ extension _JellyLive2DLoader on _JellyLive2DState {
     });
   }
 
+  /// 回复完成后的反应动画入口：Jev 开启时让位给决策链路
+  /// （_scheduleJevReply → _applyJevReply），由决策失败/未命中时回退随机；
+  /// 未开启 Jev 时立即随机播放。
   Future<void> _playReaction() async {
+    if (Live2DPlugin.instance.selected?.jevEnabled == true) {
+      debugPrint('[Live2D][Jev] JEV 已开启，等待决策结果后再播放反应动画');
+      return;
+    }
+    await _playRandomMotion();
+  }
+
+  /// 随机播放一个反应动作：视频档案随机点播动画，Live2D 随机非 Idle 动作。
+  Future<void> _playRandomMotion() async {
     if (_isVideo) {
       final animations = _videoManifest?.animations ?? const [];
       if (animations.isNotEmpty) {
@@ -245,12 +257,17 @@ extension _JellyLive2DLoader on _JellyLive2DState {
             .toList(),
       );
       final choice = result['motion'];
-      if (choice == null) return;
+      if (choice == null) {
+        debugPrint('[Live2D][Jev] 决策未返回动作，回退随机动画');
+        await _playRandomMotion();
+        return;
+      }
       final match = candidates
           .where((item) => item.name == choice || item.id == choice)
           .firstOrNull;
       if (match == null) {
-        debugPrint('[Live2D][Jev] 决策结果 $choice 不在候选动画中，忽略');
+        debugPrint('[Live2D][Jev] 决策结果 $choice 不在候选动画中，回退随机动画');
+        await _playRandomMotion();
         return;
       }
       debugPrint('[Live2D][Jev] 播放视频动画: ${match.id}');
@@ -292,8 +309,9 @@ extension _JellyLive2DLoader on _JellyLive2DState {
       await _startMotion(motion);
       _scheduleAppearanceReset();
     } else {
-      debugPrint('[Live2D][Jev] 未选择动作');
+      debugPrint('[Live2D][Jev] 未选择动作，回退随机动作');
       _syncVoiceGaze();
+      await _playRandomMotion();
     }
   }
 
