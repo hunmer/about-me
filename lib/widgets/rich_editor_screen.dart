@@ -117,6 +117,10 @@ class _RichEditorScreenState extends State<RichEditorScreen> {
   TextEditingController? _titleController;
   quill.QuillController? _contentController;
   final TextEditingController _tagInputController = TextEditingController();
+  // 编辑器稳定焦点节点：QuillEditor.basic 不传时工厂每次 build 都会新建
+  // FocusNode，输入触发 setState 重建后旧焦点节点被 detach，焦点会跳到
+  // 标题/标签输入框
+  final FocusNode _editorFocusNode = FocusNode();
 
   // 取消编辑时还原标签
   List<String> _backupTags = const [];
@@ -171,6 +175,7 @@ class _RichEditorScreenState extends State<RichEditorScreen> {
   void dispose() {
     _disposeEditingControllers();
     _tagInputController.dispose();
+    _editorFocusNode.dispose();
     super.dispose();
   }
 
@@ -649,6 +654,8 @@ class _RichEditorScreenState extends State<RichEditorScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: quill.QuillEditor.basic(
               controller: _contentController!,
+              // 稳定焦点节点：见字段声明处注释
+              focusNode: _editorFocusNode,
               config: quill.QuillEditorConfig(
                 placeholder: _text(widget.texts?.contentHint, 'diary_contentHint'),
                 padding: const EdgeInsets.all(16),
