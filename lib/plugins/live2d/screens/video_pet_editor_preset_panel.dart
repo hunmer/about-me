@@ -226,6 +226,8 @@ extension _VideoPetEditorPresetPanel on _VideoPetEditorScreenState {
           key: ValueKey('animationResource-${selected.id}'),
           animation: selected,
           onChanged: _updateAnimation,
+          onPreviewSegment: (start, end) =>
+              _previewSegmentLoop(selected.id, start, end),
           baseUri: widget.baseUri,
           resolvedSources: widget.resolvedSources,
         ),
@@ -360,7 +362,8 @@ extension _VideoPetEditorPresetPanel on _VideoPetEditorScreenState {
             icon: const Icon(Icons.edit_outlined, size: 14),
             onPressed: () {
               _requestAnimation(selectedId);
-              DefaultTabController.maybeOf(context)?.animateTo(3);
+              // 窄屏下跳转「动作编辑」tab（宽屏右侧面板本就可见）。
+              _narrowTabs.animateTo(3);
             },
           ),
         ),

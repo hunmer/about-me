@@ -36,16 +36,20 @@ class VideoPetPlaybackRequest {
 }
 
 /// 一次性点播请求（如撞墙动画）：动画 + 可选帧区间 + 去重用 nonce。
+/// [loop] 为 true 时按 [startFrame, endFrame] 区间循环（AB 播放），
+/// 直到外部取消，不会自然完成。
 class VideoPetManualAnimation {
   const VideoPetManualAnimation({
     required this.animationId,
     this.startFrame,
     this.endFrame,
+    this.loop = false,
     this.nonce = 0,
   });
   final String animationId;
   final int? startFrame;
   final int? endFrame;
+  final bool loop;
   final int nonce;
 }
 
@@ -61,6 +65,7 @@ class VideoPetPlaybackState {
   VideoPetPlaybackKind _onceKind = VideoPetPlaybackKind.click;
   int? _onceStartFrame;
   int? _onceEndFrame;
+  bool _onceLoop = false;
   String? _hoverId;
   String? _dragId;
   String? _movementId;
@@ -99,11 +104,11 @@ class VideoPetPlaybackState {
           : VideoPetPlaybackKind.idle,
       generation: _generation,
       loop:
-          _dragId != null ||
-          (_onceId == null &&
-              (_hoverId != null ||
-                  _pendingMovementId == null ||
-                  _movementLoop)),
+          _dragId != null
+          ? true
+          : _onceId != null
+          ? _onceLoop
+          : (_hoverId != null || _pendingMovementId == null || _movementLoop),
       startFrame: _onceId != null ? _onceStartFrame : null,
       endFrame: _onceId != null ? _onceEndFrame : null,
     );
@@ -139,6 +144,7 @@ class VideoPetPlaybackState {
     _onceKind = VideoPetPlaybackKind.click;
     _onceStartFrame = null;
     _onceEndFrame = null;
+    _onceLoop = false;
     return _dragId != null ? current : _bump();
   }
 
@@ -146,12 +152,14 @@ class VideoPetPlaybackState {
     String? animationId, {
     int? startFrame,
     int? endFrame,
+    bool loop = false,
   }) {
     if (animationId == null) {
       if (_onceId == null) return current;
       _onceId = null;
       _onceStartFrame = null;
       _onceEndFrame = null;
+      _onceLoop = false;
       return _dragId != null ? current : _bump();
     }
     final id = _valid(animationId);
@@ -160,6 +168,7 @@ class VideoPetPlaybackState {
     _onceKind = VideoPetPlaybackKind.manual;
     _onceStartFrame = startFrame;
     _onceEndFrame = endFrame;
+    _onceLoop = loop;
     return _dragId != null ? current : _bump();
   }
 
@@ -181,6 +190,7 @@ class VideoPetPlaybackState {
       _onceId = null;
       _onceStartFrame = null;
       _onceEndFrame = null;
+      _onceLoop = false;
     } else if (_hoverId == null &&
         _pendingMovementId != null &&
         !_movementLoop) {

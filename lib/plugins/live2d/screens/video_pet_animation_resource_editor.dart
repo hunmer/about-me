@@ -21,6 +21,7 @@ class VideoPetAnimationResourceEditor extends StatefulWidget {
     super.key,
     required this.animation,
     required this.onChanged,
+    this.onPreviewSegment,
     this.baseUri = '',
     this.resolvedSources = const {},
   });
@@ -30,6 +31,10 @@ class VideoPetAnimationResourceEditor extends StatefulWidget {
 
   /// 仅在能构成「合法单动画」时回调。
   final ValueChanged<VideoPetAnimation> onChanged;
+
+  /// AB 循环预览：点按某移动区间右侧的播放按钮时回调帧区间，
+  /// 由父级（编辑器）驱动预览区循环播放该区间。
+  final void Function(int startFrame, int endFrame)? onPreviewSegment;
 
   /// 资源基址与已解析来源（用于在弹层中加载精灵图原图）。
   final String baseUri;
@@ -340,6 +345,16 @@ class _VideoPetAnimationResourceEditorState
                   ),
                 ),
               ),
+            ),
+            DSIconButton(
+              key: ValueKey('videoPetMovingLoop-$index'),
+              icon: DsIconKind.play,
+              size: 30,
+              color: dsTheme.surfaceAlt,
+              iconColor: dsTheme.primary,
+              tooltip: _t('AB 循环播放该区间', 'Loop this segment (A→B)'),
+              onPressed: () =>
+                  widget.onPreviewSegment?.call(segment.startFrame, segment.endFrame),
             ),
             DSIconButton(
               key: ValueKey('videoPetMovingDelete-$index'),

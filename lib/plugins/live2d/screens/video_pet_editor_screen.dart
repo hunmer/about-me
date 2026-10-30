@@ -40,13 +40,24 @@ class VideoPetEditorScreen extends StatefulWidget {
   State<VideoPetEditorScreen> createState() => _VideoPetEditorScreenState();
 }
 
-class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
+class _VideoPetEditorScreenState extends State<VideoPetEditorScreen>
+    with SingleTickerProviderStateMixin {
   late VideoPetManifest _draft;
   final _animationRequest = ValueNotifier<String?>(null);
+  // AB 循环点播（动作编辑的移动区间预览）；测试模式注入舞台、
+  // 编辑模式直连播放器，见 [_previewSegmentLoop]。
+  final _frameLoopRequest = ValueNotifier<VideoPetManualAnimation?>(null);
+  VideoPetManualAnimation? _loopPreview;
+  int _loopPreviewNonce = 0;
   final _walkEnabled = ValueNotifier<bool>(true);
   final _stageKey = GlobalKey<JellyVideoPetStageState>();
   final _searchController = TextEditingController();
   final _jsonController = TextEditingController();
+  // 窄屏 Tab 的控制器：供「动作预设 → 编辑」等外部入口跳转指定 tab。
+  late final TabController _narrowTabs = TabController(
+    length: 4,
+    vsync: this,
+  );
 
   String? _selectedRegionId;
   String? _selectedAnimationId;
@@ -75,7 +86,9 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
 
   @override
   void dispose() {
+    _narrowTabs.dispose();
     _animationRequest.dispose();
+    _frameLoopRequest.dispose();
     _walkEnabled.dispose();
     _searchController.dispose();
     _jsonController.dispose();
@@ -129,6 +142,7 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
 
   void _requestAnimation(String id) {
     _selectedAnimationId = id;
+    _cancelSegmentLoop();
     // Reset first so tapping the same animation restarts the player request.
     _animationRequest.value = null;
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -136,6 +150,34 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
       _animationRequest.value = id;
     });
     setState(() {});
+  }
+
+  /// AB 循环预览：在预览区循环播放 [startFrame, endFrame] 区间。
+  /// 测试模式经舞台注入（busy 暂停走动），编辑模式直连播放器。
+  void _previewSegmentLoop(String animationId, int startFrame, int endFrame) {
+    final request = VideoPetManualAnimation(
+      animationId: animationId,
+      startFrame: startFrame,
+      endFrame: endFrame,
+      loop: true,
+      nonce: ++_loopPreviewNonce,
+    );
+    _animationRequest.value = null;
+    setState(() => _loopPreview = request);
+    if (_isTestMode) {
+      _stageKey.currentState?.playFrameAnimation(request);
+    } else {
+      _frameLoopRequest.value = request;
+    }
+  }
+
+  /// 取消 AB 循环预览，恢复正常播放。
+  void _cancelSegmentLoop() {
+    final active = _loopPreview;
+    _loopPreview = null;
+    _frameLoopRequest.value = null;
+    _stageKey.currentState?.cancelFrameAnimation();
+    if (active != null) setState(() {});
   }
 
   List<VideoPetAnimation> get _visibleAnimations {

@@ -283,11 +283,17 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
     unawaited(_present(_playback.playManual(widget.animationRequest?.value)));
   }
 
-  /// 撞墙等一次性点播：nonce 去重，同一 nonce 只播一次。
+  /// 撞墙 / AB 循环等点播：nonce 去重，同一 nonce 只处理一次。
   void _frameAnimation() {
     if (_package == null) return;
     final request = widget.frameAnimationRequest?.value;
-    if (request == null) return;
+    if (request == null) {
+      // 外部清空 = 取消循环点播，恢复常规播放。
+      if (_playback.current?.kind == VideoPetPlaybackKind.manual) {
+        unawaited(_present(_playback.playManual(null)));
+      }
+      return;
+    }
     if (request.nonce != 0 && request.nonce == _lastFrameNonce) return;
     _lastFrameNonce = request.nonce;
     unawaited(
@@ -296,6 +302,7 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
           request.animationId,
           startFrame: request.startFrame,
           endFrame: request.endFrame,
+          loop: request.loop,
         ),
       ),
     );
@@ -546,10 +553,15 @@ class _SpriteSurfaceState extends State<_SpriteSurface> {
 
   void _frameAdvanced(int frame) {
     if (!widget.playing || !_controller.isPlaying) return;
-    // 帧区间播放：到达 endFrame 即提前完成（非区间播放 endFrame 为 null 不受影响）。
+    // 帧区间播放：到达 endFrame 即完成。循环请求（AB 播放）回到
+    // startFrame 继续循环；一次性请求（撞墙等）暂停并提前完成。
     final end = widget.endFrame;
     if (end != null && frame >= end) {
       if (_rangeCompleted) return;
+      if (widget.loop) {
+        _controller.goToFrame(widget.startFrame ?? 0);
+        return;
+      }
       _rangeCompleted = true;
       _controller.pause();
       widget.onComplete();

@@ -26,6 +26,8 @@ void main() {
       'timestamp': '2026-10-24T07:54:37.839Z',
     });
     expect(message.isUser, isFalse);
-    expect(message.timestamp, DateTime.parse('2026-10-24T07:54:37.839Z'));
+    // 统一入口解析即转本地时区：同一时刻的本地表示
+    expect(message.timestamp, DateTime.parse('2026-10-24T07:54:37.839Z').toLocal());
+    expect(message.timestamp.isUtc, isFalse);
   });
 }

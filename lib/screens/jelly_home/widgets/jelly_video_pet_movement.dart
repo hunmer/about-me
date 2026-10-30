@@ -298,6 +298,16 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
     _beginWalk();
   }
 
+  /// 外部帧区间点播（编辑器 AB 循环预览等）：直接注入点播请求。
+  void playFrameAnimation(VideoPetManualAnimation request) {
+    _frameRequest.value = request;
+  }
+
+  /// 取消外部点播，恢复正常播放调度。
+  void cancelFrameAnimation() {
+    _frameRequest.value = null;
+  }
+
   /// 位置复位到舞台中央并清除持久化坐标，然后重新调度走动。
   void resetPosition() {
     final prefs = _prefs;

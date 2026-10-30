@@ -107,42 +107,58 @@ extension _VideoPetEditorLayout on _VideoPetEditorScreenState {
                             : _text('videoPet_pause', '暂停'),
                         onPressed: () => setState(() => _isPaused = !_isPaused),
                       ),
+                      // 测试模式：舞台操作收进右上角 dots 菜单。
+                      if (_isTestMode)
+                        ValueListenableBuilder<bool>(
+                          valueListenable: _walkEnabled,
+                          builder: (context, walkEnabled, _) =>
+                              PopupMenuButton<String>(
+                                icon: const Icon(Icons.more_vert, size: 20),
+                                tooltip: _text('videoPet_test', '测试'),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                onSelected: (action) {
+                                  switch (action) {
+                                    case 'walkToggle':
+                                      _walkEnabled.value = !_walkEnabled.value;
+                                    case 'reset':
+                                      _stageKey.currentState
+                                          ?.resetPosition();
+                                    case 'walkNow':
+                                      _stageKey.currentState?.walkNow();
+                                  }
+                                },
+                                itemBuilder: (_) => [
+                                  PopupMenuItem(
+                                    value: 'walkToggle',
+                                    child: Text(
+                                      walkEnabled
+                                          ? _text(
+                                              'videoPet_walkOff',
+                                              '走动 关',
+                                            )
+                                          : _text('videoPet_walkOn', '走动 开'),
+                                    ),
+                                  ),
+                                  PopupMenuItem(
+                                    value: 'reset',
+                                    child: Text(
+                                      _text('videoPet_resetPosition', '复位'),
+                                    ),
+                                  ),
+                                  PopupMenuItem(
+                                    value: 'walkNow',
+                                    child: Text(
+                                      _text('videoPet_walkNow', '立即走动'),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                        ),
                     ],
                   ),
                 ),
-                // 测试模式：舞台操作按钮独立一行，置于舞台上方。
-                if (_isTestMode)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 0, 8, 6),
-                    child: Row(
-                      children: [
-                        ValueListenableBuilder<bool>(
-                          valueListenable: _walkEnabled,
-                          builder: (context, walkEnabled, _) => DSButton(
-                            label: walkEnabled
-                                ? _text('videoPet_walkOn', '走动 开')
-                                : _text('videoPet_walkOff', '走动 关'),
-                            size: DSButtonSize.sm,
-                            onPressed: () =>
-                                _walkEnabled.value = !_walkEnabled.value,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        DSButton(
-                          label: _text('videoPet_resetPosition', '复位'),
-                          size: DSButtonSize.sm,
-                          onPressed: () =>
-                              _stageKey.currentState?.resetPosition(),
-                        ),
-                        const SizedBox(width: 8),
-                        DSButton(
-                          label: _text('videoPet_walkNow', '立即走动'),
-                          size: DSButtonSize.sm,
-                          onPressed: () => _stageKey.currentState?.walkNow(),
-                        ),
-                      ],
-                    ),
-                  ),
                 Expanded(
                   child: LayoutBuilder(
                     builder: (context, constraints) {
@@ -218,6 +234,7 @@ extension _VideoPetEditorLayout on _VideoPetEditorScreenState {
                                     active: true,
                                     paused: _isPaused,
                                     animationRequest: _animationRequest,
+                                    frameAnimationRequest: _frameLoopRequest,
                                     interactive: false,
                                     onEditPointer: (type, x, y) => _onEditPointer(type, x, y),
                                     showRegions: _showRegions,
@@ -249,6 +266,22 @@ extension _VideoPetEditorLayout on _VideoPetEditorScreenState {
                                         showLabels: true,
                                       ),
                                     ),
+                                  ),
+                                ),
+                              // AB 循环预览进行中：预览区右上角显示取消按钮。
+                              if (_loopPreview != null)
+                                Positioned(
+                                  key: const ValueKey('videoPetCancelLoop'),
+                                  top: 8,
+                                  right: 8,
+                                  child: DSIconButton(
+                                    icon: DsIconKind.stop,
+                                    size: 34,
+                                    tooltip: _text(
+                                      'videoPet_cancelLoopPreview',
+                                      '取消 AB 循环播放',
+                                    ),
+                                    onPressed: _cancelSegmentLoop,
                                   ),
                                 ),
                             ],
@@ -304,46 +337,45 @@ extension _VideoPetEditorLayout on _VideoPetEditorScreenState {
     );
     return Material(
       color: theme.surfaceAlt,
-      child: DefaultTabController(
-        length: 4,
-        child: Column(
-          children: [
-            TabBar(
-              tabAlignment: TabAlignment.start,
-              isScrollable: true,
-              tabs: [
-                Tab(text: _text('videoPet_regions', '区域')),
-                Tab(
-                  key: const ValueKey('videoPetNarrowAnimationTab'),
-                  text: _text('videoPet_animations', '动画'),
+      child: Column(
+        children: [
+          TabBar(
+            controller: _narrowTabs,
+            tabAlignment: TabAlignment.start,
+            isScrollable: true,
+            tabs: [
+              Tab(text: _text('videoPet_regions', '区域')),
+              Tab(
+                key: const ValueKey('videoPetNarrowAnimationTab'),
+                text: _text('videoPet_animations', '动画'),
+              ),
+              Tab(
+                key: const ValueKey('videoPetNarrowConfigTab'),
+                text: _text('videoPet_presets', '动作预设'),
+              ),
+              Tab(
+                key: const ValueKey('videoPetNarrowActionTab'),
+                text: _text('videoPet_actionEdit', '动作编辑'),
+              ),
+            ],
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _narrowTabs,
+              children: [
+                _buildRegionPanel(),
+                _buildAnimationPanel(),
+                configPanel(
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: _buildPresetSections(),
+                  ),
                 ),
-                Tab(
-                  key: const ValueKey('videoPetNarrowConfigTab'),
-                  text: _text('videoPet_presets', '动作预设'),
-                ),
-                Tab(
-                  key: const ValueKey('videoPetNarrowActionTab'),
-                  text: _text('videoPet_actionEdit', '动作编辑'),
-                ),
+                configPanel(_buildAnimationResourceEditor()),
               ],
             ),
-            Expanded(
-              child: TabBarView(
-                children: [
-                  _buildRegionPanel(),
-                  _buildAnimationPanel(),
-                  configPanel(
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: _buildPresetSections(),
-                    ),
-                  ),
-                  configPanel(_buildAnimationResourceEditor()),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
