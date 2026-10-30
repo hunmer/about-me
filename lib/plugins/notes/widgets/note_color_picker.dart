@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:aboutme/constants/app_icons.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/widgets/form_fields/circle_icon_picker_field.dart';
+import 'package:aboutme/widgets/picker/circle_icon_picker.dart'
+    show CircleIconPickerType;
 
 /// 可选标记色板（内容数据，非主题色）：首位 null = 默认（跟随主题）
 const List<Color?> kNoteColorChoices = <Color?>[
@@ -14,32 +18,6 @@ const List<Color?> kNoteColorChoices = <Color?>[
   Color(0xFFC96B98), // 蔷薇
   Color(0xFF6B9C8F), // 青瓷
   Color(0xFF8C8C8C), // 炭灰
-];
-
-/// 可选水印图标（内容数据）：首位 null = 无图标
-final List<DsIconKind?> kNoteIconChoices = <DsIconKind?>[
-  null,
-  DsIconKind.book,
-  DsIconKind.star,
-  DsIconKind.heart,
-  DsIconKind.tag,
-  DsIconKind.clock,
-  DsIconKind.calendar,
-  DsIconKind.mood,
-  DsIconKind.sprout,
-  DsIconKind.gift,
-  DsIconKind.pin,
-  DsIconKind.home,
-  DsIconKind.chat,
-  DsIconKind.bell,
-  DsIconKind.image,
-  DsIconKind.video,
-  DsIconKind.mic,
-  DsIconKind.bot,
-  DsIconKind.piggy,
-  DsIconKind.drop,
-  DsIconKind.moon,
-  DsIconKind.sun,
 ];
 
 /// 手绘风格色板行（无标题）：一排圆形色块，选中项墨线描边加粗 + 对勾
@@ -95,11 +73,17 @@ class NoteColorSwatchRow extends StatelessWidget {
   }
 }
 
-/// 手绘风格水印图标选择行（无标题）：无图标项用 close；选中项主题色实底圆 + 反色图标
+/// 手绘风格水印图标选择行（无标题）：「无」项手绘圆钮（close 图标），
+/// 其余接入 CircleIconPickerField 全量图标库；新选择存 AppIcons 键名，
+/// 旧 DsIconKind 枚举名继续兼容回显
 class NoteIconPickerRow extends StatelessWidget {
-  const NoteIconPickerRow({super.key, this.selectedIcon, required this.onChanged});
+  const NoteIconPickerRow({
+    super.key,
+    this.selectedIcon,
+    required this.onChanged,
+  });
 
-  /// 当前水印图标（DsIconKind 枚举名）；null = 无
+  /// 当前水印图标（DsIconKind 枚举名或 AppIcons 键名）；null = 无
   final String? selectedIcon;
 
   final ValueChanged<String?> onChanged;
@@ -107,40 +91,61 @@ class NoteIconPickerRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
+    final isNone = selectedIcon == null;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        for (final choice in kNoteIconChoices) _buildIconChoice(theme, choice),
+        GestureDetector(
+          onTap: () => onChanged(null),
+          child: Container(
+            width: 36,
+            height: 36,
+            decoration: dsSketchDecoration(
+              theme: theme,
+              fillColor: isNone ? theme.primary : null,
+              circle: true,
+              strokeWidth: isNone ? 2.4 : 1.5,
+              seed: 200,
+            ),
+            child: Center(
+              child: DsIcon(
+                DsIconKind.close,
+                size: 18,
+                color: isNone ? theme.onPrimary : theme.textSub,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        CircleIconPickerField(
+          currentIcon: _resolveIconData(),
+          currentBackgroundColor: theme.primary,
+          supportedTypes: const {CircleIconPickerType.icon},
+          onValueChanged: (value) {
+            final icon = value['icon'] as IconData?;
+            if (icon == null) return;
+            // 反查 AppIcons 键名持久化（与悬浮球/相册标签的既有模式一致）
+            for (final entry in AppIcons.predefinedIcons.entries) {
+              if (entry.value == icon) {
+                onChanged(entry.key);
+                return;
+              }
+            }
+          },
+        ),
       ],
     );
   }
 
-  Widget _buildIconChoice(AppThemeData theme, DsIconKind? choice) {
-    final isSelected =
-        (choice?.name ?? '') == (selectedIcon ?? '') &&
-        (choice != null || selectedIcon == null);
-    return GestureDetector(
-      onTap: () => onChanged(choice?.name),
-      child: Container(
-        width: 36,
-        height: 36,
-        decoration: dsSketchDecoration(
-          theme: theme,
-          fillColor: isSelected ? theme.primary : null,
-          circle: true,
-          strokeWidth: isSelected ? 2.4 : 1.5,
-          seed: 200 + (choice?.index ?? 0),
-        ),
-        child: Center(
-          child: DsIcon(
-            choice ?? DsIconKind.close,
-            size: 18,
-            color: isSelected ? theme.onPrimary : theme.textSub,
-          ),
-        ),
-      ),
-    );
+  /// 解析当前图标用于回显：DsIconKind 名走手绘图标集，
+  /// 其余按 AppIcons 键名查；无值/未命中回退默认心情图标
+  IconData _resolveIconData() {
+    final name = selectedIcon;
+    if (name == null) return DsIconKind.mood.iconData;
+    for (final kind in DsIconKind.values) {
+      if (kind.name == name) return kind.iconData;
+    }
+    return AppIcons.predefinedIcons[name] ?? DsIconKind.mood.iconData;
   }
 }
 

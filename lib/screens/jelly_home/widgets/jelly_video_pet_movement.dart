@@ -232,7 +232,11 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
       _wallBumpNonce = 0;
       unawaited(_load());
     } else if (oldWidget.active != widget.active ||
-        oldWidget.movement != widget.movement) {
+        oldWidget.movement != widget.movement ||
+        oldWidget.animations != widget.animations) {
+      // 动画/移动配置变化（如编辑器改分段）：播放器会重新 prepare，
+      // generation 重新从 0 计数，必须清掉 _frameGeneration 闸门并
+      // 复位走动状态，否则新帧全部被旧闸门拒绝、宠物冻结卡死。
       _stop();
       _schedule();
     }
@@ -289,12 +293,18 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
   /// 立即选择目标并开始（转向 +）行走，跳过空闲等待。
   /// 供外部（如编辑器测试区“立即走动”按钮）经 GlobalKey 调用。
   void walkNow() {
+    if (!widget.movement.enabled || !widget.enabled.value) {
+      _logStatus();
+      return;
+    }
+    // 强制干净重启：清掉可能卡住的 _turning/_walking/_frameGeneration
+    // （如播放器重新 prepare 后 generation 重置导致帧被闸门拒绝），
+    // 与「切换走动开关」的 _stop 等效，保证按钮每次都能触发。
+    setState(_stop);
     if (!_canWalk) {
       _logStatus();
       return;
     }
-    _wait?.cancel();
-    _wait = null;
     _beginWalk();
   }
 

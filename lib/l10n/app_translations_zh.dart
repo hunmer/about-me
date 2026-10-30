@@ -49,6 +49,8 @@ const Map<String, String> appTranslationsZh = {
   'app_import': '导入',
   'app_share': '分享',
   'app_shareImage': '分享图片',
+  'app_lineSpacing': '行间距',
+  'app_letterSpacing': '字间距',
   'app_makeSticker': '制作贴图',
   'app_notepadText': '便签文字',
   'app_notepadTextHint': '输入内容...；「- [ ]」开头的行会渲染成待办清单',

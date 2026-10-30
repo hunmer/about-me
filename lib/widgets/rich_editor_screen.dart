@@ -652,6 +652,8 @@ class _RichEditorScreenState extends State<RichEditorScreen> {
               config: quill.QuillEditorConfig(
                 placeholder: _text(widget.texts?.contentHint, 'diary_contentHint'),
                 padding: const EdgeInsets.all(16),
+                // 渲染自定义字间距属性（与阅读态 QuillViewer 一致）
+                customStyleBuilder: quillCustomStyleBuilder,
                 embedBuilders: kIsWeb
                     ? FlutterQuillEmbeds.editorWebBuilders()
                     : FlutterQuillEmbeds.editorBuilders(),
@@ -678,6 +680,11 @@ class _RichEditorScreenState extends State<RichEditorScreen> {
                   controller: _contentController!,
                 ),
                 const SizedBox(width: 4),
+                // 行间距（quill 内置 line-height 属性，1 / 1.15 / 1.5 / 2 档）
+                quill.QuillToolbarSelectLineHeightStyleDropdownButton(
+                  controller: _contentController!,
+                ),
+                const SizedBox(width: 4),
                 // Styles
                 quill.QuillToolbarToggleStyleButton(
                   controller: _contentController!,
@@ -695,6 +702,8 @@ class _RichEditorScreenState extends State<RichEditorScreen> {
                   controller: _contentController!,
                   attribute: quill.Attribute.strikeThrough,
                 ),
+                // 字间距（自定义 letter-spacing 属性，循环切换档位）
+                _LetterSpacingToolbarButton(controller: _contentController!),
                 // Lists
                 quill.QuillToolbarToggleStyleButton(
                   controller: _contentController!,
@@ -875,6 +884,82 @@ class EditorDockButton extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// 字间距循环切换按钮：标准(清除) → 宽 1.0 → 更宽 2.0 → 标准。
+/// quill 无内置字间距属性，走自定义 letter-spacing 属性，
+/// 由 [quillCustomStyleBuilder] 映射到 TextStyle.letterSpacing 渲染。
+class _LetterSpacingToolbarButton extends StatefulWidget {
+  final quill.QuillController controller;
+
+  const _LetterSpacingToolbarButton({required this.controller});
+
+  @override
+  State<_LetterSpacingToolbarButton> createState() =>
+      _LetterSpacingToolbarButtonState();
+}
+
+class _LetterSpacingToolbarButtonState
+    extends State<_LetterSpacingToolbarButton> {
+  /// 档位序列：null 为清除属性（标准间距）
+  static const List<double?> _levels = [null, 1.0, 2.0];
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_onControllerChanged);
+  }
+
+  @override
+  void didUpdateWidget(covariant _LetterSpacingToolbarButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_onControllerChanged);
+      widget.controller.addListener(_onControllerChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onControllerChanged);
+    super.dispose();
+  }
+
+  void _onControllerChanged() {
+    if (mounted) setState(() {});
+  }
+
+  /// 选区当前生效的字间距（非数字视为无）
+  double? get _current {
+    final value = widget.controller
+        .getSelectionStyle()
+        .attributes[kQuillLetterSpacingKey]
+        ?.value;
+    return value is num ? value.toDouble() : null;
+  }
+
+  void _cycle() {
+    final index = _levels.indexOf(_current);
+    final next = _levels[(index + 1) % _levels.length];
+    widget.controller.formatSelection(
+      quill.Attribute(
+        kQuillLetterSpacingKey,
+        quill.AttributeScope.inline,
+        next,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return quill.QuillToolbarIconButton(
+      tooltip: 'app_letterSpacing'.tr,
+      isSelected: _current != null,
+      onPressed: _cycle,
+      iconTheme: null,
+      icon: const Icon(Icons.format_size),
     );
   }
 }

@@ -271,6 +271,13 @@ const Map<DsIconKind, IconData> _kIcons = {
   DsIconKind.science: Icons.science_outlined,
 };
 
+/// 图标种类 → Material 图标数据
+///
+/// [_kIcons] 的公开只读入口，供持久化名称与回显之间的转换使用
+extension DsIconKindIconData on DsIconKind {
+  IconData get iconData => _kIcons[this] ?? Icons.help_outline;
+}
+
 /// 图标组件：基于系统 Material Icons
 class DsIcon extends StatelessWidget {
   const DsIcon(

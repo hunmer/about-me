@@ -6,6 +6,7 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
 import 'package:aboutme/plugins/chat/models/message.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 /// 统一管理消息操作的处理器
 class MessageOperations {
@@ -14,101 +15,73 @@ class MessageOperations {
 
   MessageOperations(this.context) : _chatPlugin = ChatPlugin.instance;
 
-  /// 编辑消息
+  /// 编辑消息（smooth_sheets 底部弹层）
   Future<void> editMessage(Message message) async {
     final controller = TextEditingController(text: message.content);
 
-    // 显示编辑对话框
-    final result = await showDSDialog<bool>(
+    // 显示编辑底部弹层：标题栏尾部自带保存按钮，下滑或点背景取消
+    final result = await SmoothBottomSheet.showForm<bool>(
       context: context,
-      theme: DSThemeBridge.resolve(context),
-      builder:
-          (context) => DSThemeBridge(
-            child: Builder(
-              builder: (context) {
-                final theme = DSThemeBridge.resolve(context);
-                return JellyBox(
-                  radius: theme.radii.xxl,
-                  padding: EdgeInsets.all(theme.spacing.xl),
-                  constraints: const BoxConstraints(maxWidth: 420),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        'chat_editMessage'.tr,
-                        textAlign: TextAlign.center,
-                        style: DsTypography.title.copyWith(color: theme.text),
+      title: 'chat_editMessage'.tr,
+      child: Builder(
+        builder: (sheetContext) {
+          final theme = DSThemeBridge.resolve(sheetContext);
+          return Padding(
+            padding: EdgeInsets.all(theme.spacing.xl),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                DSInput(
+                  controller: controller,
+                  hint: '输入新的消息内容...',
+                  maxLines: null,
+                ),
+                SizedBox(height: theme.spacing.md),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _FormatButton(
+                      label: 'B',
+                      style: DsTypography.heading.copyWith(
+                        color: theme.text,
+                        fontWeight: FontWeight.w900,
                       ),
-                      SizedBox(height: theme.spacing.lg),
-                      DSInput(
-                        controller: controller,
-                        hint: '输入新的消息内容...',
-                        maxLines: null,
+                      onTap: () => _insertMarkdownStyle(controller, '**'),
+                    ),
+                    _FormatButton(
+                      label: 'I',
+                      style: DsTypography.heading.copyWith(
+                        color: theme.text,
+                        fontStyle: FontStyle.italic,
                       ),
-                      SizedBox(height: theme.spacing.md),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          _FormatButton(
-                            label: 'B',
-                            style: DsTypography.heading.copyWith(
-                              color: theme.text,
-                              fontWeight: FontWeight.w900,
-                            ),
-                            onTap: () => _insertMarkdownStyle(controller, '**'),
-                          ),
-                          _FormatButton(
-                            label: 'I',
-                            style: DsTypography.heading.copyWith(
-                              color: theme.text,
-                              fontStyle: FontStyle.italic,
-                            ),
-                            onTap: () => _insertMarkdownStyle(controller, '*'),
-                          ),
-                          _FormatButton(
-                            label: 'S',
-                            style: DsTypography.heading.copyWith(
-                              color: theme.text,
-                              decoration: TextDecoration.lineThrough,
-                            ),
-                            onTap: () => _insertMarkdownStyle(controller, '~~'),
-                          ),
-                          _FormatButton(
-                            label: 'U',
-                            style: DsTypography.heading.copyWith(
-                              color: theme.text,
-                              decoration: TextDecoration.underline,
-                            ),
-                            onTap: () => _insertMarkdownStyle(controller, '__'),
-                          ),
-                        ],
+                      onTap: () => _insertMarkdownStyle(controller, '*'),
+                    ),
+                    _FormatButton(
+                      label: 'S',
+                      style: DsTypography.heading.copyWith(
+                        color: theme.text,
+                        decoration: TextDecoration.lineThrough,
                       ),
-                      SizedBox(height: theme.spacing.lg),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: DSButton(
-                              label: 'app_cancel'.tr,
-                              variant: DSButtonVariant.outline,
-                              onPressed: () => Navigator.pop(context, false),
-                            ),
-                          ),
-                          SizedBox(width: theme.spacing.md),
-                          Expanded(
-                            child: DSButton(
-                              label: 'app_save'.tr,
-                              onPressed: () => Navigator.pop(context, true),
-                            ),
-                          ),
-                        ],
+                      onTap: () => _insertMarkdownStyle(controller, '~~'),
+                    ),
+                    _FormatButton(
+                      label: 'U',
+                      style: DsTypography.heading.copyWith(
+                        color: theme.text,
+                        decoration: TextDecoration.underline,
                       ),
-                    ],
-                  ),
-                );
-              },
+                      onTap: () => _insertMarkdownStyle(controller, '__'),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ),
+          );
+        },
+      ),
+      // sheet 位于根 Navigator 栈顶，pop 页面 context 即关闭弹层并带回保存标记
+      onSave: () => Navigator.pop(context, true),
     );
 
     if (result == true && controller.text.isNotEmpty) {

@@ -166,7 +166,9 @@ class NoteCard extends StatelessWidget {
         todoItems.isNotEmpty &&
         doneCount == todoItems.length;
 
-    final watermarkIcon = note.iconKind;
+    final watermarkKind = note.iconKind;
+    // 旧 DsIconKind 名走手绘图标；新存值（AppIcons 键名）回退普通 Icon
+    final watermarkData = note.watermarkIconData;
 
     // 参考 DSListItemCard：ClipRRect + Stack（底色 / 填充墨线 / 右上角水印 / 内容），
     // 水印位于内容层之下，溢出被裁剪
@@ -207,7 +209,7 @@ class NoteCard extends StatelessWidget {
               ),
             ),
             // 右上角图标水印：放大贴角，标记色优先
-            if (watermarkIcon != null)
+            if (watermarkData != null)
               Positioned(
                 right: 0,
                 top: 0,
@@ -218,10 +220,15 @@ class NoteCard extends StatelessWidget {
                     fit: BoxFit.contain,
                     child: Opacity(
                       opacity: 0.15,
-                      child: DsIcon(
-                        watermarkIcon,
-                        color: note.color ?? theme.primary,
-                      ),
+                      child: watermarkKind != null
+                          ? DsIcon(
+                              watermarkKind,
+                              color: note.color ?? theme.primary,
+                            )
+                          : Icon(
+                              watermarkData,
+                              color: note.color ?? theme.primary,
+                            ),
                     ),
                   ),
                 ),

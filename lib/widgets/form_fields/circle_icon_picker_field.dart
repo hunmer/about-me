@@ -22,6 +22,9 @@ class CircleIconPickerField extends StatelessWidget {
   /// 是否显示标签
   final bool showLabel;
 
+  /// 支持的选择类型（透传 CircleIconPicker），默认图标 + 颜色
+  final Set<CircleIconPickerType> supportedTypes;
+
   /// 值变化回调（返回 Map {'icon': IconData, 'color': Color}）
   final ValueChanged<Map<String, dynamic>> onValueChanged;
 
@@ -33,6 +36,10 @@ class CircleIconPickerField extends StatelessWidget {
     this.enabled = true,
     this.labelText,
     this.showLabel = false,
+    this.supportedTypes = const {
+      CircleIconPickerType.icon,
+      CircleIconPickerType.color,
+    },
   });
 
   @override
@@ -45,6 +52,7 @@ class CircleIconPickerField extends StatelessWidget {
           CircleIconPicker(
             currentIcon: currentIcon,
             backgroundColor: currentBackgroundColor,
+            supportedTypes: supportedTypes,
             onIconSelected:
                 enabled
                     ? (icon) {

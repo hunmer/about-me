@@ -7,6 +7,20 @@ import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
 
 import 'package:aboutme/design_system/design_system.dart';
 
+/// 自定义字间距属性 key（quill 无内置字间距，Delta 中以数字值记录）
+const String kQuillLetterSpacingKey = 'letter-spacing';
+
+/// quill 自定义样式映射：把字间距属性转成 TextStyle.letterSpacing，
+/// 其余属性返回空样式（合并不影响原样式）。
+/// 编辑器（rich_editor_screen）与只读查看器（QuillViewer）共用，
+/// 保证编辑态所见与保存后阅读态一致。
+TextStyle quillCustomStyleBuilder(quill.Attribute attribute) {
+  if (attribute.key == kQuillLetterSpacingKey && attribute.value is num) {
+    return TextStyle(letterSpacing: (attribute.value as num).toDouble());
+  }
+  return const TextStyle();
+}
+
 /// Quill 内容查看器（只读模式）
 /// 用于显示 Quill Delta 格式的内容
 class QuillViewer extends StatefulWidget {
@@ -139,6 +153,8 @@ class _QuillViewerState extends State<QuillViewer> {
             config: quill.QuillEditorConfig(
               padding: EdgeInsets.zero,
               customStyles: widget.customStyles,
+              // 渲染自定义字间距属性（与编辑态一致）
+              customStyleBuilder: quillCustomStyleBuilder,
               // 只读查看器不显示输入光标
               showCursor: false,
               // 提供勾选回调时允许点击复选框（其余内容仍只读）

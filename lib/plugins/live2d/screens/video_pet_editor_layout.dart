@@ -107,54 +107,48 @@ extension _VideoPetEditorLayout on _VideoPetEditorScreenState {
                             : _text('videoPet_pause', '暂停'),
                         onPressed: () => setState(() => _isPaused = !_isPaused),
                       ),
-                      // 测试模式：舞台操作收进右上角 dots 菜单。
+                      // 测试模式：舞台操作收进右上角 dots 菜单（DSMenu）。
                       if (_isTestMode)
                         ValueListenableBuilder<bool>(
                           valueListenable: _walkEnabled,
-                          builder: (context, walkEnabled, _) =>
-                              PopupMenuButton<String>(
-                                icon: const Icon(Icons.more_vert, size: 20),
-                                tooltip: _text('videoPet_test', '测试'),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                onSelected: (action) {
-                                  switch (action) {
-                                    case 'walkToggle':
-                                      _walkEnabled.value = !_walkEnabled.value;
-                                    case 'reset':
-                                      _stageKey.currentState
-                                          ?.resetPosition();
-                                    case 'walkNow':
-                                      _stageKey.currentState?.walkNow();
-                                  }
-                                },
-                                itemBuilder: (_) => [
-                                  PopupMenuItem(
-                                    value: 'walkToggle',
-                                    child: Text(
-                                      walkEnabled
-                                          ? _text(
-                                              'videoPet_walkOff',
-                                              '走动 关',
-                                            )
-                                          : _text('videoPet_walkOn', '走动 开'),
-                                    ),
-                                  ),
-                                  PopupMenuItem(
-                                    value: 'reset',
-                                    child: Text(
-                                      _text('videoPet_resetPosition', '复位'),
-                                    ),
-                                  ),
-                                  PopupMenuItem(
-                                    value: 'walkNow',
-                                    child: Text(
-                                      _text('videoPet_walkNow', '立即走动'),
-                                    ),
-                                  ),
-                                ],
+                          builder: (context, walkEnabled, _) => DSMenu(
+                            align: DSMenuAlign.end,
+                            width: 180,
+                            items: [
+                              DSMenuItem(
+                                icon: walkEnabled
+                                    ? DsIconKind.pause
+                                    : DsIconKind.play,
+                                label: walkEnabled
+                                    ? _text('videoPet_walkOff', '走动 关')
+                                    : _text('videoPet_walkOn', '走动 开'),
+                                onTap: () =>
+                                    _walkEnabled.value = !_walkEnabled.value,
                               ),
+                              DSMenuItem(
+                                icon: DsIconKind.refresh,
+                                label: _text(
+                                  'videoPet_resetPosition',
+                                  '复位',
+                                ),
+                                onTap: () =>
+                                    _stageKey.currentState?.resetPosition(),
+                              ),
+                              DSMenuItem(
+                                icon: DsIconKind.play,
+                                label: _text('videoPet_walkNow', '立即走动'),
+                                onTap: () =>
+                                    _stageKey.currentState?.walkNow(),
+                              ),
+                            ],
+                            child: DSIconButton(
+                              icon: DsIconKind.dots,
+                              size: 34,
+                              color: DSThemeBridge.resolve(context).surfaceAlt,
+                              iconColor: DSThemeBridge.resolve(context).textSub,
+                              tooltip: _text('videoPet_test', '测试'),
+                            ),
+                          ),
                         ),
                     ],
                   ),

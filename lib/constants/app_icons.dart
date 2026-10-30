@@ -10224,8 +10224,10 @@ class AppIcons {
   static const IconData zoom_out_rounded = Icons.zoom_out_rounded;
   static const IconData zoom_out_sharp = Icons.zoom_out_sharp;
 
-  // 获取预定义图标映射
-  static Map<String, IconData> get predefinedIcons => {
+  // 获取预定义图标映射（内容恒定，缓存避免每次访问重建上万条目）
+  static Map<String, IconData>? _predefinedIconsCache;
+
+  static Map<String, IconData> get predefinedIcons => _predefinedIconsCache ??= {
     'abc': abc,
     'abc_outlined': abc_outlined,
     'abc_rounded': abc_rounded,

@@ -50,6 +50,8 @@ const Map<String, String> appTranslationsEn = {
   'app_import': 'Import',
   'app_share': 'Share',
   'app_shareImage': 'Share as Image',
+  'app_lineSpacing': 'Line spacing',
+  'app_letterSpacing': 'Letter spacing',
   'app_makeSticker': 'Make Sticker',
   'app_notepadText': 'Notepad text',
   'app_notepadTextHint': 'Enter content; lines starting with "- [ ]" render as a todo list',

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:aboutme/constants/app_icons.dart';
 import 'package:aboutme/design_system/design_system.dart';
 
 import 'package:shared_models/shared_models.dart';
@@ -27,7 +28,7 @@ class Note {
   /// 卡片背景填充风格（DsSketchFill 下标），0 = 默认排线
   int bgStyle;
 
-  /// 右上角水印图标（DsIconKind 枚举名），null = 无
+  /// 右上角水印图标（DsIconKind 枚举名或 AppIcons 键名），null = 无
   String? icon;
 
   /// 已归档（普通视图隐藏，归入"已归档"分组）
@@ -60,6 +61,16 @@ class Note {
       if (kind.name == name) return kind;
     }
     return null;
+  }
+
+  /// 水印图标渲染数据：DsIconKind 名走手绘图标集，
+  /// 其余按 AppIcons 键名解析（未知名称返回 null）
+  IconData? get watermarkIconData {
+    final kind = iconKind;
+    if (kind != null) return kind.iconData;
+    final name = icon;
+    if (name == null) return null;
+    return AppIcons.predefinedIcons[name];
   }
 
   Map<String, dynamic> toJson() {
