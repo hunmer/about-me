@@ -354,6 +354,16 @@ extension _VideoPetEditorLayout on _VideoPetEditorScreenState {
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                 ),
+                // 选中动画后可一键：播放并跳到「动作编辑」（窄屏 Tab）。
+                if (_selectedAnimationId != null)
+                  IconButton(
+                    tooltip: _text('videoPet_actionEdit', '动作编辑'),
+                    icon: const Icon(Icons.edit_outlined, size: 20),
+                    onPressed: () {
+                      _requestAnimation(_selectedAnimationId!);
+                      DefaultTabController.maybeOf(context)?.animateTo(3);
+                    },
+                  ),
                 SizedBox(
                   width: 200,
                   child: DSInput.search(

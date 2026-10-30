@@ -172,4 +172,9 @@ const Map<String, String> agentChatTranslationsZh = {
   'agentChat_sampleConversationsDesc': '创建分组好的示例 AI 会话和消息记录',
     'agent_chat_conversationNotFound': '未找到对话',
     'agent_chat_pluginNotAvailable': '插件不可用',
+
+  // 多选模式工具栏
+  'agent_chat_copySelectedMessages': '复制选中消息',
+  'agent_chat_deleteSelectedMessages': '删除选中消息',
+  'agent_chat_exitMultiSelectMode': '退出多选模式',
 };

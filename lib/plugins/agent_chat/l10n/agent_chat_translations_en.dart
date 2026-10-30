@@ -173,4 +173,9 @@ const Map<String, String> agentChatTranslationsEn = {
   'agentChat_sampleConversationsDesc': 'Create grouped sample AI conversations with messages',
     'agent_chat_conversationNotFound': 'Conversation not found',
     'agent_chat_pluginNotAvailable': 'Plugin not available',
+
+  // Multi-select mode toolbar
+  'agent_chat_copySelectedMessages': 'Copy Selected Messages',
+  'agent_chat_deleteSelectedMessages': 'Delete Selected Messages',
+  'agent_chat_exitMultiSelectMode': 'Exit Multi-Select Mode',
 };

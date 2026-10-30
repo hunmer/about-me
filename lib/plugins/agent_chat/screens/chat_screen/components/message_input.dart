@@ -60,6 +60,9 @@ class MessageInput extends StatefulWidget {
   /// 素描面板描边用虚线（透传；需 showPanelStroke 为 true）
   final bool dashedPanelStroke;
 
+  /// 选择模式工具栏动作（如消息多选的复制/删除）；非 null 时替换常规输入 UI
+  final List<common.MessageInputQuickAction>? selectionActions;
+
   const MessageInput({
     super.key,
     required this.controller,
@@ -68,6 +71,7 @@ class MessageInput extends StatefulWidget {
     this.trailingToolbarActions = const [],
     this.showPanelStroke = true,
     this.dashedPanelStroke = false,
+    this.selectionActions,
   });
 
   @override
@@ -390,6 +394,8 @@ class _MessageInputState extends State<MessageInput> {
 
     return common.MessageInput(
       controller: _textController,
+      // 多选模式工具栏（复制/删除）；非 null 时替换常规输入 UI
+      selectionActions: widget.selectionActions,
       focusNode: _focusNode,
       enabled: agentReady,
       hintText: agentReady ? '输入消息...' : '请先选择Agent...',

@@ -513,8 +513,11 @@ class _Live2DArchiveFormScreenState extends State<Live2DArchiveFormScreen> {
         if (current.isVideo) ...[
           const SizedBox(height: 12),
           DSListItem(
-            title: '随机走动',
-            subtitle: '开启后该档案的桌宠会在小屋内随机等待并水平走动',
+            title: _videoText('随机走动', 'Random walk'),
+            subtitle: _videoText(
+              '开启后该档案的桌宠会在小屋内随机等待并水平走动',
+              'When enabled, the pet of this profile waits and walks horizontally at random',
+            ),
             leading: DsIcon(DsIconKind.drag, color: theme.primary),
             trailing: DSSwitch(
               value: current.randomWalkEnabled,

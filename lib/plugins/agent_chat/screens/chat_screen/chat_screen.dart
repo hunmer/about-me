@@ -398,6 +398,21 @@ class _ChatScreenState extends State<ChatScreen> {
         // 输入框
         MessageInput(
           controller: _controller,
+          // 多选模式：输入框替换为一行工具栏（复制/删除选中消息）
+          selectionActions: _isMultiSelectMode
+              ? [
+                  MessageInputQuickAction(
+                    icon: DsIconKind.copy,
+                    tooltip: 'agent_chat_copySelectedMessages'.tr,
+                    onPressed: _copySelectedMessages,
+                  ),
+                  MessageInputQuickAction(
+                    icon: DsIconKind.trash,
+                    tooltip: 'agent_chat_deleteSelectedMessages'.tr,
+                    onPressed: _deleteSelectedMessages,
+                  ),
+                ]
+              : null,
           extraQuickActions: _buildExtraQuickActions(),
         ),
       ],

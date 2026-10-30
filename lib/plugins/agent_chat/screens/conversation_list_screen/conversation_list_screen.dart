@@ -176,7 +176,7 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
                       padding: const EdgeInsets.only(right: 8),
                       child: Center(
                         child: DSChip(
-                          label: '全部',
+                          label: 'agent_chat_all'.tr,
                           selected: selectedGroups.isEmpty,
                           onSelected: (selected) {
                             if (selected || selectedGroups.isNotEmpty) {
@@ -255,7 +255,7 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
                       padding: const EdgeInsets.only(right: 8),
                       child: Center(
                         child: DSChip(
-                          label: '全部',
+                          label: 'agent_chat_all'.tr,
                           selected: selectedAgentId.isEmpty,
                           onSelected: (selected) {
                             if (selected || selectedAgentId.isNotEmpty) {
@@ -270,7 +270,7 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
                       padding: const EdgeInsets.only(right: 8),
                       child: Center(
                         child: DSChip(
-                          label: '本插件',
+                          label: 'agent_chat_thisPlugin'.tr,
                           selected: selectedAgentId == localFilter,
                           onSelected: (selected) {
                             if (selected) {
@@ -307,7 +307,7 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
         getBadge: (value) {
           final id = value as String? ?? '';
           if (id.isEmpty) return null;
-          if (id == localFilter) return '本插件';
+          if (id == localFilter) return 'agent_chat_thisPlugin'.tr;
           for (final agent in _agents) {
             if (agent.id == id) {
               return agent.name.length > 6

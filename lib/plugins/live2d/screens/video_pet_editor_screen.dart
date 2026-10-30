@@ -84,7 +84,9 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
 
   String _text(String key, String fallback) {
     if (key.isEmpty) return fallback;
-    return videoPetText(fallback, fallback);
+    // 优先查统一翻译表（live2d/core 等），缺 key 时回退内置中文
+    final translated = key.tr;
+    return translated == key ? videoPetText(fallback, fallback) : translated;
   }
 
   VideoPetRegion? get _selectedRegion => _draft.regions

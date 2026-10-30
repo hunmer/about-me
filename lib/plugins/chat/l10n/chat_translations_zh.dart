@@ -213,5 +213,10 @@ class ChatTranslationsZh {
   'chat_sampleChannelsDesc': '创建几个示例聊天频道、消息和设置',
     'chat_pluginNotAvailable': '插件不可用',
     'chat_videoFileNotExist': '视频文件不存在',
+
+    // 多选模式工具栏
+    'chat_copySelectedMessages': '复制选中消息',
+    'chat_deleteSelectedMessages': '删除选中消息',
+    'chat_exitMultiSelectMode': '退出多选模式',
 };
 }

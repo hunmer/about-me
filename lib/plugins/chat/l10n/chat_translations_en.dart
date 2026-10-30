@@ -216,5 +216,10 @@ class ChatTranslationsEn {
   'chat_sampleChannelsDesc': 'Create sample chat channels, messages and settings',
     'chat_pluginNotAvailable': 'Plugin not available',
     'chat_videoFileNotExist': 'Video file does not exist',
+
+    // Multi-select mode toolbar
+    'chat_copySelectedMessages': 'Copy Selected Messages',
+    'chat_deleteSelectedMessages': 'Delete Selected Messages',
+    'chat_exitMultiSelectMode': 'Exit Multi-Select Mode',
 };
 }

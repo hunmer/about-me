@@ -715,7 +715,7 @@ class _ChatScreenState extends State<ChatScreen> {
           color: ds.surfaceAlt,
           iconColor: ds.textSub,
           onPressed: _controller.toggleMultiSelectMode,
-          tooltip: '退出多选模式',
+          tooltip: 'chat_exitMultiSelectMode'.tr,
         ),
       ];
     }
@@ -900,12 +900,12 @@ class _ChatScreenState extends State<ChatScreen> {
                   ? [
                       common_input.MessageInputQuickAction(
                         icon: DsIconKind.copy,
-                        tooltip: '复制选中消息',
+                        tooltip: 'chat_copySelectedMessages'.tr,
                         onPressed: _copySelectedMessages,
                       ),
                       common_input.MessageInputQuickAction(
                         icon: DsIconKind.trash,
-                        tooltip: '删除选中消息',
+                        tooltip: 'chat_deleteSelectedMessages'.tr,
                         onPressed: _deleteSelectedMessages,
                       ),
                     ]

@@ -323,6 +323,26 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
     _log(
       'target selected x=$_target from=${_position.dx} minDistance=$minDistance xBounds=[$_minX,$_maxX]',
     );
+    _departToward();
+  }
+
+  /// 无撞墙动画时到达边界：转身并反向走回场地内部。
+  void _reverseFromWall() {
+    final minDistance = math.min(80.0, _range.width / 2);
+    final atLeft = (_minX - _target).abs() < 0.5;
+    final far = atLeft ? _maxX : _minX;
+    final span = (far - _position.dx).abs();
+    // 在反方向上取一个足够远的随机点，空间不足则直接走到对侧边界。
+    final t = span >= minDistance
+        ? (_random.nextDouble() * (1 - minDistance / span) + minDistance / span)
+        : 1.0;
+    _target = _position.dx + (far - _position.dx) * t;
+    _log('wall reverse target=$_target from=${_position.dx}');
+    _departToward();
+  }
+
+  /// 朝 [_target] 发起走动：按需先请求转身动画，再启动位移。
+  void _departToward() {
     final movement = widget.movement;
     final left = _target < _position.dx;
     final turn = left
@@ -366,11 +386,10 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
   void _move(double distance) {
     final remaining = _target - _position.dx;
     final arrived = remaining.abs() <= distance;
-    // 到达的目标恰好在左右边界 = 撞墙（仅在配置了撞墙动画时生效）。
+    // 到达的目标恰好在左右边界 = 撞墙。
     final atBound =
         (_minX - _target).abs() < 0.5 || (_target - _maxX).abs() < 0.5;
-    final hitWall =
-        arrived && atBound && widget.movement.wallBumpEnabled;
+    final hitWall = arrived && atBound;
     setState(() {
       final x = arrived
           ? _target
@@ -379,7 +398,15 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
       _rememberPosition();
       if (arrived) _stop();
     });
-    if (hitWall) _bumpWall();
+    if (hitWall) {
+      // 配置了撞墙动画则播放；否则转身反向走回场地内部。
+      if (widget.movement.wallBumpEnabled) {
+        _bumpWall();
+      } else {
+        _reverseFromWall();
+        return;
+      }
+    }
     _schedule();
   }
 

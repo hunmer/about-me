@@ -160,32 +160,16 @@ extension _ChatScreenTopBarExt on _ChatScreenState {
     // 颜色在构建期解析（按钮挂到导航壳的 actions 槽位，不依赖渲染处主题祖树）
     final theme = DSThemeBridge.resolve(context);
 
-    // 多选模式：复制/删除选中 + 退出
+    // 多选模式：复制/删除移至底部输入栏的多选工具栏，AppBar 仅保留退出入口
     if (_isMultiSelectMode) {
       return [
-        DSIconButton(
-          icon: DsIconKind.copy,
-          size: 36,
-          color: theme.surfaceAlt,
-          iconColor: theme.textSub,
-          onPressed: _copySelectedMessages,
-          tooltip: '复制选中消息',
-        ),
-        DSIconButton(
-          icon: DsIconKind.trash,
-          size: 36,
-          color: theme.surfaceAlt,
-          iconColor: theme.danger,
-          onPressed: _deleteSelectedMessages,
-          tooltip: '删除选中消息',
-        ),
         DSIconButton(
           icon: DsIconKind.close,
           size: 36,
           color: theme.surfaceAlt,
           iconColor: theme.textSub,
           onPressed: _toggleMultiSelectMode,
-          tooltip: '退出多选模式',
+          tooltip: 'agent_chat_exitMultiSelectMode'.tr,
         ),
       ];
     }

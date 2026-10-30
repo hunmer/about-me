@@ -448,47 +448,32 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
                       _image != null &&
                       request != null &&
                       sheet != null)
-                    // 动画切换时渐隐渐显：key 含 generation，切换即 crossfade。
-                    AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 180),
-                      switchInCurve: Curves.easeOut,
-                      switchOutCurve: Curves.easeIn,
-                      transitionBuilder: (child, animation) =>
-                          FadeTransition(opacity: animation, child: child),
-                      layoutBuilder: (currentChild, previousChildren) =>
-                          Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              ...previousChildren,
-                              if (currentChild != null) currentChild,
-                            ],
+                    // key 含 generation，动画请求变化时重建精灵面。
+                    _SpriteSurface(
+                      key: ValueKey((_image, request.generation)),
+                      image: _image!,
+                      sheet: sheet,
+                      playing: _playing,
+                      loop: request.loop,
+                      startFrame: request.startFrame,
+                      endFrame: request.endFrame,
+                      onComplete: () => _complete(request),
+                      onFrame: (frame) {
+                        if (!mounted ||
+                            !_playing ||
+                            _error != null ||
+                            !identical(_request, request) ||
+                            request.generation != _playback.generation) {
+                          return;
+                        }
+                        widget.onAnimationFrame?.call(
+                          VideoPetAnimationFrame(
+                            animationId: request.animationId,
+                            currentFrame: frame,
+                            generation: request.generation,
                           ),
-                      child: _SpriteSurface(
-                        key: ValueKey((_image, request.generation)),
-                        image: _image!,
-                        sheet: sheet,
-                        playing: _playing,
-                        loop: request.loop,
-                        startFrame: request.startFrame,
-                        endFrame: request.endFrame,
-                        onComplete: () => _complete(request),
-                        onFrame: (frame) {
-                          if (!mounted ||
-                              !_playing ||
-                              _error != null ||
-                              !identical(_request, request) ||
-                              request.generation != _playback.generation) {
-                            return;
-                          }
-                          widget.onAnimationFrame?.call(
-                            VideoPetAnimationFrame(
-                              animationId: request.animationId,
-                              currentFrame: frame,
-                              generation: request.generation,
-                            ),
-                          );
-                        },
-                      ),
+                        );
+                      },
                     ),
                   if (widget.showRegions)
                     IgnorePointer(
