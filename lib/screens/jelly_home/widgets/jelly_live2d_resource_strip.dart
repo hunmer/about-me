@@ -39,17 +39,59 @@ extension _JellyLive2DResourceStrip on _JellyLive2DState {
   Widget _buildAppearanceStrip(AppThemeData theme) {
     if (_isVideo) {
       final animations = _videoManifest?.animations ?? const [];
+      if (animations.isEmpty) return const SizedBox.shrink();
+      // video-pet：动作按 category 分组，每组一个按钮，点击弹出组内动作菜单
+      final groups = <String, List<VideoPetAnimation>>{};
+      for (final animation in animations) {
+        final key = animation.category.trim();
+        groups.putIfAbsent(key.isEmpty ? '未分组' : key, () => []).add(animation);
+      }
       return SizedBox(
         height: 58,
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
-          itemCount: animations.length,
+          itemCount: groups.length,
           separatorBuilder: (_, _) => SizedBox(width: theme.spacing.sm),
-          itemBuilder: (_, index) => DSButton(
-            label: animations[index].name,
-            size: DSButtonSize.sm,
-            onPressed: () => _requestVideoAnimation(animations[index].id),
-          ),
+          itemBuilder: (_, index) {
+            final entry = groups.entries.elementAt(index);
+            return DSMenu(
+              width: 220,
+              items: [
+                for (final animation in entry.value)
+                  DSMenuItem(
+                    label: animation.name.isEmpty ? animation.id : animation.name,
+                    onTap: () => _requestVideoAnimation(animation.id),
+                  ),
+              ],
+              child: Container(
+                height: 36,
+                padding: EdgeInsets.symmetric(horizontal: theme.spacing.md),
+                decoration: BoxDecoration(
+                  color: theme.primary,
+                  borderRadius: theme.radii.sm,
+                  border: Border.all(color: theme.stroke),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      entry.key,
+                      style: DsTypography.button.copyWith(
+                        fontSize: 13,
+                        color: theme.onPrimary,
+                      ),
+                    ),
+                    SizedBox(width: theme.spacing.xs),
+                    DsIcon(
+                      DsIconKind.chevronDown,
+                      size: 14,
+                      color: theme.onPrimary,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
         ),
       );
     }
@@ -227,7 +269,13 @@ extension _JellyLive2DResourceStrip on _JellyLive2DState {
                 ),
                 child: ClipOval(
                   child: cover == null || cover.isEmpty
-                      ? DsIcon(DsIconKind.user, size: 20, color: theme.textSub)
+                      ? Center(
+                          child: DsIcon(
+                            DsIconKind.user,
+                            size: 20,
+                            color: theme.textSub,
+                          ),
+                        )
                       : JellyConfigurableImage(path: cover, fit: BoxFit.cover),
                 ),
               ),

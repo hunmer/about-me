@@ -7,7 +7,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:aboutme/plugins/live2d/video/video_pet_manifest.dart';
 import 'package:aboutme/plugins/live2d/video/video_pet_player_state.dart';
-import 'package:aboutme/plugins/live2d/video/video_pet_preferences.dart';
 
 /// 视频播放器与移动舞台之间的动作和交互回调。
 class JellyVideoPetPlayback {
@@ -67,10 +66,10 @@ class JellyVideoPetStage extends StatefulWidget {
       'jelly_video_pet.${Uri.encodeComponent(modelId)}';
 
   @override
-  State<JellyVideoPetStage> createState() => _JellyVideoPetStageState();
+  State<JellyVideoPetStage> createState() => JellyVideoPetStageState();
 }
 
-class _JellyVideoPetStageState extends State<JellyVideoPetStage>
+class JellyVideoPetStageState extends State<JellyVideoPetStage>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late final Ticker _ticker = createTicker(_tick);
   late final math.Random _random = widget.random ?? math.Random();
@@ -185,8 +184,6 @@ class _JellyVideoPetStageState extends State<JellyVideoPetStage>
     _foreground =
         WidgetsBinding.instance.lifecycleState == null ||
         WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
-    VideoPetPreferences.randomWalkEnabled.addListener(_syncEnabled);
-    _syncEnabled();
     widget.enabled.addListener(_enabledChanged);
     unawaited(_load());
   }
@@ -213,7 +210,6 @@ class _JellyVideoPetStageState extends State<JellyVideoPetStage>
     if (oldWidget.enabled != widget.enabled) {
       oldWidget.enabled.removeListener(_enabledChanged);
       widget.enabled.addListener(_enabledChanged);
-      _syncEnabled();
     }
     if (oldWidget.modelId != widget.modelId) {
       _stop();
@@ -228,10 +224,6 @@ class _JellyVideoPetStageState extends State<JellyVideoPetStage>
       _stop();
       _schedule();
     }
-  }
-
-  void _syncEnabled() {
-    widget.enabled.value = VideoPetPreferences.randomWalkEnabled.value;
   }
 
   void _enabledChanged() {
@@ -277,32 +269,62 @@ class _JellyVideoPetStageState extends State<JellyVideoPetStage>
         _wait = null;
         _logStatus();
         if (!_canWalk) return;
-        _target = _minX + _random.nextDouble() * _range.width;
-        final minDistance = math.min(80.0, _range.width / 2);
-        if ((_target - _position.dx).abs() < minDistance) {
-          // Keep this walk opportunity even when randomness picks our position.
-          _target = _position.dx - _minX >= _maxX - _position.dx
-              ? _minX
-              : _maxX;
-        }
-        _log(
-          'target selected x=$_target from=${_position.dx} minDistance=$minDistance xBounds=[$_minX,$_maxX]',
-        );
-        final left = _target < _position.dx;
-        final turn = left
-            ? movement.turnLeftAnimationId
-            : movement.turnRightAnimationId;
-        setState(() {
-          ++_phase;
-          _turning = left != _facingLeft && turn.isNotEmpty;
-          _left = left;
-          if (_turning) {
-            _log('turn request animation=$turn left=$left phase=$_phase');
-          }
-          if (!_turning) _startWalking();
-        });
+        _beginWalk();
       },
     );
+  }
+
+  /// 立即选择目标并开始（转向 +）行走，跳过空闲等待。
+  /// 供外部（如编辑器测试区“立即走动”按钮）经 GlobalKey 调用。
+  void walkNow() {
+    if (!_canWalk) {
+      _logStatus();
+      return;
+    }
+    _wait?.cancel();
+    _wait = null;
+    _beginWalk();
+  }
+
+  /// 位置复位到舞台中央并清除持久化坐标，然后重新调度走动。
+  void resetPosition() {
+    final prefs = _prefs;
+    if (prefs != null) {
+      unawaited(prefs.remove('$_key.x'));
+      unawaited(prefs.remove('$_key.y'));
+    }
+    setState(() {
+      _stop();
+      _normalized = null;
+    });
+  }
+
+  void _beginWalk() {
+    _target = _minX + _random.nextDouble() * _range.width;
+    final minDistance = math.min(80.0, _range.width / 2);
+    if ((_target - _position.dx).abs() < minDistance) {
+      // Keep this walk opportunity even when randomness picks our position.
+      _target = _position.dx - _minX >= _maxX - _position.dx
+          ? _minX
+          : _maxX;
+    }
+    _log(
+      'target selected x=$_target from=${_position.dx} minDistance=$minDistance xBounds=[$_minX,$_maxX]',
+    );
+    final movement = widget.movement;
+    final left = _target < _position.dx;
+    final turn = left
+        ? movement.turnLeftAnimationId
+        : movement.turnRightAnimationId;
+    setState(() {
+      ++_phase;
+      _turning = left != _facingLeft && turn.isNotEmpty;
+      _left = left;
+      if (_turning) {
+        _log('turn request animation=$turn left=$left phase=$_phase');
+      }
+      if (!_turning) _startWalking();
+    });
   }
 
   void _startWalking() {
@@ -497,7 +519,6 @@ class _JellyVideoPetStageState extends State<JellyVideoPetStage>
   @override
   void dispose() {
     ++_generation;
-    VideoPetPreferences.randomWalkEnabled.removeListener(_syncEnabled);
     widget.enabled.removeListener(_enabledChanged);
     WidgetsBinding.instance.removeObserver(this);
     _stop();

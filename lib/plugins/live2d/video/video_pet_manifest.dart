@@ -161,6 +161,9 @@ class VideoPetMovement {
     this.turnLeftAnimationId = '',
     this.turnRightAnimationId = '',
     this.dragAnimationId = '',
+    this.wallBumpAnimationId = '',
+    this.wallBumpStartFrame,
+    this.wallBumpEndFrame,
     this.speed = 40,
     this.minIdleSeconds = 10,
     this.maxIdleSeconds = 10,
@@ -172,6 +175,13 @@ class VideoPetMovement {
   final String turnRightAnimationId;
   final String dragAnimationId;
 
+  /// 撞墙动画：走到水平边界时播放一次；空 = 不启用撞墙。
+  final String wallBumpAnimationId;
+
+  /// 撞墙动画的帧区间（闭区间）；null = 播放整段动画。
+  final int? wallBumpStartFrame;
+  final int? wallBumpEndFrame;
+
   /// Logical pixels per second.
   final double speed;
   final double minIdleSeconds;
@@ -180,6 +190,9 @@ class VideoPetMovement {
   /// Call after manifest validation; both walking directions are required.
   bool get enabled => leftAnimationId.isNotEmpty && rightAnimationId.isNotEmpty;
 
+  /// 仅在配置了撞墙动画时启用撞墙逻辑。
+  bool get wallBumpEnabled => wallBumpAnimationId.isNotEmpty;
+
   factory VideoPetMovement.fromJson(Map<String, dynamic> json) {
     final result = VideoPetMovement(
       leftAnimationId: _string(json, 'leftAnimationId'),
@@ -187,6 +200,9 @@ class VideoPetMovement {
       turnLeftAnimationId: _string(json, 'turnLeftAnimationId'),
       turnRightAnimationId: _string(json, 'turnRightAnimationId'),
       dragAnimationId: _string(json, 'dragAnimationId'),
+      wallBumpAnimationId: _string(json, 'wallBumpAnimationId'),
+      wallBumpStartFrame: (json['wallBumpStartFrame'] as num?)?.toInt(),
+      wallBumpEndFrame: (json['wallBumpEndFrame'] as num?)?.toInt(),
       speed: _number(json, 'speed', 40),
       minIdleSeconds: _number(json, 'minIdleSeconds', 10),
       maxIdleSeconds: _number(json, 'maxIdleSeconds', 10),
@@ -201,6 +217,13 @@ class VideoPetMovement {
     'turnLeftAnimationId': turnLeftAnimationId,
     'turnRightAnimationId': turnRightAnimationId,
     'dragAnimationId': dragAnimationId,
+    if (wallBumpAnimationId.isNotEmpty) 'wallBumpAnimationId': wallBumpAnimationId,
+    if (wallBumpAnimationId.isNotEmpty &&
+        wallBumpStartFrame != null)
+      'wallBumpStartFrame': wallBumpStartFrame,
+    if (wallBumpAnimationId.isNotEmpty &&
+        wallBumpEndFrame != null)
+      'wallBumpEndFrame': wallBumpEndFrame,
     'speed': speed,
     'minIdleSeconds': minIdleSeconds,
     'maxIdleSeconds': maxIdleSeconds,
@@ -212,6 +235,9 @@ class VideoPetMovement {
     String? turnLeftAnimationId,
     String? turnRightAnimationId,
     String? dragAnimationId,
+    String? wallBumpAnimationId,
+    Object? wallBumpStartFrame = _unset,
+    Object? wallBumpEndFrame = _unset,
     double? speed,
     double? minIdleSeconds,
     double? maxIdleSeconds,
@@ -221,6 +247,13 @@ class VideoPetMovement {
     turnLeftAnimationId: turnLeftAnimationId ?? this.turnLeftAnimationId,
     turnRightAnimationId: turnRightAnimationId ?? this.turnRightAnimationId,
     dragAnimationId: dragAnimationId ?? this.dragAnimationId,
+    wallBumpAnimationId: wallBumpAnimationId ?? this.wallBumpAnimationId,
+    wallBumpStartFrame: identical(wallBumpStartFrame, _unset)
+        ? this.wallBumpStartFrame
+        : wallBumpStartFrame as int?,
+    wallBumpEndFrame: identical(wallBumpEndFrame, _unset)
+        ? this.wallBumpEndFrame
+        : wallBumpEndFrame as int?,
     speed: speed ?? this.speed,
     minIdleSeconds: minIdleSeconds ?? this.minIdleSeconds,
     maxIdleSeconds: maxIdleSeconds ?? this.maxIdleSeconds,
@@ -233,12 +266,21 @@ class VideoPetMovement {
       turnLeftAnimationId,
       turnRightAnimationId,
       dragAnimationId,
+      wallBumpAnimationId,
     ]) {
       _require(
         id.isEmpty ||
             (id.trim().isNotEmpty &&
                 (knownIds == null || knownIds.contains(id))),
         'Unknown movement animation: $id',
+      );
+    }
+    if (wallBumpEnabled) {
+      final start = wallBumpStartFrame ?? 0;
+      final end = wallBumpEndFrame;
+      _require(
+        start >= 0 && (end == null || end >= start),
+        'Invalid wall bump frame range: $start-$end',
       );
     }
     _require(speed.isFinite && speed > 0, 'movement.speed must be positive');

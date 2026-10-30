@@ -69,26 +69,34 @@ extension _JellyLive2DBubble on _JellyLive2DState {
 
   /// 按命中区域挑一条随机台词，避免和上一条重复。
   /// 当前档案开启自定义台词时优先取该部位配置，未配置的部位回退内置文案
-  String _pickBubbleMessage(String? hitAreaId, String? hitAreaName) {
+  /// 根据命中区域解析部位 ID（head/body/miss 等）
+  String _tapPartId(String? hitAreaId, String? hitAreaName) {
     final area = (hitAreaName != null && hitAreaName.isNotEmpty)
         ? hitAreaName
         : hitAreaId?.replaceFirst('HitArea', '') ?? '';
     final lower = area.toLowerCase();
-    final String partId;
-    if (area.isEmpty) {
-      partId = 'miss';
-    } else {
-      partId =
-          live2DTapParts
-              .where(
-                (part) => part.keywords.any(
-                  (keyword) => lower.contains(keyword.toLowerCase()),
-                ),
-              )
-              .map((part) => part.id)
-              .firstOrNull ??
-          'body';
-    }
+    if (area.isEmpty) return 'miss';
+    return live2DTapParts
+            .where(
+              (part) => part.keywords.any(
+                (keyword) => lower.contains(keyword.toLowerCase()),
+              ),
+            )
+            .map((part) => part.id)
+            .firstOrNull ??
+        'body';
+  }
+
+  /// 当前档案是否为该部位配置了自定义点击台词
+  bool _hasCustomTapMessage(String partId) {
+    final archive = Live2DPlugin.instance.selected;
+    return archive != null &&
+        archive.tapMessagesEnabled &&
+        archive.tapMessageList(partId).isNotEmpty;
+  }
+
+  String _pickBubbleMessage(String? hitAreaId, String? hitAreaName) {
+    final partId = _tapPartId(hitAreaId, hitAreaName);
     final archive = Live2DPlugin.instance.selected;
     final custom = archive != null && archive.tapMessagesEnabled
         ? archive.tapMessageList(partId)

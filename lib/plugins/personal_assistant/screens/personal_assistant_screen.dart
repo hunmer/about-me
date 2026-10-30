@@ -785,6 +785,7 @@ class _PersonalAssistantScreenState extends State<PersonalAssistantScreen> {
                 );
               }
               return Padding(
+                key: ValueKey('msg_${message.id}_${message.isSessionDivider}'),
                 padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.end,

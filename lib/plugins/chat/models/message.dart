@@ -271,10 +271,11 @@ class Message {
         (t) => t.toString().split('.').last == json['type'],
         orElse: () => MessageType.received,
       ),
-      date: DateTime.parse((json['date'] ?? json['createdAt']) as String),
+      // 服务端以 UTC ISO（Z 结尾）存储，统一入口解析并转本地时区
+      date: parseIsoDateTime((json['date'] ?? json['createdAt']) as String),
       editedAt:
           json['editedAt'] != null
-              ? DateTime.parse(json['editedAt'] as String)
+              ? parseIsoDateTime(json['editedAt'] as String)
               : null,
       fixedSymbol: json['fixedSymbol'] as String?,
       bubbleColor:

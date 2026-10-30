@@ -165,6 +165,8 @@ class _JellyLive2DState extends State<JellyLive2D>
 
   void _handleVideoTap(String? id, String? name) {
     widget.onTap?.call(id, name);
+    // 视频桌宠：仅在该部位配置了自定义点击台词时才显示气泡
+    if (!_hasCustomTapMessage(_tapPartId(id, name))) return;
     _showBubble(_pickBubbleMessage(id, name));
   }
 
@@ -275,8 +277,23 @@ class _JellyLive2DState extends State<JellyLive2D>
     widget.motionRequest?.addListener(_handleMotionRequest);
     widget.videoAnimationRequest?.addListener(_handleExternalVideoRequest);
     widget.expressionRequest?.addListener(_handleExpressionRequest);
+    _syncVideoWalkingEnabled();
+    eventManager.subscribe(
+      Live2DPlugin.archiveSelectedEvent,
+      _handleArchiveSelected,
+    );
     _loadSavedCropRegion(_selectedModel);
     unawaited(_initialize());
+  }
+
+  /// 档案级随机走动：跟随当前选中档案的 randomWalkEnabled 字段
+  void _syncVideoWalkingEnabled() {
+    _videoWalkingEnabled.value =
+        Live2DPlugin.instance.selected?.randomWalkEnabled ?? false;
+  }
+
+  void _handleArchiveSelected(EventArgs args) {
+    if (mounted) _syncVideoWalkingEnabled();
   }
 
   void _notifyAppearanceAvailabilityChanged() {
@@ -349,6 +366,10 @@ class _JellyLive2DState extends State<JellyLive2D>
 
   @override
   void dispose() {
+    eventManager.unsubscribe(
+      Live2DPlugin.archiveSelectedEvent,
+      _handleArchiveSelected,
+    );
     RouteHistoryManager.instance.unsubscribe(this);
     widget.motionRequest?.removeListener(_handleMotionRequest);
     widget.videoAnimationRequest?.removeListener(_handleExternalVideoRequest);

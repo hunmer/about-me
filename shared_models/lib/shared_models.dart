@@ -33,6 +33,9 @@ export 'utils/md5_utils.dart';
 // Iterable 扩展
 export 'utils/iterable_extensions.dart';
 
+// ISO 时间统一解析入口（服务端 UTC 存储 → 本地时区）
+export 'utils/iso_date_time.dart';
+
 // ============ Repository 层 ============
 
 // Chat 插件 Repository

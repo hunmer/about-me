@@ -22,11 +22,31 @@ class VideoPetPlaybackRequest {
     required this.kind,
     required this.generation,
     required this.loop,
+    this.startFrame,
+    this.endFrame,
   });
   final String animationId;
   final VideoPetPlaybackKind kind;
   final int generation;
   final bool loop;
+
+  /// 帧区间（闭区间）；null = 播放整段动画。
+  final int? startFrame;
+  final int? endFrame;
+}
+
+/// 一次性点播请求（如撞墙动画）：动画 + 可选帧区间 + 去重用 nonce。
+class VideoPetManualAnimation {
+  const VideoPetManualAnimation({
+    required this.animationId,
+    this.startFrame,
+    this.endFrame,
+    this.nonce = 0,
+  });
+  final String animationId;
+  final int? startFrame;
+  final int? endFrame;
+  final int nonce;
 }
 
 /// Pure Dart scheduler. Every actual playback replacement gets a new generation.
@@ -39,6 +59,8 @@ class VideoPetPlaybackState {
   int _generation = 0;
   String? _onceId;
   VideoPetPlaybackKind _onceKind = VideoPetPlaybackKind.click;
+  int? _onceStartFrame;
+  int? _onceEndFrame;
   String? _hoverId;
   String? _dragId;
   String? _movementId;
@@ -82,6 +104,8 @@ class VideoPetPlaybackState {
               (_hoverId != null ||
                   _pendingMovementId == null ||
                   _movementLoop)),
+      startFrame: _onceId != null ? _onceStartFrame : null,
+      endFrame: _onceId != null ? _onceEndFrame : null,
     );
   }
 
@@ -113,19 +137,29 @@ class VideoPetPlaybackState {
     if (id == null) return current;
     _onceId = id;
     _onceKind = VideoPetPlaybackKind.click;
+    _onceStartFrame = null;
+    _onceEndFrame = null;
     return _dragId != null ? current : _bump();
   }
 
-  VideoPetPlaybackRequest? playManual(String? animationId) {
+  VideoPetPlaybackRequest? playManual(
+    String? animationId, {
+    int? startFrame,
+    int? endFrame,
+  }) {
     if (animationId == null) {
       if (_onceId == null) return current;
       _onceId = null;
+      _onceStartFrame = null;
+      _onceEndFrame = null;
       return _dragId != null ? current : _bump();
     }
     final id = _valid(animationId);
     if (id == null) return current;
     _onceId = id;
     _onceKind = VideoPetPlaybackKind.manual;
+    _onceStartFrame = startFrame;
+    _onceEndFrame = endFrame;
     return _dragId != null ? current : _bump();
   }
 
@@ -145,6 +179,8 @@ class VideoPetPlaybackState {
     if (!playing || generation != _generation || _dragId != null) return null;
     if (_onceId != null) {
       _onceId = null;
+      _onceStartFrame = null;
+      _onceEndFrame = null;
     } else if (_hoverId == null &&
         _pendingMovementId != null &&
         !_movementLoop) {

@@ -245,7 +245,19 @@ class CollapsibleProcessSection extends StatefulWidget {
 }
 
 class _CollapsibleProcessSectionState extends State<CollapsibleProcessSection> {
-  bool _expanded = false;
+  /// 按消息 id 记忆展开状态：流式回复期间消息对象被全量替换、
+  /// State 随之重建，本地字段会丢失展开态，改为静态集合跨重建保留
+  static final Set<String> _expandedIds = <String>{};
+
+  bool get _expanded => _expandedIds.contains(widget.message.id);
+
+  void _toggleExpanded() {
+    setState(() {
+      if (!_expandedIds.remove(widget.message.id)) {
+        _expandedIds.add(widget.message.id);
+      }
+    });
+  }
 
   /// 步骤使用的工具图标头像，图标与 ToolCallSteps 一致
   /// （插件步骤用插件图标，run_js 等回退代码图标），按工具去重
@@ -296,7 +308,7 @@ class _CollapsibleProcessSectionState extends State<CollapsibleProcessSection> {
         const SizedBox(height: 8),
         // 入口按钮：展开/收起执行过程，工具图标头像堆叠展示使用的工具列表
         GestureDetector(
-          onTap: () => setState(() => _expanded = !_expanded),
+          onTap: _toggleExpanded,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(

@@ -46,6 +46,7 @@ class VideoPetPlayer extends StatefulWidget {
     this.active = true,
     this.paused = false,
     this.animationRequest,
+    this.frameAnimationRequest,
     this.movementAnimationId,
     this.dragAnimationId,
     this.movementLoop = true,
@@ -69,6 +70,9 @@ class VideoPetPlayer extends StatefulWidget {
   final bool active;
   final bool paused;
   final ValueListenable<String?>? animationRequest;
+
+  /// 一次性点播（如撞墙动画）：可带帧区间；nonce 变化才触发。
+  final ValueListenable<VideoPetManualAnimation?>? frameAnimationRequest;
   final String? movementAnimationId;
   final String? dragAnimationId;
   final bool movementLoop;
@@ -107,6 +111,7 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
   bool _reportedBusy = false;
   String? _reportedBusyReasons;
   bool _busyNotificationScheduled = false;
+  int _lastFrameNonce = 0;
 
   void _notifyBusy() {
     if (_busyNotificationScheduled) return;
@@ -156,6 +161,7 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
         state == AppLifecycleState.paused || state == AppLifecycleState.hidden;
     _playback = VideoPetPlaybackState(widget.manifest);
     widget.animationRequest?.addListener(_manual);
+    widget.frameAnimationRequest?.addListener(_frameAnimation);
     unawaited(_prepare());
   }
 
@@ -206,6 +212,10 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
       oldWidget.animationRequest?.removeListener(_manual);
       widget.animationRequest?.addListener(_manual);
     }
+    if (oldWidget.frameAnimationRequest != widget.frameAnimationRequest) {
+      oldWidget.frameAnimationRequest?.removeListener(_frameAnimation);
+      widget.frameAnimationRequest?.addListener(_frameAnimation);
+    }
     if (oldWidget.manifest != widget.manifest ||
         oldWidget.baseUri != widget.baseUri ||
         !mapEquals(oldWidget.resolvedSources, widget.resolvedSources)) {
@@ -238,6 +248,10 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
       unawaited(_present(_playback.current));
     }
     if (oldWidget.animationRequest != widget.animationRequest) _manual();
+    if (oldWidget.frameAnimationRequest != widget.frameAnimationRequest) {
+      _lastFrameNonce = 0;
+      _frameAnimation();
+    }
   }
 
   @override

@@ -43,6 +43,7 @@ class Live2DArchive {
     this.note = '',
     this.jevEnabled = false,
     this.tapMessagesEnabled = false,
+    this.randomWalkEnabled = false,
     this.displayMode = 'live2d',
     this.videoManifest,
     this.videoBaseUri = 'assets/live2d/video/dsh_pet/',
@@ -69,6 +70,9 @@ class Live2DArchive {
 
   /// 点击台词总开关：开启后点击气泡优先使用 [tapMessages] 中的自定义台词
   bool tapMessagesEnabled;
+
+  /// 随机走动开关（仅视频档案生效）：开启后桌宠在小屋内随机等待并水平走动
+  bool randomWalkEnabled;
 
   /// 点击台词：部位 id（见 [live2DTapParts]）-> 多行文本，每行一条随机台词
   Map<String, String> tapMessages;
@@ -117,6 +121,7 @@ class Live2DArchive {
         ) ??
         {},
     tapMessagesEnabled: json['tapMessagesEnabled'] as bool? ?? false,
+    randomWalkEnabled: json['randomWalkEnabled'] as bool? ?? false,
     tapMessages:
         (json['tapMessages'] as Map<String, dynamic>?)?.map(
           (key, value) => MapEntry(key, value as String),
@@ -138,6 +143,7 @@ class Live2DArchive {
     'videoBaseUri': videoBaseUri,
     'videoResolvedSources': videoResolvedSources,
     'tapMessagesEnabled': tapMessagesEnabled,
+    'randomWalkEnabled': randomWalkEnabled,
     'tapMessages': tapMessages,
   };
 }

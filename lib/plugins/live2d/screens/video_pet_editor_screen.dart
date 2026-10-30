@@ -8,6 +8,7 @@ import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/live2d/video/video_pet_manifest.dart';
 import 'package:aboutme/plugins/live2d/video/video_pet_player.dart';
+import 'package:aboutme/screens/jelly_home/widgets/jelly_video_pet_movement.dart';
 
 import 'video_pet_animation_resource_editor.dart';
 
@@ -38,6 +39,8 @@ class VideoPetEditorScreen extends StatefulWidget {
 class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
   late VideoPetManifest _draft;
   final _animationRequest = ValueNotifier<String?>(null);
+  final _walkEnabled = ValueNotifier<bool>(true);
+  final _stageKey = GlobalKey<JellyVideoPetStageState>();
   final _searchController = TextEditingController();
   final _jsonController = TextEditingController();
 
@@ -69,6 +72,7 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
   @override
   void dispose() {
     _animationRequest.dispose();
+    _walkEnabled.dispose();
     _searchController.dispose();
     _jsonController.dispose();
     super.dispose();
@@ -607,6 +611,33 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
                               setState(() => _isTestMode = index == 1),
                         ),
                       ),
+                      if (_isTestMode) ...[
+                        ValueListenableBuilder<bool>(
+                          valueListenable: _walkEnabled,
+                          builder: (context, walkEnabled, _) => DSButton(
+                            label: walkEnabled
+                                ? _text('videoPet_walkOn', '走动 开')
+                                : _text('videoPet_walkOff', '走动 关'),
+                            size: DSButtonSize.sm,
+                            onPressed: () =>
+                                _walkEnabled.value = !_walkEnabled.value,
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        DSButton(
+                          label: _text('videoPet_resetPosition', '复位'),
+                          size: DSButtonSize.sm,
+                          onPressed: () =>
+                              _stageKey.currentState?.resetPosition(),
+                        ),
+                        SizedBox(width: 8),
+                        DSButton(
+                          label: _text('videoPet_walkNow', '立即走动'),
+                          size: DSButtonSize.sm,
+                          onPressed: () => _stageKey.currentState?.walkNow(),
+                        ),
+                        SizedBox(width: 8),
+                      ],
                       DSIconButton(
                         icon: _isPaused ? DsIconKind.play : DsIconKind.pause,
                         size: 34,
@@ -628,34 +659,89 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
                           aspectRatio: _draft.canvasWidth / _draft.canvasHeight,
                           child: Stack(
                             children: [
-                              Positioned.fill(
-                                child: VideoPetPlayer(
-                                  manifest: _draft,
-                                  baseUri: widget.baseUri,
-                                  resolvedSources: widget.resolvedSources,
-                                  active: true,
-                                  paused: _isPaused,
-                                  animationRequest: _animationRequest,
-                                  interactive: _isTestMode,
-                                  onEditPointer: _isTestMode
-                                      ? null
-                                      : _onEditPointer,
-                                  showRegions: _showRegions,
-                                  onInteraction: (regionId, animationId) {
-                                    setState(() {
-                                      _selectedRegionId = regionId;
-                                      _lastHitRegion = regionId;
-                                      _lastActionAnimation = animationId;
-                                    });
-                                  },
-                                  onTap: (regionId, regionName) {
-                                    setState(
-                                      () => _lastHitRegion =
-                                          regionName ?? regionId,
-                                    );
-                                  },
+                              if (_isTestMode)
+                                Positioned.fill(
+                                  child: JellyVideoPetStage(
+                                    key: _stageKey,
+                                    modelId: 'editor:${_draft.id}',
+                                    movement: _draft.movement,
+                                    animations: _draft.animations,
+                                    enabled: _walkEnabled,
+                                    petSize: Size(
+                                      _draft.canvasWidth,
+                                      _draft.canvasHeight,
+                                    ),
+                                    builder: (context, playback) =>
+                                        VideoPetPlayer(
+                                          manifest: _draft,
+                                          baseUri: widget.baseUri,
+                                          resolvedSources:
+                                              widget.resolvedSources,
+                                          active: true,
+                                          paused: _isPaused,
+                                          animationRequest: _animationRequest,
+                                          interactive: true,
+                                          showRegions: _showRegions,
+                                          onInteraction: (regionId,
+                                              animationId) {
+                                            setState(() {
+                                              _selectedRegionId = regionId;
+                                              _lastHitRegion = regionId;
+                                              _lastActionAnimation =
+                                                  animationId;
+                                            });
+                                          },
+                                          onTap: (regionId, regionName) {
+                                            setState(
+                                              () => _lastHitRegion =
+                                                  regionName ?? regionId,
+                                            );
+                                          },
+                                          movementAnimationId:
+                                              playback.animationId,
+                                          dragAnimationId:
+                                              playback.dragAnimationId,
+                                          movementLoop: playback.loop,
+                                          onMovementComplete:
+                                              playback.onComplete,
+                                          onAnimationFrame:
+                                              playback.onAnimationFrame,
+                                          onPlaybackBusyChanged:
+                                              playback.onBusyChanged,
+                                          onDragStart: playback.onDragStart,
+                                          onDragUpdate: playback.onDragUpdate,
+                                          onDragEnd: playback.onDragEnd,
+                                          onDragCancel: playback.onDragCancel,
+                                        ),
+                                  ),
+                                )
+                              else
+                                Positioned.fill(
+                                  child: VideoPetPlayer(
+                                    manifest: _draft,
+                                    baseUri: widget.baseUri,
+                                    resolvedSources: widget.resolvedSources,
+                                    active: true,
+                                    paused: _isPaused,
+                                    animationRequest: _animationRequest,
+                                    interactive: false,
+                                    onEditPointer: _onEditPointer,
+                                    showRegions: _showRegions,
+                                    onInteraction: (regionId, animationId) {
+                                      setState(() {
+                                        _selectedRegionId = regionId;
+                                        _lastHitRegion = regionId;
+                                        _lastActionAnimation = animationId;
+                                      });
+                                    },
+                                    onTap: (regionId, regionName) {
+                                      setState(
+                                        () => _lastHitRegion =
+                                            regionName ?? regionId,
+                                      );
+                                    },
+                                  ),
                                 ),
-                              ),
                               if (!_isTestMode &&
                                   (_isAddingRegion ||
                                       _gestureMode != _RegionGestureMode.none))
@@ -714,7 +800,7 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
     );
   }
 
-  /// 窄屏底部工具区：区域 / 动画 / 随机移动 / 动作编辑四个 Tab，
+  /// 窄屏底部工具区：区域 / 动画 / 动作预设 / 动作编辑四个 Tab，
   /// 保持在树内实时刷新。
   Widget _buildNarrowToolsPanel() {
     final theme = DSThemeBridge.resolve(context);
@@ -739,7 +825,7 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
                 ),
                 Tab(
                   key: const ValueKey('videoPetNarrowConfigTab'),
-                  text: _text('videoPet_movement', '随机移动'),
+                  text: _text('videoPet_presets', '动作预设'),
                 ),
                 Tab(
                   key: const ValueKey('videoPetNarrowActionTab'),
@@ -752,7 +838,12 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
                 children: [
                   _buildRegionPanel(),
                   _buildAnimationPanel(),
-                  configPanel(_buildMovementEditor()),
+                  configPanel(
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: _buildPresetSections(),
+                    ),
+                  ),
                   configPanel(_buildAnimationResourceEditor()),
                 ],
               ),
@@ -1120,7 +1211,7 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
         child: ListView(
           padding: const EdgeInsets.all(12),
           children: [
-            _buildMovementEditor(),
+            ..._buildPresetSections(),
             const Divider(height: 22),
             _buildAnimationResourceEditor(),
           ],
@@ -1132,7 +1223,7 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
       child: ListView(
         padding: const EdgeInsets.all(12),
         children: [
-          _buildMovementEditor(),
+          ..._buildPresetSections(),
           const Divider(height: 22),
           _buildAnimationResourceEditor(),
           const Divider(height: 22),
@@ -1141,35 +1232,6 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 10),
-          Text(
-            _text('videoPet_idleAnimation', 'Idle 动画'),
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-          const SizedBox(height: 4),
-          DSCombobox<String>(
-            value:
-                _draft.animations.any(
-                  (animation) => animation.id == _draft.idleAnimationId,
-                )
-                ? _draft.idleAnimationId
-                : null,
-            items: [
-              for (final animation in _draft.animations)
-                DSSelectItem(
-                  value: animation.id,
-                  label: animation.name.isEmpty ? animation.id : animation.name,
-                ),
-            ],
-            hint: _text('videoPet_selectAnimations', '选择动画'),
-            onChanged: (id) => _setDraft(_draft.copyWith(idleAnimationId: id)),
-          ),
-          const SizedBox(height: 12),
-          _buildGlobalBindingEditor(
-            _text('videoPet_globalClick', '全局 Click'),
-            _draft.click,
-            (binding) => _updateGlobalBinding(click: binding),
-          ),
-          const Divider(height: 22),
           TextFormField(
             initialValue: selected.name,
             decoration: InputDecoration(
@@ -1221,6 +1283,13 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
           ),
           const Divider(height: 22),
           _buildBindingEditor(
+            _text('videoPet_hover', 'Hover 动画'),
+            selected.hover,
+            _draft.hover,
+            (binding) => _updateSelectedRegion(hover: binding),
+          ),
+          const Divider(height: 22),
+          _buildBindingEditor(
             _text('videoPet_click', 'Click 动画'),
             selected.click,
             _draft.click,
@@ -1239,6 +1308,61 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen> {
       ),
     );
   }
+
+  /// Idle 动画选择器（空闲时循环播放的动画）
+  Widget _buildIdleSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          _text('videoPet_idleAnimation', 'Idle 动画'),
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        const SizedBox(height: 4),
+        DSCombobox<String>(
+          value:
+              _draft.animations.any(
+                (animation) => animation.id == _draft.idleAnimationId,
+              )
+              ? _draft.idleAnimationId
+              : null,
+          items: [
+            for (final animation in _draft.animations)
+              DSSelectItem(
+                value: animation.id,
+                label: animation.name.isEmpty ? animation.id : animation.name,
+              ),
+          ],
+          hint: _text('videoPet_selectAnimations', '选择动画'),
+          onChanged: (id) => _setDraft(_draft.copyWith(idleAnimationId: id)),
+        ),
+      ],
+    );
+  }
+
+  /// 「动作预设」分区：Idle / 全局 Hover / 全局 Click 绑定 + 随机移动。
+  List<Widget> _buildPresetSections() => [
+    Text(
+      _text('videoPet_presets', '动作预设'),
+      style: Theme.of(context).textTheme.titleMedium,
+    ),
+    const SizedBox(height: 10),
+    _buildIdleSelector(),
+    const SizedBox(height: 12),
+    _buildGlobalBindingEditor(
+      _text('videoPet_globalHover', '全局 Hover'),
+      _draft.hover,
+      (binding) => _updateGlobalBinding(hover: binding),
+    ),
+    const SizedBox(height: 8),
+    _buildGlobalBindingEditor(
+      _text('videoPet_globalClick', '全局 Click'),
+      _draft.click,
+      (binding) => _updateGlobalBinding(click: binding),
+    ),
+    const Divider(height: 22),
+    _buildMovementEditor(),
+  ];
 
   Widget _numberField(
     String label,

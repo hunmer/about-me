@@ -251,15 +251,15 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
             ),
           if (current != null) ...[
             if (current.isVideo)
-              ValueListenableBuilder<bool>(
-                valueListenable: plugin.videoRandomWalkEnabledNotifier,
-                builder: (context, enabled, _) => SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('随机走路'),
-                  subtitle: const Text('随机等待后水平走动，可拖拽调整位置'),
-                  value: enabled,
-                  onChanged: plugin.setVideoRandomWalkEnabled,
-                ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('随机走动'),
+                subtitle: Text('当前档案（${current.name}）随机等待后水平走动，可拖拽调整位置'),
+                value: current.randomWalkEnabled,
+                onChanged: (value) {
+                  plugin.setArchiveRandomWalkEnabled(current, value);
+                  setState(() {});
+                },
               ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,

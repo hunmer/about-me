@@ -24,7 +24,6 @@ import 'package:aboutme/plugins/tts/tts_plugin.dart';
 import 'live2d_voice_analyzer.dart';
 import 'screens/live2d_main_screen.dart';
 import 'screens/live2d_settings_screen.dart';
-import 'video/video_pet_preferences.dart';
 
 part 'live2d_data_selectors.dart';
 
@@ -177,20 +176,20 @@ class Live2DPlugin extends BasePlugin {
     voiceFrame.value = null;
   }
 
-  bool get videoRandomWalkEnabled =>
-      settings['videoRandomWalkEnabled'] as bool? ?? false;
-
-  ValueNotifier<bool> get videoRandomWalkEnabledNotifier =>
-      VideoPetPreferences.randomWalkEnabled;
-
-  Future<void> setVideoRandomWalkEnabled(bool enabled) =>
-      updateSettings({'videoRandomWalkEnabled': enabled});
+  /// 档案级随机走动开关（仅视频档案生效）：
+  /// 修改档案字段并保存，广播 [archiveSelectedEvent] 让小屋舞台即时生效
+  Future<void> setArchiveRandomWalkEnabled(
+    Live2DArchive archive,
+    bool enabled,
+  ) async {
+    archive.randomWalkEnabled = enabled;
+    await save();
+    _notifyArchiveSelected();
+  }
 
   @override
   Future<void> updateSettings(Map<String, dynamic> newSettings) async {
-    final saving = super.updateSettings(newSettings);
-    videoRandomWalkEnabledNotifier.value = videoRandomWalkEnabled;
-    await saving;
+    await super.updateSettings(newSettings);
   }
 
   Duration get bubbleTypingInterval => Duration(
@@ -459,13 +458,11 @@ class Live2DPlugin extends BasePlugin {
       'backgroundAsset': null,
       'backgroundBlur': defaultBackgroundBlur,
       'backgroundOpacity': defaultBackgroundOpacity,
-      'videoRandomWalkEnabled': false,
       'customBackgroundAssets': <String>[],
       'bubbleRegions': <String, dynamic>{},
       'customBubbleAssets': <String>[],
       'importedModels': <Map<String, dynamic>>[],
     });
-    videoRandomWalkEnabledNotifier.value = videoRandomWalkEnabled;
     final res = await AboutmeDataService.instance.call(
       'live2d',
       'getSnapshot',
@@ -473,12 +470,19 @@ class Live2DPlugin extends BasePlugin {
     );
     final data = res['success'] == true ? res['data'] : null;
     final rawArchives = data is Map ? data['archives'] : null;
+    // 迁移：旧全局“随机走动”设置 → 档案级字段（旧档案无该键时按旧全局值填充）
+    final legacyWalkEnabled = settings['videoRandomWalkEnabled'] as bool? ?? false;
     archives
       ..clear()
       ..addAll(
-        (rawArchives is List ? rawArchives : const []).map(
-          (e) => Live2DArchive.fromJson(Map<String, dynamic>.from(e as Map)),
-        ),
+        (rawArchives is List ? rawArchives : const []).map((e) {
+          final json = Map<String, dynamic>.from(e as Map);
+          if (!json.containsKey('randomWalkEnabled')) {
+            json['randomWalkEnabled'] =
+                json['displayMode'] == 'video' && legacyWalkEnabled;
+          }
+          return Live2DArchive.fromJson(json);
+        }),
       );
     selectedId = data is Map ? data['selectedId'] as String? : null;
 
