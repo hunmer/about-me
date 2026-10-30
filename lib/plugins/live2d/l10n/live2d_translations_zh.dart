@@ -107,7 +107,6 @@ const Map<String, String> live2dTranslationsZh = {
   'videoPet_showRegions': '显示区域',
   'videoPet_strategy': '播放策略',
   'videoPet_test': '测试',
-  'videoPet_testPreview': '测试预览',
   'videoPet_turnLeft': '向左转向',
   'videoPet_turnRight': '向右转向',
   'videoPet_walkNow': '立即走动',

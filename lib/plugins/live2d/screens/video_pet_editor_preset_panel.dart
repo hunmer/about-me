@@ -34,7 +34,7 @@ extension _VideoPetEditorPresetPanel on _VideoPetEditorScreenState {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(label, style: Theme.of(context).textTheme.bodySmall),
+          _presetLabelRow(label, value),
           const SizedBox(height: 4),
           // 可搜索下拉（design_system combobox）：动画多时可直接搜索。
           DSCombobox<String>(
@@ -340,13 +340,41 @@ extension _VideoPetEditorPresetPanel on _VideoPetEditorScreenState {
   }
 
   /// Idle 动画选择器（空闲时循环播放的动画）
+  /// 预设行标题：下拉已选中动画时右侧显示编辑图标，
+  /// 点击播放该动画并跳转「动作编辑」（窄屏 Tab；宽屏右侧面板本就可见）。
+  Widget _presetLabelRow(String label, String? selectedId) {
+    final labelWidget = Text(
+      label,
+      style: Theme.of(context).textTheme.bodySmall,
+    );
+    if (selectedId == null || selectedId.isEmpty) return labelWidget;
+    return Row(
+      children: [
+        Expanded(child: labelWidget),
+        SizedBox(
+          width: 24,
+          height: 24,
+          child: IconButton(
+            padding: EdgeInsets.zero,
+            tooltip: _text('videoPet_actionEdit', '动作编辑'),
+            icon: const Icon(Icons.edit_outlined, size: 14),
+            onPressed: () {
+              _requestAnimation(selectedId);
+              DefaultTabController.maybeOf(context)?.animateTo(3);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildIdleSelector() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
+        _presetLabelRow(
           _text('videoPet_idleAnimation', 'Idle 动画'),
-          style: Theme.of(context).textTheme.bodySmall,
+          _draft.idleAnimationId,
         ),
         const SizedBox(height: 4),
         DSCombobox<String>(

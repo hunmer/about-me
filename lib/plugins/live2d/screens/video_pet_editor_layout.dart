@@ -74,14 +74,16 @@ extension _VideoPetEditorLayout on _VideoPetEditorScreenState {
                   padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
                   child: Row(
                     children: [
-                      Expanded(
-                        child: Text(
-                          _isTestMode
-                              ? _text('videoPet_testPreview', '测试预览')
-                              : _text('videoPet_editPreview', '编辑预览'),
-                          style: Theme.of(context).textTheme.titleSmall,
+                      // 测试模式不显示标题，仅保留占位撑开左侧。
+                      if (_isTestMode)
+                        const Spacer()
+                      else
+                        Expanded(
+                          child: Text(
+                            _text('videoPet_editPreview', '编辑预览'),
+                            style: Theme.of(context).textTheme.titleSmall,
+                          ),
                         ),
-                      ),
                       // DSSegmentedControl 需有界宽度（内部按 maxWidth 均分选项）。
                       SizedBox(
                         width: 150,
@@ -95,33 +97,6 @@ extension _VideoPetEditorLayout on _VideoPetEditorScreenState {
                               setState(() => _isTestMode = index == 1),
                         ),
                       ),
-                      if (_isTestMode) ...[
-                        ValueListenableBuilder<bool>(
-                          valueListenable: _walkEnabled,
-                          builder: (context, walkEnabled, _) => DSButton(
-                            label: walkEnabled
-                                ? _text('videoPet_walkOn', '走动 开')
-                                : _text('videoPet_walkOff', '走动 关'),
-                            size: DSButtonSize.sm,
-                            onPressed: () =>
-                                _walkEnabled.value = !_walkEnabled.value,
-                          ),
-                        ),
-                        SizedBox(width: 8),
-                        DSButton(
-                          label: _text('videoPet_resetPosition', '复位'),
-                          size: DSButtonSize.sm,
-                          onPressed: () =>
-                              _stageKey.currentState?.resetPosition(),
-                        ),
-                        SizedBox(width: 8),
-                        DSButton(
-                          label: _text('videoPet_walkNow', '立即走动'),
-                          size: DSButtonSize.sm,
-                          onPressed: () => _stageKey.currentState?.walkNow(),
-                        ),
-                        SizedBox(width: 8),
-                      ],
                       DSIconButton(
                         icon: _isPaused ? DsIconKind.play : DsIconKind.pause,
                         size: 34,
@@ -135,6 +110,39 @@ extension _VideoPetEditorLayout on _VideoPetEditorScreenState {
                     ],
                   ),
                 ),
+                // 测试模式：舞台操作按钮独立一行，置于舞台上方。
+                if (_isTestMode)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 0, 8, 6),
+                    child: Row(
+                      children: [
+                        ValueListenableBuilder<bool>(
+                          valueListenable: _walkEnabled,
+                          builder: (context, walkEnabled, _) => DSButton(
+                            label: walkEnabled
+                                ? _text('videoPet_walkOn', '走动 开')
+                                : _text('videoPet_walkOff', '走动 关'),
+                            size: DSButtonSize.sm,
+                            onPressed: () =>
+                                _walkEnabled.value = !_walkEnabled.value,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        DSButton(
+                          label: _text('videoPet_resetPosition', '复位'),
+                          size: DSButtonSize.sm,
+                          onPressed: () =>
+                              _stageKey.currentState?.resetPosition(),
+                        ),
+                        const SizedBox(width: 8),
+                        DSButton(
+                          label: _text('videoPet_walkNow', '立即走动'),
+                          size: DSButtonSize.sm,
+                          onPressed: () => _stageKey.currentState?.walkNow(),
+                        ),
+                      ],
+                    ),
+                  ),
                 Expanded(
                   child: LayoutBuilder(
                     builder: (context, constraints) {
@@ -354,16 +362,6 @@ extension _VideoPetEditorLayout on _VideoPetEditorScreenState {
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                 ),
-                // 选中动画后可一键：播放并跳到「动作编辑」（窄屏 Tab）。
-                if (_selectedAnimationId != null)
-                  IconButton(
-                    tooltip: _text('videoPet_actionEdit', '动作编辑'),
-                    icon: const Icon(Icons.edit_outlined, size: 20),
-                    onPressed: () {
-                      _requestAnimation(_selectedAnimationId!);
-                      DefaultTabController.maybeOf(context)?.animateTo(3);
-                    },
-                  ),
                 SizedBox(
                   width: 200,
                   child: DSInput.search(
