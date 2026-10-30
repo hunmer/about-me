@@ -1,3 +1,4 @@
+import 'package:shared_models/shared_models.dart';
 /// 热力图数据模型
 ///
 /// 存储24小时×7天的活动颜色数据
@@ -130,8 +131,8 @@ class ActivityWeeklyData {
     return ActivityWeeklyData(
       year: json['year'] as int,
       weekNumber: json['weekNumber'] as int,
-      weekStart: DateTime.parse(json['weekStart'] as String),
-      weekEnd: DateTime.parse(json['weekEnd'] as String),
+      weekStart: parseIsoDateTime(json['weekStart'] as String),
+      weekEnd: parseIsoDateTime(json['weekEnd'] as String),
       heatmap: ActivityHeatmapData.fromJson(json['heatmap'] as Map<String, dynamic>),
       topTags: (json['topTags'] as List<dynamic>)
           .map((tagJson) => WeeklyTagItem.fromJson(tagJson as Map<String, dynamic>))

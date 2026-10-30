@@ -36,6 +36,8 @@ const Map<String, String> agentChatTranslationsEn = {
   'agent_chat_restoreDefaultDescription': 'This operation will delete all custom configurations and restore to default settings. Continue?',
   'agent_chat_restoreDefault': 'Restore Default',
   'agent_chat_all': 'All',
+  'agent_chat_thisPlugin': 'This Plugin',
+  'agent_chat_groupFilter': 'Group',
   'agent_chat_disabledTools': 'Disabled Tools',
   'agent_chat_enableAll': 'Enable All',
   'agent_chat_confirmEnableAll': 'Confirm Enable All',

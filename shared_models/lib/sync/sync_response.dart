@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:shared_models/shared_models.dart';
 /// 同步响应状态
 enum SyncStatus {
   /// 同步成功
@@ -85,11 +86,11 @@ class SyncResponse {
         filePath: json['file_path'] as String,
         message: json['message'] as String?,
         newMd5: json['new_md5'] as String?,
-        timestamp: DateTime.parse(json['timestamp'] as String),
+        timestamp: parseIsoDateTime(json['timestamp'] as String),
         serverData: json['server_data'] as String?,
         serverMd5: json['server_md5'] as String?,
         serverUpdatedAt: json['server_updated_at'] != null
-            ? DateTime.parse(json['server_updated_at'] as String)
+            ? parseIsoDateTime(json['server_updated_at'] as String)
             : null,
         isBinary: json['is_binary'] as bool? ?? false,
       );
@@ -168,7 +169,7 @@ class FileListResponse {
         files: (json['files'] as List)
             .map((f) => FileInfo.fromJson(f as Map<String, dynamic>))
             .toList(),
-        timestamp: DateTime.parse(json['timestamp'] as String),
+        timestamp: parseIsoDateTime(json['timestamp'] as String),
       );
 }
 
@@ -203,7 +204,7 @@ class PullResponse {
   factory PullResponse.fromJson(Map<String, dynamic> json) => PullResponse(
         encryptedData: json['encrypted_data'] as String,
         md5: json['md5'] as String,
-        updatedAt: DateTime.parse(json['updated_at'] as String),
+        updatedAt: parseIsoDateTime(json['updated_at'] as String),
         isBinary: json['is_binary'] as bool? ?? false,
       );
 }
@@ -244,7 +245,7 @@ class FileInfo {
         path: json['path'] as String,
         size: json['size'] as int?,
         md5: json['md5'] as String?,
-        updatedAt: DateTime.parse(json['updated_at'] as String),
+        updatedAt: parseIsoDateTime(json['updated_at'] as String),
         isFolder: json['is_folder'] as bool? ?? false,
       );
 }

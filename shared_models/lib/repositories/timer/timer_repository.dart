@@ -4,6 +4,7 @@ library;
 import 'package:shared_models/utils/result.dart';
 import 'package:shared_models/utils/pagination.dart';
 
+import 'package:shared_models/shared_models.dart';
 // ============ DTOs ============
 
 /// 计时任务 DTO
@@ -42,7 +43,7 @@ class TimerTaskDto {
               ?.map((e) => TimerItemDto.fromJson(e as Map<String, dynamic>))
               .toList() ??
           const [],
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: parseIsoDateTime(json['createdAt'] as String),
       repeatCount: json['repeatCount'] as int? ?? 1,
       isRunning: json['isRunning'] as bool? ?? false,
       group: json['group'] as String? ?? '默认',

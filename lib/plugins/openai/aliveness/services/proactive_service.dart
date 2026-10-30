@@ -26,6 +26,7 @@ import 'package:aboutme/plugins/openai/moments/services/moments_service.dart';
 import 'package:aboutme/plugins/openai/openai_plugin.dart';
 import 'package:aboutme/plugins/openai/services/request_service.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 主动消息服务（PRD 5.1.2 / Phase 3）：
 /// 周期检查所有开启活人感的 agent，满足条件时主动发消息到上次互动频道。
 /// 三重硬限制：免打扰时段 + 每日上限 + 冷却时间（代码强制，防骚扰）。
@@ -111,7 +112,7 @@ class ProactiveService {
 
     // ---- 硬限制：冷却 ----
     final cooldownUntil = stats['cooldownUntil'] as String?;
-    if (cooldownUntil != null && now.isBefore(DateTime.parse(cooldownUntil))) {
+    if (cooldownUntil != null && now.isBefore(parseIsoDateTime(cooldownUntil))) {
       return;
     }
 

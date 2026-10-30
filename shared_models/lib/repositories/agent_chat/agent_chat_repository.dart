@@ -4,6 +4,7 @@ library;
 import 'package:shared_models/utils/result.dart';
 import 'package:shared_models/utils/pagination.dart';
 
+import 'package:shared_models/shared_models.dart';
 // ============ DTOs ============
 
 /// 会话 DTO
@@ -44,8 +45,8 @@ class AgentChatConversationDto {
               .toList() ??
           const [],
       contextMessageCount: json['contextMessageCount'] as int?,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      lastMessageAt: DateTime.parse(json['lastMessageAt'] as String),
+      createdAt: parseIsoDateTime(json['createdAt'] as String),
+      lastMessageAt: parseIsoDateTime(json['lastMessageAt'] as String),
       isPinned: json['isPinned'] as bool? ?? false,
       lastMessagePreview: json['lastMessagePreview'] as String?,
       unreadCount: json['unreadCount'] as int? ?? 0,
@@ -123,7 +124,7 @@ class AgentChatGroupDto {
       icon: json['icon'] as String?,
       color: json['color'] as String?,
       order: json['order'] as int? ?? 0,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: parseIsoDateTime(json['createdAt'] as String),
     );
   }
 
@@ -308,7 +309,7 @@ class AgentChatMessageDto {
       conversationId: json['conversationId'] as String,
       content: json['content'] as String,
       isUser: json['isUser'] as bool,
-      timestamp: DateTime.parse(json['timestamp'] as String),
+      timestamp: parseIsoDateTime(json['timestamp'] as String),
       tokenCount: json['tokenCount'] as int? ?? 0,
       attachments: (json['attachments'] as List<dynamic>?)
               ?.map((e) =>
@@ -316,7 +317,7 @@ class AgentChatMessageDto {
               .toList() ??
           const [],
       editedAt: json['editedAt'] != null
-          ? DateTime.parse(json['editedAt'] as String)
+          ? parseIsoDateTime(json['editedAt'] as String)
           : null,
       isGenerating: json['isGenerating'] as bool? ?? false,
       metadata: json['metadata'] as Map<String, dynamic>?,
@@ -420,9 +421,9 @@ class AgentChatToolTemplateDto {
           .map((e) =>
               AgentChatToolCallStepDto.fromJson(e as Map<String, dynamic>))
           .toList(),
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: parseIsoDateTime(json['createdAt'] as String),
       lastUsedAt: json['lastUsedAt'] != null
-          ? DateTime.parse(json['lastUsedAt'] as String)
+          ? parseIsoDateTime(json['lastUsedAt'] as String)
           : null,
       usageCount: json['usageCount'] as int? ?? 0,
       declaredTools: (json['declaredTools'] as List<dynamic>?)

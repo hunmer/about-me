@@ -20,6 +20,7 @@ import '../models/folder.dart';
 import 'utils.dart' show notesColor;
 import 'providers.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 注册笔记列表小组件
 void registerNotesListWidget(HomeWidgetRegistry registry) {
   registry.register(
@@ -181,14 +182,14 @@ class _NotesListStatefulWidgetState extends State<_NotesListStatefulWidget> {
       DateTime? endDate;
       if (startDateStr != null) {
         try {
-          startDate = DateTime.parse(startDateStr);
+          startDate = parseIsoDateTime(startDateStr);
         } catch (e) {
           debugPrint('[NotesListWidget] 解析 startDate 失败: $e');
         }
       }
       if (endDateStr != null) {
         try {
-          endDate = DateTime.parse(endDateStr);
+          endDate = parseIsoDateTime(endDateStr);
         } catch (e) {
           debugPrint('[NotesListWidget] 解析 endDate 失败: $e');
         }

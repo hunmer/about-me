@@ -14,6 +14,7 @@ import 'package:aboutme/plugins/openai/aliveness/services/schedule_service.dart'
 import 'package:aboutme/plugins/openai/aliveness/services/state_service.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 生成输入：编排器把缓冲合并文本与注入段交给宿主通道，
 /// 通道用自己的 AI 聊天链路（chat 流式 / agent_chat executeChain）完成生成。
 class AlivenessGenerationInput {
@@ -226,7 +227,7 @@ class AlivenessOrchestrator {
         unaskedQuestions: unasked,
         lastExploreAt: stats['lastExploreAt'] == null
             ? null
-            : DateTime.parse(stats['lastExploreAt'] as String),
+            : parseIsoDateTime(stats['lastExploreAt'] as String),
       );
       unawaited(
         _store.appendDecision(agent.id, {

@@ -10,6 +10,7 @@ import 'package:shared_models/utils/result.dart';
 import 'package:shared_models/utils/pagination.dart';
 import 'package:shared_models/utils/validation.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// Tracker UseCase - 封装所有业务逻辑
 class TrackerUseCase {
   final ITrackerRepository repository;
@@ -357,7 +358,7 @@ class TrackerUseCase {
     }
 
     try {
-      final recordedAt = DateTime.parse(params['recordedAt'] as String);
+      final recordedAt = parseIsoDateTime(params['recordedAt'] as String);
 
       final record = RecordDto(
         id: params['id'] as String? ?? _uuid.v4(),
@@ -437,14 +438,14 @@ class TrackerUseCase {
       if (params.containsKey('startDate')) {
         final startDateStr = params['startDate'] as String?;
         if (startDateStr != null && startDateStr.isNotEmpty) {
-          startDate = DateTime.parse(startDateStr);
+          startDate = parseIsoDateTime(startDateStr);
         }
       }
 
       if (params.containsKey('endDate')) {
         final endDateStr = params['endDate'] as String?;
         if (endDateStr != null && endDateStr.isNotEmpty) {
-          endDate = DateTime.parse(endDateStr);
+          endDate = parseIsoDateTime(endDateStr);
         }
       }
 

@@ -1,5 +1,6 @@
 /// 纪念日插件主页小组件数据模型
 library;
+import 'package:shared_models/shared_models.dart';
 
 /// 纪念日小组件数据
 class MemorialDayWidgetData {
@@ -43,7 +44,7 @@ class MemorialDayWidgetData {
     return MemorialDayWidgetData(
       id: json['id'] as String,
       title: json['title'] as String? ?? '',
-      targetDate: DateTime.parse(json['targetDate'] as String? ?? ''),
+      targetDate: parseIsoDateTime(json['targetDate'] as String? ?? ''),
       backgroundImageUrl: json['backgroundImageUrl'] as String?,
       backgroundColor: json['backgroundColor'] as int? ?? 0,
       daysRemaining: json['daysRemaining'] as int? ?? 0,

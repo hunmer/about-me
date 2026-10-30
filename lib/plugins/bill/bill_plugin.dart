@@ -40,6 +40,7 @@ import 'models/bill_statistics.dart';
 import 'models/statistic_range.dart';
 import 'models/subscription.dart';
 
+import 'package:shared_models/shared_models.dart';
 part 'bill_js_api.dart';
 part 'bill_data_selectors.dart';
 
@@ -438,14 +439,14 @@ class _BillMainViewState extends State<BillMainView>
     // 解析统计日期范围
     if (widget.statsStartDate != null) {
       try {
-        _statsStartDate = DateTime.parse(widget.statsStartDate!);
+        _statsStartDate = parseIsoDateTime(widget.statsStartDate!);
       } catch (e) {
         debugPrint('[BillMainView] 解析 statsStartDate 失败: $e');
       }
     }
     if (widget.statsEndDate != null) {
       try {
-        _statsEndDate = DateTime.parse(widget.statsEndDate!);
+        _statsEndDate = parseIsoDateTime(widget.statsEndDate!);
       } catch (e) {
         debugPrint('[BillMainView] 解析 statsEndDate 失败: $e');
       }

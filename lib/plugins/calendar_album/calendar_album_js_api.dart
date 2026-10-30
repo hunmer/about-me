@@ -332,8 +332,8 @@ Future<String> _jsGetPhotosByDateRange(Map<String, dynamic> params) async {
     final getHttpImage = params['get_http_image'] == true;
     params.remove('get_http_image');
 
-    final startDate = DateTime.parse(startDateStr);
-    final endDate = DateTime.parse(endDateStr);
+    final startDate = parseIsoDateTime(startDateStr);
+    final endDate = parseIsoDateTime(endDateStr);
 
     final controller = CalendarAlbumPlugin.instance.calendarController;
     if (controller == null) {
@@ -428,6 +428,7 @@ Future<String> _jsCreatePhoto(Map<String, dynamic> params) async {
     // 解析日期或使用今天
     DateTime createdAt = DateTime.now();
     if (params['date'] != null) {
+      // 故意以 UTC 午夜为锚点（'Z'），不能用统一入口（会转本地时区导致日期漂移）
       createdAt = DateTime.parse(params['date'] + 'T00:00:00.000Z');
     }
 

@@ -7,6 +7,7 @@ library;
 
 import 'dart:convert';
 
+import 'package:shared_models/shared_models.dart';
 class TodoItem {
   String text;
   bool checked;
@@ -67,7 +68,7 @@ class TodoMeta {
       );
       final doneAt = <String, DateTime>{};
       json['doneAt']?.forEach((key, value) {
-        if (value is String) doneAt[key] = DateTime.parse(value);
+        if (value is String) doneAt[key] = parseIsoDateTime(value);
       });
       return TodoMeta(doneAt: doneAt);
     } catch (_) {

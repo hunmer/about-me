@@ -4,6 +4,7 @@ import 'package:agentlib/agent_slots.dart';
 import '../aliveness/models/aliveness_config.dart';
 import 'thinking_effort.dart';
 
+import 'package:shared_models/shared_models.dart';
 class Prompt {
   String type; // system, user, assistant
   String content;
@@ -177,7 +178,7 @@ class AIAgent {
           ) ??
           {},
       createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'] as String)
+          ? parseIsoDateTime(json['createdAt'] as String)
           : DateTime.now(),
       temperature: (json['temperature'] as num?)?.toDouble() ?? 0.7,
       maxLength: json['maxLength'] as int? ?? 2000,
@@ -186,7 +187,7 @@ class AIAgent {
       presencePenalty: (json['presencePenalty'] as num?)?.toDouble() ?? 0.0,
       stop: (json['stop'] as List<dynamic>?)?.cast<String>(),
       updatedAt: json['updatedAt'] != null
-          ? DateTime.parse(json['updatedAt'] as String)
+          ? parseIsoDateTime(json['updatedAt'] as String)
           : DateTime.now(),
       model: json['model'] as String? ?? 'gpt-3.5-turbo',
       icon: json['icon'] != null

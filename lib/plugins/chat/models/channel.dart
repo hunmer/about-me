@@ -3,6 +3,7 @@ import 'package:aboutme/utils/color_extension.dart';
 import 'message.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 
+import 'package:shared_models/shared_models.dart';
 class Channel {
   Map<String, dynamic>? sdkSnapshot;
   int? sdkVersion;
@@ -192,7 +193,7 @@ class Channel {
       fixedSymbol: json['fixedSymbol'] as String?,
       backgroundPath: json['backgroundPath'] as String?,
       metadata: json['metadata'] as Map<String, dynamic>?,
-      lastMessageTime: DateTime.tryParse(json['lastMessageTime'] as String? ?? ''),
+      lastMessageTime: tryParseIsoDateTime(json['lastMessageTime'] as String? ?? ''),
       messageCount: json['messageCount'] as int?,
     );
   }

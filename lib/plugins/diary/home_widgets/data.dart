@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 日记统计项数据
 ///
 /// 用于概览组件中的统计展示
@@ -47,7 +48,7 @@ class WeekDiaryCardData {
   /// 从 JSON 创建（用于公共小组件系统）
   factory WeekDiaryCardData.fromJson(Map<String, dynamic> json) {
     return WeekDiaryCardData(
-      date: DateTime.parse(json['date'] as String),
+      date: parseIsoDateTime(json['date'] as String),
       isToday: json['isToday'] as bool,
       weekday: json['weekday'] as String,
       dayNumber: json['dayNumber'] as String,

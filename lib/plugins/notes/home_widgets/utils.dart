@@ -3,13 +3,14 @@ library;
 
 import 'package:flutter/material.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 笔记插件主题色
 const Color notesColor = Color.fromARGB(255, 61, 204, 185);
 
 /// 格式化笔记时间为相对时间显示
 String formatNoteTime(String isoTime) {
   try {
-    final date = DateTime.parse(isoTime);
+    final date = parseIsoDateTime(isoTime);
     final now = DateTime.now();
     final diff = now.difference(date);
 

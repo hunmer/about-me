@@ -10,6 +10,7 @@ import 'package:shared_models/utils/result.dart';
 import 'package:shared_models/utils/pagination.dart';
 import 'package:shared_models/utils/validation.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// Checkin UseCase - 封装所有业务逻辑
 class CheckinUseCase {
   final ICheckinRepository repository;
@@ -244,9 +245,9 @@ class CheckinUseCase {
     }
 
     try {
-      final startTime = DateTime.parse(params['startTime'] as String);
-      final endTime = DateTime.parse(params['endTime'] as String);
-      final checkinTime = DateTime.parse(params['checkinTime'] as String);
+      final startTime = parseIsoDateTime(params['startTime'] as String);
+      final endTime = parseIsoDateTime(params['endTime'] as String);
+      final checkinTime = parseIsoDateTime(params['checkinTime'] as String);
 
       // 验证时间逻辑 - 使用毫秒精度比较
       if (endTime.isBefore(startTime)) {

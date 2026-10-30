@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 循环周期单位：截止日期 = 上次重置日期 + 叠加量
 enum RecurrenceUnit { days, months, years }
 
@@ -159,13 +160,13 @@ class MemorialDay {
     return MemorialDay(
       id: json['id'],
       title: json['title'],
-      creationDate: DateTime.parse(json['creationDate']),
-      targetDate: DateTime.parse(json['targetDate']),
+      creationDate: parseIsoDateTime(json['creationDate']),
+      targetDate: parseIsoDateTime(json['targetDate']),
       notes: List<String>.from(json['notes'] ?? []),
       noteDates:
           (json['noteDates'] as List<dynamic>? ?? [])
               .map(
-                (e) => e == null ? null : DateTime.parse(e as String),
+                (e) => e == null ? null : parseIsoDateTime(e as String),
               )
               .toList(),
       // 旧版双字段迁移：iconColor 是用户最后选的主题色，优先于 backgroundColor

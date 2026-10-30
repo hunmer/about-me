@@ -3,6 +3,7 @@ import 'package:syncfusion_flutter_calendar/calendar.dart';
 import 'package:aboutme/core/services/plugin_data_selector/models/selectable_item.dart';
 import 'package:aboutme/core/services/plugin_data_selector/models/selector_definition.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 日历选择视图
 ///
 /// 用于在选择器中展示日历形式的选项（如日记条目）
@@ -99,7 +100,7 @@ class _CalendarSelectionViewState extends State<CalendarSelectionView> {
         return dateValue;
       }
       if (dateValue is String) {
-        return DateTime.tryParse(dateValue);
+        return tryParseIsoDateTime(dateValue);
       }
     }
     // 尝试从 rawData 中获取
@@ -109,7 +110,7 @@ class _CalendarSelectionViewState extends State<CalendarSelectionView> {
         if (rawData is Map && rawData['date'] != null) {
           final dateValue = rawData['date'];
           if (dateValue is DateTime) return dateValue;
-          if (dateValue is String) return DateTime.tryParse(dateValue);
+          if (dateValue is String) return tryParseIsoDateTime(dateValue);
         }
       } catch (_) {}
     }

@@ -31,6 +31,8 @@ import 'package:aboutme/plugins/tts/tts_plugin.dart';
 import 'package:aboutme/plugins/webview/webview_plugin.dart';
 import 'package:aboutme/plugins/scripts_center/scripts_center_plugin.dart';
 
+// 只引入 ISO 解析入口，避免 shared_models 总出口的 NodeStatus 与 nodes 模型二义
+import 'package:shared_models/utils/iso_date_time.dart';
 /// 成就快照统计提供器：成就编号 → (数据来源插件id, 取数函数)
 ///
 /// 约定：
@@ -452,7 +454,7 @@ Future<RecordDayStats?> collectRecordDayStats() async {
     // 打卡日期
     final checkinDays = CheckinPlugin.instance.checkinItems
         .expand((item) => item.checkInRecords.keys)
-        .map((day) => DateTime.parse(day))
+        .map((day) => parseIsoDateTime(day))
         .map(_dateOnly)
         .toSet();
 

@@ -4,6 +4,7 @@ library;
 import 'package:shared_models/utils/result.dart';
 import 'package:shared_models/utils/pagination.dart';
 
+import 'package:shared_models/shared_models.dart';
 // ============ DTOs ============
 
 /// 自定义字段 DTO
@@ -97,14 +98,14 @@ class NodeDto {
     return NodeDto(
       id: json['id'] as String,
       title: json['title'] as String,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: parseIsoDateTime(json['createdAt'] as String),
       tags: tagsList,
       status: NodeStatus.values[json['status'] as int],
       startDate: json['startDate'] != null
-          ? DateTime.parse(json['startDate'] as String)
+          ? parseIsoDateTime(json['startDate'] as String)
           : null,
       endDate: json['endDate'] != null
-          ? DateTime.parse(json['endDate'] as String)
+          ? parseIsoDateTime(json['endDate'] as String)
           : null,
       customFields: customFieldsList,
       notes: json['notes'] as String,

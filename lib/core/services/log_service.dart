@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:aboutme/core/storage/storage_manager.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 日志级别
 enum LogLevel {
   debug,
@@ -41,7 +42,7 @@ class LogEntry {
 
   factory LogEntry.fromJson(Map<String, dynamic> json) {
     return LogEntry(
-      timestamp: DateTime.parse(json['timestamp'] as String),
+      timestamp: parseIsoDateTime(json['timestamp'] as String),
       level: LogLevel.values.firstWhere(
         (e) => e.name == json['level'],
         orElse: () => LogLevel.info,

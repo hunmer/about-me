@@ -2,6 +2,7 @@ import 'package:uuid/uuid.dart';
 import 'file_attachment.dart';
 import 'tool_call_step.dart';
 
+import 'package:shared_models/shared_models.dart';
 const _uuid = Uuid();
 
 /// 聊天消息模型
@@ -200,7 +201,7 @@ class ChatMessage {
       content: json['content'] as String,
       isUser: json['isUser'] as bool? ?? json['role'] == 'user',
       timestamp:
-          DateTime.tryParse(json['timestamp'] as String? ?? '') ??
+          tryParseIsoDateTime(json['timestamp'] as String? ?? '') ??
           DateTime.now(),
       tokenCount: json['tokenCount'] as int? ?? 0,
       attachments:
@@ -209,7 +210,7 @@ class ChatMessage {
               .toList() ??
           [],
       editedAt: json['editedAt'] != null
-          ? DateTime.parse(json['editedAt'] as String)
+          ? parseIsoDateTime(json['editedAt'] as String)
           : null,
       isGenerating: json['isGenerating'] as bool? ?? false,
       metadata: json['metadata'] as Map<String, dynamic>?,

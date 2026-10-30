@@ -1,3 +1,4 @@
+import 'package:shared_models/shared_models.dart';
 class CompletionRecord {
   final String id;
   final String parentId;
@@ -17,7 +18,7 @@ class CompletionRecord {
     return CompletionRecord(
       id: map['id']?.toString() ?? '',
       parentId: map['parentId']?.toString() ?? '',
-      date: map['date'] != null ? DateTime.parse(map['date'].toString()) : DateTime.now(),
+      date: map['date'] != null ? parseIsoDateTime(map['date'].toString()) : DateTime.now(),
       duration: Duration(seconds: (map['duration'] as num?)?.toInt() ?? 0),
       notes: map['notes']?.toString() ?? '',
     );

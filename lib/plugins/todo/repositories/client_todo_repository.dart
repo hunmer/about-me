@@ -251,7 +251,7 @@ class ClientTodoRepository implements ITodoRepository {
       if (metadata.containsKey('reminders') && metadata['reminders'] is List) {
         for (final reminder in metadata['reminders']) {
           if (reminder is String) {
-            reminders.add(DateTime.parse(reminder));
+            reminders.add(parseIsoDateTime(reminder));
           }
         }
       }
@@ -272,7 +272,7 @@ class ClientTodoRepository implements ITodoRepository {
       // 提取开始时间
       if (metadata.containsKey('startTime') &&
           metadata['startTime'] is String) {
-        startTime = DateTime.parse(metadata['startTime'] as String);
+        startTime = parseIsoDateTime(metadata['startTime'] as String);
       }
 
       // 提取持续时间

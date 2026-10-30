@@ -1,5 +1,6 @@
 import 'category.dart';
 
+import 'package:shared_models/shared_models.dart';
 class Product {
   final String id;
   final String name;
@@ -39,8 +40,8 @@ class Product {
           : json['category'] as String?,
       stock: json['stock'],
       price: json['price'],
-      exchangeStart: DateTime.parse(json['exchange_start']),
-      exchangeEnd: DateTime.parse(json['exchange_end']),
+      exchangeStart: parseIsoDateTime(json['exchange_start']),
+      exchangeEnd: parseIsoDateTime(json['exchange_end']),
       useDuration: json['use_duration'],
     );
   }

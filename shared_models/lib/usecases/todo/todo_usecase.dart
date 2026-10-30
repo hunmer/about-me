@@ -10,6 +10,7 @@ import 'package:shared_models/utils/result.dart';
 import 'package:shared_models/utils/pagination.dart';
 import 'package:shared_models/utils/validation.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// Todo UseCase - 封装所有业务逻辑
 class TodoUseCase {
   final ITodoRepository repository;
@@ -126,7 +127,7 @@ class TodoUseCase {
       DateTime? dueDate;
       if (params['dueDate'] != null) {
         final dueDateStr = params['dueDate'] as String;
-        dueDate = DateTime.tryParse(dueDateStr);
+        dueDate = tryParseIsoDateTime(dueDateStr);
       }
 
       // 构建元数据
@@ -184,7 +185,7 @@ class TodoUseCase {
       DateTime? dueDate = existing.dueDate;
       if (params.containsKey('dueDate')) {
         final dueDateStr = params['dueDate'] as String?;
-        dueDate = dueDateStr != null ? DateTime.tryParse(dueDateStr) : null;
+        dueDate = dueDateStr != null ? tryParseIsoDateTime(dueDateStr) : null;
       }
 
       // 处理完成状态变化

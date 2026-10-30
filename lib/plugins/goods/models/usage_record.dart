@@ -1,3 +1,4 @@
+import 'package:shared_models/shared_models.dart';
 class UsageRecord {
   final DateTime date;
   final String? note;
@@ -8,7 +9,7 @@ class UsageRecord {
 
   factory UsageRecord.fromJson(Map<String, dynamic> json) {
     return UsageRecord(
-      date: DateTime.parse(json['date'] as String),
+      date: parseIsoDateTime(json['date'] as String),
       note: json['note'] as String?,
       duration: json['duration'] as int?,
       location: json['location'] as String?,

@@ -28,11 +28,11 @@ class DiaryEntry {
     return DiaryEntry(
       sdkVersion: json['_sdkVersion'] as int?,
       extensions: Map<String, dynamic>.from(json)..remove('_sdkVersion'),
-      date: DateTime.parse(json['date']),
+      date: parseIsoDateTime(json['date']),
       title: json['title'] ?? '',
       content: json['content'],
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
+      createdAt: parseIsoDateTime(json['createdAt']),
+      updatedAt: parseIsoDateTime(json['updatedAt']),
       mood: json['mood'],
       tags: (json['tags'] as List<dynamic>?)?.cast<String>() ?? const [],
     );

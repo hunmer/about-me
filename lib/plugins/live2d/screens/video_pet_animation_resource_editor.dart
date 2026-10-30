@@ -38,6 +38,27 @@ class VideoPetAnimationResourceEditor extends StatefulWidget {
   @override
   State<VideoPetAnimationResourceEditor> createState() =>
       _VideoPetAnimationResourceEditorState();
+
+  /// 通用帧区间选择弹层（撞墙动画等场景）：分帧网格点选起止帧，
+  /// 返回闭区间；取消返回 null。
+  static Future<({int start, int end})?> showVideoPetFrameRangeSheet(
+    BuildContext context, {
+    required String title,
+    required VideoPetSpritesheet? sheet,
+    required String? imageUri,
+    int? initialStart,
+    int? initialEnd,
+  }) => SmoothBottomSheet.showWithTitle<({int start, int end})>(
+    context: context,
+    title: title,
+    showCloseButton: true,
+    child: _FrameRangeSheet(
+      sheet: sheet,
+      imageUri: imageUri,
+      initialStart: initialStart,
+      initialEnd: initialEnd,
+    ),
+  );
 }
 
 /// 分段移动的三种模式值，与 `VideoPetAnimation.moving` 三态一一对应。
@@ -651,6 +672,243 @@ class _MovingSegmentSheetState extends State<_MovingSegmentSheet> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// 通用帧区间选择弹层：分帧网格上点选起点与终点，返回闭区间；
+/// 取消弹回 null。与 [_MovingSegmentSheet] 同一套分帧逻辑，但无速度
+/// 输入、无重叠校验（撞墙动画等只需一段区间）。
+class _FrameRangeSheet extends StatefulWidget {
+  const _FrameRangeSheet({
+    required this.sheet,
+    required this.imageUri,
+    this.initialStart,
+    this.initialEnd,
+  });
+
+  final VideoPetSpritesheet? sheet;
+  final String? imageUri;
+  final int? initialStart;
+  final int? initialEnd;
+
+  @override
+  State<_FrameRangeSheet> createState() => _FrameRangeSheetState();
+}
+
+class _FrameRangeSheetState extends State<_FrameRangeSheet> {
+  List<ui.Image> _frameImages = const [];
+  Object? _loadError;
+  int? _start;
+  int? _end;
+
+  @override
+  void initState() {
+    super.initState();
+    _start = widget.initialStart;
+    _end = widget.initialEnd;
+    final uri = widget.imageUri;
+    if (uri == null || widget.sheet == null) {
+      _loadError = StateError('缺少精灵图来源');
+      return;
+    }
+    _splitFrames();
+  }
+
+  @override
+  void dispose() {
+    for (final frame in _frameImages) {
+      frame.dispose();
+    }
+    super.dispose();
+  }
+
+  Future<void> _splitFrames() async {
+    final sheet = widget.sheet!;
+    try {
+      final bytes = await readVideoPetImageBytes(Uri.parse(widget.imageUri!));
+      final codec = await ui.instantiateImageCodec(bytes);
+      final full = (await codec.getNextFrame()).image;
+      final frameW = full.width ~/ sheet.columns;
+      final frameH = full.height ~/ sheet.rows;
+      final frames = <ui.Image>[];
+      final paint = ui.Paint()..filterQuality = FilterQuality.none;
+      for (var index = 0; index < sheet.frameCount; index++) {
+        final src = ui.Rect.fromLTWH(
+          (index % sheet.columns) * frameW.toDouble(),
+          (index ~/ sheet.columns) * frameH.toDouble(),
+          frameW.toDouble(),
+          frameH.toDouble(),
+        );
+        final recorder = ui.PictureRecorder();
+        ui.Canvas(recorder).drawImageRect(
+          full,
+          src,
+          ui.Offset.zero & src.size,
+          paint,
+        );
+        frames.add(await recorder.endRecording().toImage(frameW, frameH));
+      }
+      full.dispose();
+      codec.dispose();
+      if (mounted) setState(() => _frameImages = frames);
+    } catch (error) {
+      if (mounted) setState(() => _loadError = error);
+    }
+  }
+
+  String _t(String zh, String en) =>
+      (Get.locale?.languageCode ?? 'zh') == 'zh' ? zh : en;
+
+  void _tapFrame(int frame) {
+    setState(() {
+      if (_start == null || (_start != null && _end != null)) {
+        _start = frame;
+        _end = null;
+        return;
+      }
+      if (frame < _start!) {
+        _end = _start;
+        _start = frame;
+      } else {
+        _end = frame;
+      }
+    });
+  }
+
+  void _confirm() {
+    if (_start == null || _end == null) return;
+    Navigator.of(context).pop((start: _start!, end: _end!));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final dsTheme = DSThemeBridge.resolve(context);
+    final sheet = widget.sheet;
+    return Padding(
+      key: const ValueKey('videoPetFrameRangeSheet'),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text(
+            _t('先点起点帧，再点终点帧', 'Tap a start frame then an end frame'),
+            style: theme.textTheme.bodySmall,
+          ),
+          const SizedBox(height: 8),
+          Flexible(
+            child: sheet == null
+                ? Text(
+                    _t('缺少精灵图配置', 'Missing spritesheet'),
+                    style: theme.textTheme.bodySmall,
+                  )
+                : GridView.builder(
+                    gridDelegate:
+                        SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: 160,
+                          childAspectRatio:
+                              sheet.frameWidth / sheet.frameHeight,
+                          mainAxisSpacing: 4,
+                          crossAxisSpacing: 4,
+                        ),
+                    shrinkWrap: true,
+                    itemCount: sheet.frameCount,
+                    itemBuilder: (context, frame) {
+                      final isStart = _start == frame;
+                      final isEnd = _end == frame;
+                      final inRange =
+                          _start != null &&
+                          _end != null &&
+                          frame >= _start! &&
+                          frame <= _end!;
+                      final borderColor = isStart || isEnd
+                          ? dsTheme.primary
+                          : inRange
+                          ? dsTheme.hatch
+                          : dsTheme.textSub.withValues(alpha: .35);
+                      final provider = frame < _frameImages.length
+                          ? _frameImages[frame]
+                          : null;
+                      return InkWell(
+                        key: ValueKey('videoPetRangeCell-$frame'),
+                        onTap: () => _tapFrame(frame),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: borderColor,
+                              width: (isStart || isEnd) ? 2.4 : 1,
+                            ),
+                            borderRadius: BorderRadius.circular(4),
+                            color: inRange
+                                ? dsTheme.hatch.withValues(alpha: .5)
+                                : null,
+                          ),
+                          padding: const EdgeInsets.all(1),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: <Widget>[
+                              if (provider != null)
+                                RawImage(image: provider, fit: BoxFit.contain),
+                              Align(
+                                alignment: Alignment.bottomRight,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(1),
+                                  child: Text(
+                                    '$frame',
+                                    style: TextStyle(
+                                      fontSize: 9,
+                                      color:
+                                          DSThemeBridge.resolve(context).text,
+                                      backgroundColor: DSThemeBridge.resolve(
+                                        context,
+                                      ).surface.withValues(alpha: .7),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+          if (_loadError != null)
+            Text(
+              _t('精灵图缩略图加载失败，仅显示帧号', 'Thumbnail load failed'),
+              style: theme.textTheme.bodySmall,
+            ),
+          const SizedBox(height: 10),
+          Text(
+            _start == null || _end == null
+                ? _t('请点选起点帧与终点帧', 'Pick a start and an end frame')
+                : '${_start!}–${_end!}',
+            key: const ValueKey('videoPetFrameRangeLabel'),
+            style: theme.textTheme.bodySmall,
+          ),
+          const SizedBox(height: 6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: <Widget>[
+              DSButton(
+                label: _t('取消', 'Cancel'),
+                variant: DSButtonVariant.ghost,
+                size: DSButtonSize.sm,
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+              const SizedBox(width: 8),
+              DSButton(
+                label: _t('保存', 'Save'),
+                size: DSButtonSize.sm,
+                onPressed:
+                    _start != null && _end != null ? _confirm : null,
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

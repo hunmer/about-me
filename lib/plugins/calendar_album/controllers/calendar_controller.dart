@@ -7,6 +7,7 @@ import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/event/event_args.dart';
 import 'package:aboutme/core/event/item_event_args.dart';
 
+import 'package:shared_models/shared_models.dart';
 class CalendarController extends ChangeNotifier {
   // 发送事件通知
   void _notifyEvent(String action, CalendarEntry entry) {
@@ -150,7 +151,7 @@ class CalendarController extends ChangeNotifier {
 
       // 加载现有数据
       data.forEach((key, value) {
-        final date = DateTime.parse(key as String);
+        final date = parseIsoDateTime(key as String);
         final entries =
             (value as List)
                 .map(

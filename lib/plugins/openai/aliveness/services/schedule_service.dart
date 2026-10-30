@@ -7,6 +7,7 @@ import 'package:aboutme/plugins/openai/aliveness/services/aliveness_store.dart';
 import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'package:aboutme/plugins/openai/services/request_service.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 一条日程：今日具体时间段的活动
 class ScheduleEntry {
   final DateTime start;
@@ -30,8 +31,8 @@ class ScheduleEntry {
   };
 
   static ScheduleEntry fromJson(Map<String, dynamic> json) => ScheduleEntry(
-    start: DateTime.parse(json['start'] as String),
-    end: DateTime.parse(json['end'] as String),
+    start: parseIsoDateTime(json['start'] as String),
+    end: parseIsoDateTime(json['end'] as String),
     title: json['title'] as String,
     description: json['description'] as String?,
   );
@@ -52,7 +53,7 @@ class AgentSchedule {
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
   static AgentSchedule fromJson(Map<String, dynamic> json) => AgentSchedule(
-    date: DateTime.parse(json['dateKey'] as String),
+    date: parseIsoDateTime(json['dateKey'] as String),
     entries: (json['entries'] as List<dynamic>? ?? [])
         .map((e) => ScheduleEntry.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList(),

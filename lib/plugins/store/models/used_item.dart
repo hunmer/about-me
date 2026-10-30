@@ -1,3 +1,4 @@
+import 'package:shared_models/shared_models.dart';
 class UsedItem {
   final String id;
   final String productId;
@@ -15,7 +16,7 @@ class UsedItem {
     return UsedItem(
       id: json['id'],
       productId: json['product_id'],
-      useDate: DateTime.parse(json['use_date']),
+      useDate: parseIsoDateTime(json['use_date']),
       productSnapshot: Map<String, dynamic>.from(json['product_snapshot']),
     );
   }

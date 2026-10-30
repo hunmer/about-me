@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 
+import 'package:shared_models/shared_models.dart';
 class Folder {
   int? sdkVersion;
   final String id;
@@ -47,8 +48,8 @@ class Folder {
       // SDK/MCP 允许省略父级，普通文件夹应归入页面使用的 root 目录。
       parentId: json['parentId'] as String? ??
           (json['id'] == 'root' ? null : 'root'),
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      createdAt: parseIsoDateTime(json['createdAt'] as String),
+      updatedAt: parseIsoDateTime(json['updatedAt'] as String),
       color: Color(json['color'] as int? ?? Colors.blue.value),
       icon: dynamicIconData(
         json['icon'] as int? ?? Icons.folder.codePoint,

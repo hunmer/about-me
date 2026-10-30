@@ -52,7 +52,7 @@ Future<String> _jsCreateMediaItem(Map<String, dynamic> params) async {
       rating: (params['rating'] as num?)?.toDouble(),
       overview: params['overview'] as String?,
       tags: (params['tags'] as List?)?.cast<String>() ?? const [],
-      finishedAt: DateTime.tryParse(params['finishedAt'] as String? ?? ''),
+      finishedAt: tryParseIsoDateTime(params['finishedAt'] as String? ?? ''),
       createdAt: DateTime.now(),
       reviews: const [],
     );
@@ -81,7 +81,7 @@ Future<String> _jsUpdateMediaItem(Map<String, dynamic> params) async {
       rating: (params['rating'] as num?)?.toDouble(),
       overview: params['overview'] as String?,
       tags: (params['tags'] as List?)?.cast<String>(),
-      finishedAt: DateTime.tryParse(params['finishedAt'] as String? ?? ''),
+      finishedAt: tryParseIsoDateTime(params['finishedAt'] as String? ?? ''),
     );
     await MediaLogPlugin.instance.saveItem(updated);
     return jsonEncode(updated.toJson());
@@ -118,7 +118,7 @@ Future<String> _jsAddMediaReview(Map<String, dynamic> params) async {
       id: MediaLogPlugin.newId(),
       text: text.trim(),
       timestamp:
-          DateTime.tryParse(params['timestamp'] as String? ?? '') ??
+          tryParseIsoDateTime(params['timestamp'] as String? ?? '') ??
           DateTime.now(),
       rating: (params['rating'] as num?)?.toDouble(),
       author: params['author'] as String?,

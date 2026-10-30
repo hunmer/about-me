@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import './database_field.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 数据库模型
 @immutable
 class DatabaseModel {
@@ -32,8 +33,8 @@ class DatabaseModel {
       fields: (map['fields'] as List)
           .map((e) => DatabaseField.fromMap(e))
           .toList(),
-      createdAt: DateTime.parse(map['createdAt']),
-      updatedAt: DateTime.parse(map['updatedAt']),
+      createdAt: parseIsoDateTime(map['createdAt']),
+      updatedAt: parseIsoDateTime(map['updatedAt']),
     );
   }
 

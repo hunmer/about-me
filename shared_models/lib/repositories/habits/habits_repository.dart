@@ -4,6 +4,7 @@ library;
 import 'package:shared_models/utils/result.dart';
 import 'package:shared_models/utils/pagination.dart';
 
+import 'package:shared_models/shared_models.dart';
 // ============ DTOs ============
 
 /// 习惯 DTO
@@ -197,7 +198,7 @@ class CompletionRecordDto {
     return CompletionRecordDto(
       id: json['id'] as String,
       parentId: json['parentId'] as String,
-      date: DateTime.parse(json['date'] as String),
+      date: parseIsoDateTime(json['date'] as String),
       durationSeconds: json['durationSeconds'] as int,
       notes: json['notes'] as String? ?? '',
     );

@@ -34,6 +34,7 @@ import 'package:shared_models/usecases/calendar/calendar_usecase.dart';
 import './repositories/client_calendar_repository.dart';
 import 'services/calendar_api_params.dart';
 
+import 'package:shared_models/shared_models.dart';
 // 代码分离：JS API 和数据选择器
 part 'calendar_js_api.dart';
 part 'calendar_data_selectors.dart';
@@ -334,8 +335,8 @@ class CalendarPlugin extends BasePlugin with JSBridgePlugin {
       // 按开始时间排序每日事件
       for (var day in dayEventsMap.keys) {
         dayEventsMap[day]!.sort((a, b) {
-          final aTime = DateTime.parse(a['startTime'] as String);
-          final bTime = DateTime.parse(b['startTime'] as String);
+          final aTime = parseIsoDateTime(a['startTime'] as String);
+          final bTime = parseIsoDateTime(b['startTime'] as String);
           return aTime.compareTo(bTime);
         });
       }

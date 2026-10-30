@@ -18,6 +18,7 @@ import 'screens/media_detail_screen.dart';
 import 'screens/media_list_screen.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
+import 'package:shared_models/shared_models.dart';
 part 'media_log_js_api.dart';
 part 'media_log_data_selectors.dart';
 

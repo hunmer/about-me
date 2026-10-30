@@ -7,6 +7,7 @@ import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/plugins/bill/bill_plugin.dart';
 import 'utils.dart' show getCategoryColor;
 
+import 'package:shared_models/shared_models.dart';
 /// 账单统计类型
 enum BillStatsType { income, expense, balance }
 
@@ -36,7 +37,7 @@ Future<Map<String, Map<String, dynamic>>> provideBillStatsWidgets(
 
   if (startDateStr != null) {
     try {
-      startDate = DateTime.parse(startDateStr);
+      startDate = parseIsoDateTime(startDateStr);
     } catch (e) {
       debugPrint('[BillStatsWidgets] 解析 startDate 失败: $e');
     }
@@ -44,7 +45,7 @@ Future<Map<String, Map<String, dynamic>>> provideBillStatsWidgets(
 
   if (endDateStr != null) {
     try {
-      endDate = DateTime.parse(endDateStr);
+      endDate = parseIsoDateTime(endDateStr);
     } catch (e) {
       debugPrint('[BillStatsWidgets] 解析 endDate 失败: $e');
     }
@@ -217,7 +218,7 @@ Future<Map<String, Map<String, dynamic>>> provideMonthlyBillWidgets(
   DateTime? month;
   if (monthStr != null) {
     try {
-      month = DateTime.parse('$monthStr-01');
+      month = parseIsoDateTime('$monthStr-01');
     } catch (e) {
       debugPrint('[MonthlyBillWidgets] 解析 month 失败: $e');
     }

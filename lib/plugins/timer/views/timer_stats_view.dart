@@ -10,6 +10,7 @@ import 'package:aboutme/plugins/timer/models/timer_task.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/wave_fill.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 计时器统计页（专注统计）
 ///
 /// 视觉风格参考 Warm Minimalist Habit Companion：
@@ -65,7 +66,7 @@ class _TimerStatsViewState extends State<TimerStatsView> {
   /// 某天的记录列表
   List<Map<String, dynamic>> _recordsOf(DateTime day) {
     return _history.where((r) {
-      final ts = DateTime.tryParse(r['timestamp'] as String? ?? '');
+      final ts = tryParseIsoDateTime(r['timestamp'] as String? ?? '');
       return ts != null && _dayOf(ts) == day;
     }).toList();
   }
@@ -370,7 +371,7 @@ class _TimerStatsViewState extends State<TimerStatsView> {
     // 每 2 小时聚合一档专注分钟数（0–22 点共 12 档）
     final buckets = List.filled(12, 0.0);
     for (final r in today) {
-      final ts = DateTime.tryParse(r['timestamp'] as String? ?? '');
+      final ts = tryParseIsoDateTime(r['timestamp'] as String? ?? '');
       if (ts == null) continue;
       buckets[ts.hour ~/ 2] += (r['duration'] as int? ?? 0) / 60000.0;
     }
@@ -709,7 +710,7 @@ class _TimerStatsViewState extends State<TimerStatsView> {
   ) {
     final color = _typeColor(record);
     final duration = Duration(milliseconds: record['duration'] as int? ?? 0);
-    final start = DateTime.tryParse(record['timestamp'] as String? ?? '');
+    final start = tryParseIsoDateTime(record['timestamp'] as String? ?? '');
     final type = _typeOf(record['timerId'] as String? ?? '');
 
     // 记录时间戳为结束时刻，回推得到开始时刻

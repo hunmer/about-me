@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:shared_models/shared_models.dart';
 class Goal {
   final int? sdkVersion;
   final Map<String,dynamic>? originalJson;
@@ -52,7 +53,7 @@ class Goal {
       dateSettings: DateSettings.fromJson(json['dateSettings']),
       reminderTime: json['reminderTime'],
       isLoopReset: json['isLoopReset'],
-      createdAt: DateTime.parse(json['createdAt']),
+      createdAt: parseIsoDateTime(json['createdAt']),
       group: json['group'] ?? '默认',
       imagePath: json['imagePath'],
       progressColor: json['progressColor'],
@@ -134,9 +135,9 @@ class DateSettings {
     return DateSettings(
       type: json['type'],
       startDate: json['startDate'] != null
-          ? DateTime.parse(json['startDate'])
+          ? parseIsoDateTime(json['startDate'])
           : null,
-      endDate: json['endDate'] != null ? DateTime.parse(json['endDate']) : null,
+      endDate: json['endDate'] != null ? parseIsoDateTime(json['endDate']) : null,
       selectedDays: json['selectedDays'] != null
           ? List<String>.from(json['selectedDays'])
           : null,

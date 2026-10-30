@@ -7,6 +7,7 @@ import 'package:shared_models/utils/result.dart';
 import 'package:shared_models/utils/pagination.dart';
 import 'package:shared_models/utils/validation.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// Calendar Album 插件 UseCase - 封装所有业务逻辑
 class CalendarAlbumUseCase {
   final ICalendarAlbumRepository repository;
@@ -68,7 +69,7 @@ class CalendarAlbumUseCase {
     }
 
     try {
-      final date = DateTime.parse(dateStr);
+      final date = parseIsoDateTime(dateStr);
       final pagination = _extractPagination(params);
       final result = await repository.getEntriesByDate(
         date,
@@ -160,7 +161,7 @@ class CalendarAlbumUseCase {
     try {
       final query = CalendarAlbumEntryQuery(
         date: params['date'] != null
-            ? DateTime.parse(params['date'] as String)
+            ? parseIsoDateTime(params['date'] as String)
             : null,
         tags: params['tags'] is List<dynamic>
             ? (params['tags'] as List<dynamic>).map((e) => e as String).toList()
@@ -229,7 +230,7 @@ class CalendarAlbumUseCase {
     try {
       final createdAt = createdAtStr == null || createdAtStr.isEmpty
           ? DateTime.now()
-          : DateTime.parse(createdAtStr);
+          : parseIsoDateTime(createdAtStr);
       final now = DateTime.now();
 
       final entry = CalendarAlbumEntryDto(

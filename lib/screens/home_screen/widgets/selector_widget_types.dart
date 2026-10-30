@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:aboutme/core/services/plugin_data_selector/models/selector_result.dart';
 import 'package:aboutme/core/services/plugin_data_selector/models/selectable_item.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 数据渲染器：将选择器结果渲染为Widget
 ///
 /// 参数：
@@ -72,7 +73,7 @@ class SelectorWidgetConfig {
     return SelectorWidgetConfig(
       selectedData: json['selectedData'] as Map<String, dynamic>?,
       lastUpdated: json['lastUpdated'] != null
-        ? DateTime.parse(json['lastUpdated'] as String)
+        ? parseIsoDateTime(json['lastUpdated'] as String)
         : null,
       commonWidgetId: json['commonWidgetId'] as String?,
       commonWidgetProps: json['commonWidgetProps'] as Map<String, dynamic>?,

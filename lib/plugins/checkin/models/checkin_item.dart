@@ -309,7 +309,7 @@ class ReminderSettings {
       weekdays: (json['weekdays'] as List<dynamic>).cast<int>(),
       dayOfMonth: json['dayOfMonth'] as int?,
       specificDate: json['specificDate'] != null
-          ? DateTime.parse(json['specificDate'] as String)
+          ? parseIsoDateTime(json['specificDate'] as String)
           : null,
       timeOfDay: TimeOfDay(
         hour: (json['timeOfDay'] as Map<String, dynamic>)['hour'] as int,

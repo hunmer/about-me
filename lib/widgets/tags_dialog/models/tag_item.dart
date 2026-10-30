@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 标签数据模型
 class TagItem {
   /// 标签名称
@@ -42,9 +43,9 @@ class TagItem {
       color: _getColorFromValue(map['color'] as int?),
       group: map['group'] as String? ?? 'default',
       comment: map['comment'] as String?,
-      createdAt: DateTime.parse(map['createdAt'] as String),
+      createdAt: parseIsoDateTime(map['createdAt'] as String),
       lastUsedAt: map['lastUsedAt'] != null
-          ? DateTime.parse(map['lastUsedAt'] as String)
+          ? parseIsoDateTime(map['lastUsedAt'] as String)
           : null,
     );
   }

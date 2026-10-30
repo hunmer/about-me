@@ -6,6 +6,7 @@ import 'package:aboutme/plugins/chat/services/file_service.dart';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:aboutme_data_sdk/aboutme_data_sdk.dart' show AssetDto;
 
+import 'package:shared_models/shared_models.dart';
 enum FileMessageType { document, image, video, audio, other }
 
 class FileMessage {
@@ -34,7 +35,7 @@ class FileMessage {
   factory FileMessage.fromAsset(AssetDto asset, {String? originalFileName, String? thumbPath}) => FileMessage(
     id: const Uuid().v4(), fileName: asset.fileName,
     originalFileName: originalFileName ?? asset.fileName, filePath: asset.reference, thumbPath: thumbPath,
-    fileSize: asset.size, timestamp: DateTime.parse(asset.createdAt), mimeType: asset.mediaType,
+    fileSize: asset.size, timestamp: parseIsoDateTime(asset.createdAt), mimeType: asset.mediaType,
     type: asset.mediaType.startsWith('image/') ? FileMessageType.image
       : asset.mediaType.startsWith('video/') ? FileMessageType.video
       : asset.mediaType.startsWith('audio/') ? FileMessageType.audio : _determineFileType(asset.fileName),
@@ -211,7 +212,7 @@ class FileMessage {
       fileSize: fileSize,
       timestamp:
           json.containsKey('timestamp') && json['timestamp'] != null
-              ? DateTime.parse(json['timestamp'])
+              ? parseIsoDateTime(json['timestamp'])
               : DateTime.now(),
       mimeType: json['mimeType'],
       type: fileType,

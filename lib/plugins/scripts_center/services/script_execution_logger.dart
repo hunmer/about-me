@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 单条脚本执行记录
 class ScriptExecutionLogEntry {
   final String scriptId;
@@ -41,7 +42,7 @@ class ScriptExecutionLogEntry {
       scriptName: json['scriptName'] as String? ?? '',
       success: json['success'] as bool? ?? false,
       trigger: json['trigger'] as String? ?? '手动',
-      time: DateTime.tryParse(json['time'] as String? ?? '') ?? DateTime.now(),
+      time: tryParseIsoDateTime(json['time'] as String? ?? '') ?? DateTime.now(),
       durationMs: json['durationMs'] as int? ?? 0,
       error: json['error'] as String?,
       resultSummary: json['resultSummary'] as String?,

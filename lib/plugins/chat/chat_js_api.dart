@@ -182,8 +182,8 @@ Future<String> _jsGetMessagesByDate(Map<String, dynamic> params) async {
     final endDateStr = params['endDate'] as String;
 
     // 解析日期
-    final startDate = DateTime.parse(startDateStr);
-    final endDate = DateTime.parse(
+    final startDate = parseIsoDateTime(startDateStr);
+    final endDate = parseIsoDateTime(
       endDateStr,
     ).add(const Duration(days: 1)); // 包含结束日期当天的消息
 
@@ -231,7 +231,7 @@ Future<String> _jsGetMessagesByDate(Map<String, dynamic> params) async {
 
               if (timestampStr != null) {
                 try {
-                  final timestamp = DateTime.parse(timestampStr);
+                  final timestamp = parseIsoDateTime(timestampStr);
 
                   // 检查是否在日期范围内
                   if (timestamp.isAfter(startDate) &&
@@ -253,8 +253,8 @@ Future<String> _jsGetMessagesByDate(Map<String, dynamic> params) async {
 
     // 按时间排序（最新的在前）
     allMessages.sort((a, b) {
-      final aTime = DateTime.parse(a['date'] as String);
-      final bTime = DateTime.parse(b['date'] as String);
+      final aTime = parseIsoDateTime(a['date'] as String);
+      final bTime = parseIsoDateTime(b['date'] as String);
       return bTime.compareTo(aTime);
     });
 

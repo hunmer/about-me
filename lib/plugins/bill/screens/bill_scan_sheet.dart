@@ -15,6 +15,7 @@ import 'package:aboutme/plugins/openai/services/request_service.dart';
 import '../bill_plugin.dart';
 import '../models/bill.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 拍照记账识别弹层内容（配合 [SmoothBottomSheet] 使用）：
 /// 打开即用默认识图能力分析 [imageFile]，展示识别出的账单
 /// 多选列表（默认全选），确认后批量保存为账单
@@ -132,7 +133,7 @@ class _BillScanSheetState extends State<BillScanSheet> {
   DateTime _parseDate(String? raw) {
     final s = raw?.trim();
     if (s == null || s.isEmpty) return DateTime.now();
-    return DateTime.tryParse(s.replaceAll('/', '-')) ?? DateTime.now();
+    return tryParseIsoDateTime(s.replaceAll('/', '-')) ?? DateTime.now();
   }
 
   Future<void> _confirm() async {

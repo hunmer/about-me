@@ -7,6 +7,7 @@ import 'package:shared_models/utils/result.dart';
 import 'package:shared_models/utils/pagination.dart';
 import 'package:shared_models/utils/validation.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// Agent Chat 插件 UseCase - 封装所有业务逻辑
 class AgentChatUseCase {
   final IAgentChatRepository repository;
@@ -132,7 +133,7 @@ class AgentChatUseCase {
             ? params['contextMessageCount'] as int?
             : existing.contextMessageCount,
         lastMessageAt: params.containsKey('lastMessageAt')
-            ? DateTime.parse(params['lastMessageAt'] as String)
+            ? parseIsoDateTime(params['lastMessageAt'] as String)
             : existing.lastMessageAt,
         isPinned: params['isPinned'] as bool? ?? existing.isPinned,
         lastMessagePreview: params.containsKey('lastMessagePreview')
@@ -510,10 +511,10 @@ class AgentChatUseCase {
       final query = AgentChatMessageQuery(
         conversationId: conversationId,
         startTime: params['startTime'] != null
-            ? DateTime.parse(params['startTime'] as String)
+            ? parseIsoDateTime(params['startTime'] as String)
             : null,
         endTime: params['endTime'] != null
-            ? DateTime.parse(params['endTime'] as String)
+            ? parseIsoDateTime(params['endTime'] as String)
             : null,
         isUser: params['isUser'] as bool?,
         keyword: params['keyword'] as String?,
@@ -659,7 +660,7 @@ class AgentChatUseCase {
                 existing.steps
             : existing.steps,
         lastUsedAt: params.containsKey('lastUsedAt')
-            ? DateTime.parse(params['lastUsedAt'] as String)
+            ? parseIsoDateTime(params['lastUsedAt'] as String)
             : existing.lastUsedAt,
         usageCount: params['usageCount'] as int? ?? existing.usageCount,
         declaredTools: params.containsKey('declaredTools')

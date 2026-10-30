@@ -217,7 +217,6 @@ extension _JellyLive2DLoader on _JellyLive2DState {
   }
 
   Future<void> _applyJevReply(String reply) async {
-    if (_isVideo) return;
     final archive = Live2DPlugin.instance.selected;
     if (archive?.jevEnabled != true) {
       debugPrint('[Live2D][Jev] 当前档案未开启 JEV，跳过自动表情动作');
@@ -225,6 +224,37 @@ extension _JellyLive2DLoader on _JellyLive2DState {
     }
     if (reply.trim().isEmpty) {
       debugPrint('[Live2D][Jev] 回复为空，跳过自动表情动作');
+      return;
+    }
+    if (_isVideo) {
+      // 视频桌宠：候选 = 编辑器中启用的动画，命中后一次性播放。
+      final candidates =
+          _selectedModel.videoManifest?.animations
+              .where((item) => item.enabled)
+              .toList() ??
+          const [];
+      if (candidates.isEmpty) {
+        debugPrint('[Live2D][Jev] 视频档案没有启用中的动作，跳过决策');
+        return;
+      }
+      final result = await Live2DPlugin.instance.decideAppearance(
+        reply,
+        model: _selectedModel,
+        videoAnimations: candidates
+            .map((item) => item.name.isEmpty ? item.id : item.name)
+            .toList(),
+      );
+      final choice = result['motion'];
+      if (choice == null) return;
+      final match = candidates
+          .where((item) => item.name == choice || item.id == choice)
+          .firstOrNull;
+      if (match == null) {
+        debugPrint('[Live2D][Jev] 决策结果 $choice 不在候选动画中，忽略');
+        return;
+      }
+      debugPrint('[Live2D][Jev] 播放视频动画: ${match.id}');
+      _requestVideoAnimation(match.id);
       return;
     }
     _jevMotionActive = false;

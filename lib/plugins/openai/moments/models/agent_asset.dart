@@ -1,3 +1,4 @@
+import 'package:shared_models/shared_models.dart';
 /// Agent 资产图（角色设定/场景参考图，供生图保持形象一致）
 class AgentAsset {
   final String id;
@@ -34,7 +35,7 @@ class AgentAsset {
     prompt: (json['prompt'] as String?) ?? '',
     path: json['path'] as String?,
     createdAt:
-        DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+        tryParseIsoDateTime(json['createdAt'] as String? ?? '') ??
         DateTime.now(),
   );
 

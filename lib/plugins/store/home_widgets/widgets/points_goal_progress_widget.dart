@@ -10,6 +10,7 @@ import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/widgets/event_listener_container.dart';
 import '../events/store_cache_updated_event_args.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 积分目标进度小组件
 class PointsGoalProgressWidget extends StatefulWidget {
   final Map<String, dynamic> config;
@@ -55,8 +56,8 @@ class _PointsGoalProgressWidgetState extends State<PointsGoalProgressWidget> {
     final todayPoints = _pointsLogs
         .where(
           (log) =>
-              DateTime.parse(log['timestamp']).isAfter(startOfDay) &&
-              DateTime.parse(log['timestamp']).isBefore(endOfDay) &&
+              parseIsoDateTime(log['timestamp']).isAfter(startOfDay) &&
+              parseIsoDateTime(log['timestamp']).isBefore(endOfDay) &&
               log['type'] == '获得',
         )
         .fold(0, (sum, log) => sum + (log['value'] as int));

@@ -1,3 +1,4 @@
+import 'package:shared_models/shared_models.dart';
 class Record {
   final String id;
   final String tableId;
@@ -18,8 +19,8 @@ class Record {
       id: map['id'],
       tableId: map['tableId'],
       fields: Map<String, dynamic>.from(map['fields']),
-      createdAt: DateTime.parse(map['createdAt']),
-      updatedAt: DateTime.parse(map['updatedAt']),
+      createdAt: parseIsoDateTime(map['createdAt']),
+      updatedAt: parseIsoDateTime(map['updatedAt']),
     );
   }
 

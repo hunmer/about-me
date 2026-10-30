@@ -13,6 +13,7 @@ import 'package:aboutme/plugins/goods/models/goods_item.dart';
 import 'package:aboutme/plugins/goods/models/warehouse.dart';
 import 'utils.dart' show goodsColor;
 
+import 'package:shared_models/shared_models.dart';
 const Color _goodsColor = Color.fromARGB(255, 207, 77, 116);
 
 /// 获取可用的统计项
@@ -106,14 +107,14 @@ Future<Map<String, Map<String, dynamic>>> provideGoodsListWidgets(
   DateTime? endDate;
   if (startDateStr != null) {
     try {
-      startDate = DateTime.parse(startDateStr);
+      startDate = parseIsoDateTime(startDateStr);
     } catch (e) {
       debugPrint('[GoodsListWidgets] 解析 startDate 失败: $e');
     }
   }
   if (endDateStr != null) {
     try {
-      endDate = DateTime.parse(endDateStr);
+      endDate = parseIsoDateTime(endDateStr);
     } catch (e) {
       debugPrint('[GoodsListWidgets] 解析 endDate 失败: $e');
     }

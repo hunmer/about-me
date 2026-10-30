@@ -1,5 +1,6 @@
 import 'package:aboutme/plugins/store/models/product.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 个人物品：只维护自己的数值数据（剩余次数/到期/购买信息），
 /// 商品基础数据（名称/图片/分类/描述）与商店共用一份商品列表，
 /// 经 [base] 运行时引用解析，不再整份快照复制。
@@ -35,8 +36,8 @@ class UserItem {
       id: json['id'],
       productId: json['product_id'],
       remaining: json['remaining'],
-      expireDate: DateTime.parse(json['expire_date']),
-      purchaseDate: DateTime.parse(json['purchase_date']),
+      expireDate: parseIsoDateTime(json['expire_date']),
+      purchaseDate: parseIsoDateTime(json['purchase_date']),
       purchasePrice: json['purchase_price'],
       legacySnapshot:
           json['product_snapshot'] is Map

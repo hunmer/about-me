@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'models/action_instance.dart';
 import 'models/action_group.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 动作主配置键（system 域 config 命令统一通道，configs/ 前缀；
 /// 顶层旧文件首次访问时自动迁入）。
 const String CONFIG_FILE_NAME = 'action_config.json';
@@ -79,7 +80,7 @@ class ActionStorage {
 
       return ActionStorageData(
         lastModified:
-            DateTime.tryParse(json['lastModified'] as String? ?? '') ??
+            tryParseIsoDateTime(json['lastModified'] as String? ?? '') ??
             DateTime.now(),
         gestureActions: gestureActions,
         customActions: customActions,

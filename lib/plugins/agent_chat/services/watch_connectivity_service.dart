@@ -29,6 +29,7 @@ import 'package:aboutme/plugins/calendar/calendar_plugin.dart';
 import 'package:aboutme/plugins/calendar_album/calendar_album_plugin.dart';
 import 'package:intl/intl.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// WatchConnectivity 服务
 ///
 /// 处理来自 iOS Watch 应用的数据请求
@@ -253,7 +254,7 @@ class WatchConnectivityService {
     if (dateStr == null) {
       throw ArgumentError('缺少 date 参数');
     }
-    final date = DateTime.parse(dateStr);
+    final date = parseIsoDateTime(dateStr);
     final entry = await DiaryUtils.loadDiaryEntry(date);
 
     if (entry == null) {
@@ -350,7 +351,7 @@ class WatchConnectivityService {
       if (arguments is Map && arguments['date'] != null) {
         // 获取指定日期的活动
         final dateStr = arguments['date'] as String;
-        final date = DateTime.parse(dateStr);
+        final date = parseIsoDateTime(dateStr);
         activities = activityPlugin.getActivitiesForDateSync(date);
       } else {
         // 默认获取今天的活动

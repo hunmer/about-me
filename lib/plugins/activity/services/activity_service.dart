@@ -102,6 +102,8 @@ class ActivityService {
 
       return jsonList.map((json) {
         final activity = ActivityRecord.fromJson(json);
+        // 诊断用：观察原始存储的时区标记，必须用 DateTime.parse
+        // （统一入口解析后恒为本地时间，isUtc 恒 false）
         if (DateTime.parse(json['startTime']).isUtc ||
             DateTime.parse(json['endTime']).isUtc) {
           debugPrint('[ActivityTime] read id=${activity.id} date=${_dateKey(date)} '

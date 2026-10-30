@@ -6,6 +6,7 @@ library;
 import 'package:shared_models/utils/result.dart';
 import 'package:shared_models/utils/pagination.dart';
 
+import 'package:shared_models/shared_models.dart';
 // ============ DTOs ============
 
 /// 打卡记录 DTO
@@ -23,13 +24,13 @@ class CheckinRecordDto {
   });
 
   factory CheckinRecordDto.fromJson(Map<String, dynamic> json) {
-    final checkinTime = DateTime.parse(json['checkinTime'] as String);
+    final checkinTime = parseIsoDateTime(json['checkinTime'] as String);
     return CheckinRecordDto(
       startTime: json['startTime'] != null
-          ? DateTime.parse(json['startTime'] as String)
+          ? parseIsoDateTime(json['startTime'] as String)
           : checkinTime,
       endTime: json['endTime'] != null
-          ? DateTime.parse(json['endTime'] as String)
+          ? parseIsoDateTime(json['endTime'] as String)
           : checkinTime,
       checkinTime: checkinTime,
       note: json['note'] as String?,
@@ -84,7 +85,7 @@ class ReminderSettingsDto {
       weekdays: (json['weekdays'] as List<dynamic>?)?.cast<int>() ?? [],
       dayOfMonth: json['dayOfMonth'] as int?,
       specificDate: json['specificDate'] != null
-          ? DateTime.parse(json['specificDate'] as String)
+          ? parseIsoDateTime(json['specificDate'] as String)
           : null,
       hour: (json['timeOfDay'] as Map<String, dynamic>)['hour'] as int,
       minute: (json['timeOfDay'] as Map<String, dynamic>)['minute'] as int,

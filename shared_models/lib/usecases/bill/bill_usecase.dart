@@ -10,6 +10,7 @@ import 'package:shared_models/utils/result.dart';
 import 'package:shared_models/utils/pagination.dart';
 import 'package:shared_models/utils/validation.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// Bill UseCase - 封装所有业务逻辑
 class BillUseCase {
   final IBillRepository repository;
@@ -248,7 +249,7 @@ class BillUseCase {
 
       final now = DateTime.now();
       final dateStr = params['date'] as String?;
-      final date = dateStr != null ? DateTime.parse(dateStr) : now;
+      final date = dateStr != null ? parseIsoDateTime(dateStr) : now;
 
       final bill = BillDto(
         id: params['id'] as String? ?? _uuid.v4(),
@@ -303,7 +304,7 @@ class BillUseCase {
         description: params.containsKey('description')
             ? params['description'] as String?
             : existing.description,
-        date: dateStr != null ? DateTime.parse(dateStr) : existing.date,
+        date: dateStr != null ? parseIsoDateTime(dateStr) : existing.date,
         tags: params['tags'] != null
             ? (params['tags'] as List<dynamic>).cast<String>()
             : existing.tags,
@@ -354,8 +355,8 @@ class BillUseCase {
         accountId: params['accountId'] as String?,
         type: params['type'] as String?,
         category: params['category'] as String?,
-        startDate: startDateStr != null ? DateTime.parse(startDateStr) : null,
-        endDate: endDateStr != null ? DateTime.parse(endDateStr) : null,
+        startDate: startDateStr != null ? parseIsoDateTime(startDateStr) : null,
+        endDate: endDateStr != null ? parseIsoDateTime(endDateStr) : null,
         keyword: params['keyword'] as String?,
         pagination: pagination,
       );
@@ -390,8 +391,8 @@ class BillUseCase {
       final endDateStr = params['endDate'] as String?;
 
       final result = await repository.getStats(
-        startDate: startDateStr != null ? DateTime.parse(startDateStr) : null,
-        endDate: endDateStr != null ? DateTime.parse(endDateStr) : null,
+        startDate: startDateStr != null ? parseIsoDateTime(startDateStr) : null,
+        endDate: endDateStr != null ? parseIsoDateTime(endDateStr) : null,
       );
 
       return result.map((stats) => stats.toJson());
@@ -414,8 +415,8 @@ class BillUseCase {
 
       final result = await repository.getCategoryStats(
         type: params['type'] as String?,
-        startDate: startDateStr != null ? DateTime.parse(startDateStr) : null,
-        endDate: endDateStr != null ? DateTime.parse(endDateStr) : null,
+        startDate: startDateStr != null ? parseIsoDateTime(startDateStr) : null,
+        endDate: endDateStr != null ? parseIsoDateTime(endDateStr) : null,
       );
 
       return result

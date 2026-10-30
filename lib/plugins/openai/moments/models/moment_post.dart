@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:shared_models/shared_models.dart';
 /// 朋友圈标签分类（UI 筛选 / 用户投稿 / AI 发帖共用一套）
 enum MomentPillStyle { purple, orange, blue, pink }
 
@@ -78,7 +79,7 @@ class MomentComment {
     text: (json['text'] as String?) ?? '',
     isAgent: json['isAgent'] == true,
     createdAt:
-        DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+        tryParseIsoDateTime(json['createdAt'] as String? ?? '') ??
         DateTime.now(),
   );
 }
@@ -140,7 +141,7 @@ class MomentPost {
             .map((e) => e as String)
             .toList(),
     createdAt:
-        DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+        tryParseIsoDateTime(json['createdAt'] as String? ?? '') ??
         DateTime.now(),
     source: (json['source'] as String?) ?? 'agent',
     tag:

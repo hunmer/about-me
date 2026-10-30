@@ -15,7 +15,7 @@ class StartupGate extends StatefulWidget {
   State<StartupGate> createState() => _StartupGateState();
 }
 
-class _StartupGateState extends State<StartupGate> {
+class _StartupGateState extends State<StartupGate> with RouteAware {
   bool _navigated = false;
 
   @override
@@ -23,6 +23,26 @@ class _StartupGateState extends State<StartupGate> {
     super.initState();
     AppStartupState.instance.addListener(_onStartupChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) => _routeWhenReady());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is PageRoute<dynamic>) {
+      RouteHistoryManager.instance.subscribe(this, route);
+    }
+  }
+
+  @override
+  void didPopNext() {
+    // 插件切换会移除最初恢复的插件页，返回兜底必须由栈底启动页负责。
+    // 延迟一帧，让 smartBack 等返回逻辑先完成，避免重复创建首页。
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || ModalRoute.of(context)?.isCurrent != true) return;
+      _navigated = true;
+      Navigator.of(context).pushReplacementNamed(AppRoutes.jellyHome);
+    });
   }
 
   void _onStartupChanged() => _routeWhenReady();
@@ -44,24 +64,11 @@ class _StartupGateState extends State<StartupGate> {
     if (manager.autoOpenLastPlugin && lastPlugin != null) {
       debugPrint('[StartupGate] 直接恢复插件 ${lastPlugin.id}，跳过主页构建');
       // 保留 StartupGate 作为底层路由，让插件页具备系统左滑返回的栈条件。
-      // 返回完成后再把启动闸门替换为主页，避免重新触发插件恢复。
+      // 返回完成后由 didPopNext 把启动闸门替换为主页。
       manager.recordPluginOpen(lastPlugin);
-      final navigator = Navigator.of(context);
       NavigationHelper.push(
         context,
-        _RestoredPluginPage(
-          page: lastPlugin.buildMainView(context),
-          onPopped: () {
-            // smartBack() 也可能在 pop 后负责切换主页；延迟一帧并检查
-            // 当前路由，避免两条返回路径重复推入主页。
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (RouteHistoryManager.getCurrentContext()?.pageId ==
-                  '/startup') {
-                navigator.pushReplacementNamed(AppRoutes.jellyHome);
-              }
-            });
-          },
-        ),
+        lastPlugin.buildMainView(context),
         routeName: '/plugin/${lastPlugin.id}',
       );
     } else {
@@ -74,28 +81,11 @@ class _StartupGateState extends State<StartupGate> {
 
   @override
   void dispose() {
+    RouteHistoryManager.instance.unsubscribe(this);
     AppStartupState.instance.removeListener(_onStartupChanged);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) => const AppSplash();
-}
-
-/// 启动时恢复的插件页：系统左滑完成 pop 后，将底层启动闸门切换为主页。
-class _RestoredPluginPage extends StatelessWidget {
-  const _RestoredPluginPage({required this.page, required this.onPopped});
-
-  final Widget page;
-  final VoidCallback onPopped;
-
-  @override
-  Widget build(BuildContext context) {
-    return PopScope(
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) onPopped();
-      },
-      child: page,
-    );
-  }
 }

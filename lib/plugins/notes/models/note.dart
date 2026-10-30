@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/design_system/design_system.dart';
 
+import 'package:shared_models/shared_models.dart';
 class Note {
   int? sdkVersion;
   static const String typeText = 'text';
@@ -86,8 +87,8 @@ class Note {
       title: json['title'] as String,
       content: json['content'] as String,
       folderId: json['folderId'] as String?,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      createdAt: parseIsoDateTime(json['createdAt'] as String),
+      updatedAt: parseIsoDateTime(json['updatedAt'] as String),
       tags: (json['tags'] as List<dynamic>?)?.cast<String>() ?? [],
       type: (json['type'] as String?) ?? typeText,
       meta: json['meta'] as String?,

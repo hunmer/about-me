@@ -11,6 +11,7 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 文件夹笔记卡片数据模型
 class FolderNotesCardData {
   final String folderName;
@@ -279,7 +280,7 @@ class _FolderNotesCardWidgetState extends State<FolderNotesCardWidget> {
   /// 格式化笔记时间为相对时间显示
   String _formatNoteTime(String isoTime) {
     try {
-      final date = DateTime.parse(isoTime);
+      final date = parseIsoDateTime(isoTime);
       final now = DateTime.now();
       final diff = now.difference(date);
 

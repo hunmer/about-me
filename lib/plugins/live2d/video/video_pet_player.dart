@@ -283,6 +283,24 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
     unawaited(_present(_playback.playManual(widget.animationRequest?.value)));
   }
 
+  /// 撞墙等一次性点播：nonce 去重，同一 nonce 只播一次。
+  void _frameAnimation() {
+    if (_package == null) return;
+    final request = widget.frameAnimationRequest?.value;
+    if (request == null) return;
+    if (request.nonce != 0 && request.nonce == _lastFrameNonce) return;
+    _lastFrameNonce = request.nonce;
+    unawaited(
+      _present(
+        _playback.playManual(
+          request.animationId,
+          startFrame: request.startFrame,
+          endFrame: request.endFrame,
+        ),
+      ),
+    );
+  }
+
   void _release() {
     _epoch++;
     final image = _image;
@@ -430,29 +448,47 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
                       _image != null &&
                       request != null &&
                       sheet != null)
-                    _SpriteSurface(
-                      key: ValueKey((_image, request.generation)),
-                      image: _image!,
-                      sheet: sheet,
-                      playing: _playing,
-                      loop: request.loop,
-                      onComplete: () => _complete(request),
-                      onFrame: (frame) {
-                        if (!mounted ||
-                            !_playing ||
-                            _error != null ||
-                            !identical(_request, request) ||
-                            request.generation != _playback.generation) {
-                          return;
-                        }
-                        widget.onAnimationFrame?.call(
-                          VideoPetAnimationFrame(
-                            animationId: request.animationId,
-                            currentFrame: frame,
-                            generation: request.generation,
+                    // 动画切换时渐隐渐显：key 含 generation，切换即 crossfade。
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 180),
+                      switchInCurve: Curves.easeOut,
+                      switchOutCurve: Curves.easeIn,
+                      transitionBuilder: (child, animation) =>
+                          FadeTransition(opacity: animation, child: child),
+                      layoutBuilder: (currentChild, previousChildren) =>
+                          Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              ...previousChildren,
+                              if (currentChild != null) currentChild,
+                            ],
                           ),
-                        );
-                      },
+                      child: _SpriteSurface(
+                        key: ValueKey((_image, request.generation)),
+                        image: _image!,
+                        sheet: sheet,
+                        playing: _playing,
+                        loop: request.loop,
+                        startFrame: request.startFrame,
+                        endFrame: request.endFrame,
+                        onComplete: () => _complete(request),
+                        onFrame: (frame) {
+                          if (!mounted ||
+                              !_playing ||
+                              _error != null ||
+                              !identical(_request, request) ||
+                              request.generation != _playback.generation) {
+                            return;
+                          }
+                          widget.onAnimationFrame?.call(
+                            VideoPetAnimationFrame(
+                              animationId: request.animationId,
+                              currentFrame: frame,
+                              generation: request.generation,
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   if (widget.showRegions)
                     IgnorePointer(
@@ -487,6 +523,7 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
     _packageEpoch++;
     WidgetsBinding.instance.removeObserver(this);
     widget.animationRequest?.removeListener(_manual);
+    widget.frameAnimationRequest?.removeListener(_frameAnimation);
     _release();
     super.dispose();
   }
@@ -501,11 +538,17 @@ class _SpriteSurface extends StatefulWidget {
     required this.loop,
     required this.onComplete,
     required this.onFrame,
+    this.startFrame,
+    this.endFrame,
   });
   final ImageProvider image;
   final VideoPetSpritesheet sheet;
   final bool playing;
   final bool loop;
+
+  /// 帧区间（闭区间）；null = 整段。endFrame 到达即视为播放完成。
+  final int? startFrame;
+  final int? endFrame;
   final VoidCallback onComplete;
   final ValueChanged<int> onFrame;
   @override
@@ -514,16 +557,26 @@ class _SpriteSurface extends StatefulWidget {
 
 class _SpriteSurfaceState extends State<_SpriteSurface> {
   int _frameEpoch = 0;
+  bool _rangeCompleted = false;
 
-  void _frameAdvanced(int _) {
+  void _frameAdvanced(int frame) {
     if (!widget.playing || !_controller.isPlaying) return;
+    // 帧区间播放：到达 endFrame 即提前完成（非区间播放 endFrame 为 null 不受影响）。
+    final end = widget.endFrame;
+    if (end != null && frame >= end) {
+      if (_rangeCompleted) return;
+      _rangeCompleted = true;
+      _controller.pause();
+      widget.onComplete();
+      return;
+    }
     // onFrame fires for every step, including skipped frames and each wrap.
     // Capture currentFrame now; reading it after paint would lose those steps.
-    final frame = _controller.currentFrame;
+    final captured = frame;
     final epoch = _frameEpoch;
     final deliver = widget.onFrame;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && widget.playing && epoch == _frameEpoch) deliver(frame);
+      if (mounted && widget.playing && epoch == _frameEpoch) deliver(captured);
     });
   }
 
@@ -536,7 +589,11 @@ class _SpriteSurfaceState extends State<_SpriteSurface> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && widget.playing) _controller.play();
+      if (!mounted) return;
+      // 帧区间播放：从 startFrame 起播（goToFrame 在 play 之前，静默生效）。
+      final start = widget.startFrame;
+      if (start != null && start > 0) _controller.goToFrame(start);
+      if (widget.playing) _controller.play();
     });
   }
 

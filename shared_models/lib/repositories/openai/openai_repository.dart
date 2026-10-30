@@ -4,6 +4,7 @@ library;
 import 'package:shared_models/utils/result.dart';
 import 'package:shared_models/utils/pagination.dart';
 
+import 'package:shared_models/shared_models.dart';
 // ============ DTOs ============
 
 /// AI 助手 DTO
@@ -67,8 +68,8 @@ class OpenAIAgentDto {
       serviceProviderId: json['serviceProviderId'] as String,
       baseUrl: json['baseUrl'] as String,
       headers: Map<String, String>.from(json['headers'] as Map),
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      createdAt: parseIsoDateTime(json['createdAt'] as String),
+      updatedAt: parseIsoDateTime(json['updatedAt'] as String),
       model: json['model'] as String? ?? 'gpt-3.5-turbo',
       temperature: (json['temperature'] as num?)?.toDouble() ?? 0.7,
       maxLength: json['maxLength'] as int? ?? 2000,

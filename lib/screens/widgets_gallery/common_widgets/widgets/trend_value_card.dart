@@ -12,6 +12,7 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:aboutme/screens/widgets_gallery/common_widgets/utils/striped_fill.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 趋势数据点
 class TrendDataPoint {
   final double value;
@@ -25,7 +26,7 @@ class TrendDataPoint {
       value: (json['value'] as num).toDouble(),
       timestamp:
           json['timestamp'] != null
-              ? DateTime.parse(json['timestamp'] as String)
+              ? parseIsoDateTime(json['timestamp'] as String)
               : null,
     );
   }

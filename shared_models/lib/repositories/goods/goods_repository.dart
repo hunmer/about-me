@@ -6,6 +6,7 @@ library;
 import 'package:shared_models/utils/result.dart';
 import 'package:shared_models/utils/pagination.dart';
 
+import 'package:shared_models/shared_models.dart';
 // ============ DTOs ============
 
 /// 仓库 DTO
@@ -39,10 +40,10 @@ class WarehouseDto {
       iconColor: (json['iconColor'] ?? json['color']) as int?,
       imageUrl: json['imageUrl'] as String?,
       createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'] as String)
+          ? parseIsoDateTime(json['createdAt'] as String)
           : null,
       updatedAt: json['updatedAt'] != null
-          ? DateTime.parse(json['updatedAt'] as String)
+          ? parseIsoDateTime(json['updatedAt'] as String)
           : null,
     );
   }
@@ -144,10 +145,10 @@ class GoodsItemDto {
       tags: (json['tags'] as List<dynamic>?)?.cast<String>() ?? [],
       customFields: _parseCustomFields(json['customFields']),
       purchaseDate: json['purchaseDate'] != null
-          ? DateTime.parse(json['purchaseDate'] as String)
+          ? parseIsoDateTime(json['purchaseDate'] as String)
           : null,
       expirationDate: json['expirationDate'] != null
-          ? DateTime.parse(json['expirationDate'] as String)
+          ? parseIsoDateTime(json['expirationDate'] as String)
           : null,
       purchasePrice: json['purchasePrice'] != null
           ? (json['purchasePrice'] as num).toDouble()
@@ -157,10 +158,10 @@ class GoodsItemDto {
       subItems: _parseSubItems(json['subItems']),
       usageRecords: _parseUsageRecords(json['usageRecords']),
       createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'] as String)
+          ? parseIsoDateTime(json['createdAt'] as String)
           : null,
       updatedAt: json['updatedAt'] != null
-          ? DateTime.parse(json['updatedAt'] as String)
+          ? parseIsoDateTime(json['updatedAt'] as String)
           : null,
     );
   }

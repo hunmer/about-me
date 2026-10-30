@@ -4,6 +4,7 @@ library;
 import 'package:shared_models/utils/result.dart';
 import 'package:shared_models/utils/pagination.dart';
 
+import 'package:shared_models/shared_models.dart';
 // ============ DTOs ============
 
 /// 日记条目 DTO
@@ -42,8 +43,8 @@ class CalendarAlbumEntryDto {
       id: json['id'] as String,
       title: json['title'] as String,
       content: json['content'] as String,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      createdAt: parseIsoDateTime(json['createdAt'] as String),
+      updatedAt: parseIsoDateTime(json['updatedAt'] as String),
       tags:
           (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList() ??
               const [],

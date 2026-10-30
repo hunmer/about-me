@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:shared_models/shared_models.dart';
 /// 角色内在状态（PRD 5.4.1 多维状态机），按 agentId 独立持久化。
 /// 数值域：energy/arousal/intimacy/trust ∈ [0,1]，mood ∈ [-1,1]。
 class AgentState {
@@ -90,11 +91,11 @@ class AgentState {
     currentActivity: json['currentActivity'] as String?,
     lastInteractionAt:
         json['lastInteractionAt'] != null
-            ? DateTime.parse(json['lastInteractionAt'] as String)
+            ? parseIsoDateTime(json['lastInteractionAt'] as String)
             : null,
     updatedAt:
         json['updatedAt'] != null
-            ? DateTime.parse(json['updatedAt'] as String)
+            ? parseIsoDateTime(json['updatedAt'] as String)
             : DateTime(2000),
   );
 

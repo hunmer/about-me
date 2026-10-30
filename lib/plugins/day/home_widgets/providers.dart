@@ -12,6 +12,7 @@ import '../day_plugin.dart';
 import '../models/memorial_day.dart';
 import 'utils.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 获取可用的统计项
 List<StatItemData> getAvailableStats(BuildContext context) {
   try {
@@ -127,7 +128,7 @@ Future<Map<String, Map<String, dynamic>>> provideMemorialDayCommonWidgets(
   final title = data['title'] as String? ?? '纪念日';
   final targetDateStr = data['targetDate'] as String?;
   final targetDate =
-      targetDateStr != null ? DateTime.tryParse(targetDateStr) : null;
+      targetDateStr != null ? tryParseIsoDateTime(targetDateStr) : null;
   final backgroundColor = data['backgroundColor'] as int?;
   final daysRemaining = data['daysRemaining'] as int? ?? 0;
   final daysPassed = data['daysPassed'] as int? ?? 0;

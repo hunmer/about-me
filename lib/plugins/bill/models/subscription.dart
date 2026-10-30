@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 
+import 'package:shared_models/shared_models.dart';
 class Subscription {
   final String id;
   final String name;
@@ -148,9 +149,9 @@ class Subscription {
       totalAmount: (json['totalAmount'] as num?)?.toDouble() ?? 0,
       days: (json['days'] as num?)?.toInt() ?? 0,
       category: json['category'] as String,
-      startDate: DateTime.parse(json['startDate'] as String),
+      startDate: parseIsoDateTime(json['startDate'] as String),
       endDate: json['endDate'] != null
-          ? DateTime.parse(json['endDate'] as String)
+          ? parseIsoDateTime(json['endDate'] as String)
           : null,
       isActive: json['isActive'] as bool,
       note: json['note'] as String?,
@@ -161,9 +162,9 @@ class Subscription {
       iconColor: Color(
         (json['iconColor'] as num?)?.toInt() ?? Colors.blue.value,
       ),
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: parseIsoDateTime(json['createdAt'] as String),
       terminatedAt: json['terminatedAt'] != null
-          ? DateTime.parse(json['terminatedAt'] as String)
+          ? parseIsoDateTime(json['terminatedAt'] as String)
           : null,
     );
   }

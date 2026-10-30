@@ -11,6 +11,7 @@ import 'package:aboutme/screens/widgets_gallery/common_widgets/common_widgets.da
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/plugins/store/store_plugin.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 积分目标进度小组件（基于 LiveSelectorWidget）
 ///
 /// 默认显示 segmentedProgressCard 公共小组件，支持实时更新
@@ -78,7 +79,7 @@ int _calculateTodayPoints(List<Map<String, dynamic>> pointsLogs) {
 
   return pointsLogs
       .where((log) {
-        final timestamp = DateTime.parse(log['timestamp'] as String);
+        final timestamp = parseIsoDateTime(log['timestamp'] as String);
         return timestamp.isAfter(startOfDay) &&
             timestamp.isBefore(endOfDay) &&
             log['type'] == '获得';

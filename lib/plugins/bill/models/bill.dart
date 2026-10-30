@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 
+import 'package:shared_models/shared_models.dart';
 class Bill {
   final String id;
   final String title;
@@ -138,7 +139,7 @@ class Bill {
       category: json['category'] as String? ?? '',
       date:
           json['date'] != null
-              ? DateTime.parse(json['date'] as String)
+              ? parseIsoDateTime(json['date'] as String)
               : DateTime.now(),
       note: json['note'] as String? ?? '',
       tag: json['tag'] as String?,
@@ -150,21 +151,21 @@ class Bill {
       iconColor: Color(json['iconColor'] as int? ?? Colors.blue.value),
       createdAt:
           json['createdAt'] != null
-              ? DateTime.parse(json['createdAt'] as String)
+              ? parseIsoDateTime(json['createdAt'] as String)
               : DateTime.now(),
       updatedAt:
           json['updatedAt'] != null
-              ? DateTime.parse(json['updatedAt'] as String)
+              ? parseIsoDateTime(json['updatedAt'] as String)
               : DateTime.now(),
       subscriptionId: json['subscriptionId'] as String?,
       isSubscription: json['isSubscription'] as bool? ?? false,
       subscriptionStartDate:
           json['subscriptionStartDate'] != null
-              ? DateTime.parse(json['subscriptionStartDate'] as String)
+              ? parseIsoDateTime(json['subscriptionStartDate'] as String)
               : null,
       subscriptionEndDate:
           json['subscriptionEndDate'] != null
-              ? DateTime.parse(json['subscriptionEndDate'] as String)
+              ? parseIsoDateTime(json['subscriptionEndDate'] as String)
               : null,
     );
   }

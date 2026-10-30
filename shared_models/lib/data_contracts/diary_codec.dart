@@ -1,15 +1,16 @@
 import 'dart:convert';
 
+import 'package:shared_models/shared_models.dart';
 /// 日历日期与富文本格式统一，兼容旧 ISO 日期并保留扩展字段。
 class DiaryCodec {
   static String date(String value) {
     final match = RegExp(r'^\d{4}-\d{2}-\d{2}(?:$|T)').firstMatch(value);
     if (match == null) throw const FormatException('日期必须为 YYYY-MM-DD');
     final day = value.substring(0, 10);
-    if (value.length > 10 && DateTime.tryParse(value) == null) {
+    if (value.length > 10 && tryParseIsoDateTime(value) == null) {
       throw const FormatException('无效 ISO 日期');
     }
-    final parsed = DateTime.tryParse(day);
+    final parsed = tryParseIsoDateTime(day);
     if (parsed == null || formatDate(parsed) != day) {
       throw const FormatException('无效日历日期');
     }
@@ -52,8 +53,8 @@ class DiaryCodec {
     final updated = json['updatedAt'] ?? created;
     if (created is! String ||
         updated is! String ||
-        DateTime.tryParse(created) == null ||
-        DateTime.tryParse(updated) == null) {
+        tryParseIsoDateTime(created) == null ||
+        tryParseIsoDateTime(updated) == null) {
       throw const FormatException('日记时间戳错误');
     }
     return {

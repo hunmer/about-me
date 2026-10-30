@@ -24,6 +24,7 @@ import 'package:aboutme/core/data_filter/field_filter_service.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/event/item_event_args.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 延迟注册的插件信息
 class PendingPluginRegistration {
   final PluginBase plugin;
@@ -590,7 +591,7 @@ class JSBridgeManager {
         if (dateInput is num) {
           dateTime = DateTime.fromMillisecondsSinceEpoch(dateInput.toInt());
         } else if (dateInput is String) {
-          dateTime = DateTime.parse(dateInput);
+          dateTime = parseIsoDateTime(dateInput);
         } else {
           throw Exception('Invalid date input type');
         }
@@ -635,7 +636,7 @@ class JSBridgeManager {
           if (baseDate is num) {
             date = DateTime.fromMillisecondsSinceEpoch(baseDate.toInt());
           } else if (baseDate is String) {
-            date = DateTime.parse(baseDate);
+            date = parseIsoDateTime(baseDate);
           }
         }
 

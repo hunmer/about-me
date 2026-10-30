@@ -4,6 +4,7 @@ library;
 import 'package:shared_models/utils/result.dart';
 import 'package:shared_models/utils/pagination.dart';
 
+import 'package:shared_models/shared_models.dart';
 // ============ DTOs ============
 
 /// 任务 DTO
@@ -42,14 +43,14 @@ class TaskDto {
       isCompleted: json['isCompleted'] as bool? ?? false,
       priority: json['priority'] as int? ?? 0,
       dueDate: json['dueDate'] != null
-          ? DateTime.parse(json['dueDate'] as String)
+          ? parseIsoDateTime(json['dueDate'] as String)
           : null,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: parseIsoDateTime(json['createdAt'] as String),
       updatedAt: json['updatedAt'] != null
-          ? DateTime.parse(json['updatedAt'] as String)
+          ? parseIsoDateTime(json['updatedAt'] as String)
           : DateTime.now(),
       completedAt: json['completedAt'] != null
-          ? DateTime.parse(json['completedAt'] as String)
+          ? parseIsoDateTime(json['completedAt'] as String)
           : null,
       tags: (json['tags'] as List<dynamic>?)?.cast<String>() ?? [],
       metadata: json['metadata'] as Map<String, dynamic>?,

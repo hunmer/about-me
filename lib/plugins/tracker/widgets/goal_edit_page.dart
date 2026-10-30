@@ -15,6 +15,7 @@ import 'package:aboutme/plugins/tracker/controllers/tracker_controller.dart';
 import 'package:aboutme/utils/image_utils.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 
+import 'package:shared_models/shared_models.dart';
 class GoalEditPage extends StatefulWidget {
   final TrackerController controller;
   final Goal? goal;
@@ -97,7 +98,7 @@ class _GoalEditPageState extends State<GoalEditPage> {
           : 'daily';
       _initialReminderTime = widget.goal!.reminderTime != null
           ? TimeOfDay.fromDateTime(
-              DateTime.parse('1970-01-01 ${widget.goal!.reminderTime!}'),
+              parseIsoDateTime('1970-01-01 ${widget.goal!.reminderTime!}'),
             )
           : null;
     } else {

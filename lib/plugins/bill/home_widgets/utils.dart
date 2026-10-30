@@ -7,6 +7,7 @@ import 'package:get/get_utils/src/extensions/internacionalization.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/plugins/bill/bill_plugin.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 从选择器数据数组中提取小组件需要的数据
 Map<String, dynamic> extractBillWidgetData(List<dynamic> dataArray) {
   final accountData = dataArray[0] as Map<String, dynamic>;
@@ -72,8 +73,8 @@ Future<Map<String, double>> loadBillStats(
     DateTime? startDate;
     DateTime? endDate = DateTime.now();
 
-    if (periodStart != null) startDate = DateTime.parse(periodStart);
-    if (periodEnd != null) endDate = DateTime.parse(periodEnd);
+    if (periodStart != null) startDate = parseIsoDateTime(periodStart);
+    if (periodEnd != null) endDate = parseIsoDateTime(periodEnd);
 
     final controller = plugin.controller;
 

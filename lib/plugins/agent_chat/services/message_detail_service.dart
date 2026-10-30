@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme/core/storage/storage_manager.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 消息详细信息服务
 ///
 /// 管理工具调用消息的详细数据（用户输入、思考过程、工具调用、最终回复）
@@ -173,7 +174,7 @@ class MessageDetail {
       thinkingProcess: json['thinkingProcess'] as String,
       toolCallData: json['toolCallData'] as Map<String, dynamic>?,
       finalReply: json['finalReply'] as String,
-      timestamp: DateTime.parse(json['timestamp'] as String),
+      timestamp: parseIsoDateTime(json['timestamp'] as String),
     );
   }
 }

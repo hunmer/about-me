@@ -1,3 +1,4 @@
+import 'package:shared_models/shared_models.dart';
 /// 下载状态枚举
 enum ScriptDownloadStatus {
   pending,      // 等待下载
@@ -57,9 +58,9 @@ class ScriptStoreSource {
       url: json['url'] as String,
       baseUrl: json['baseUrl'] as String,
       isDefault: json['isDefault'] as bool? ?? false,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: parseIsoDateTime(json['createdAt'] as String),
       lastFetchedAt: json['lastFetchedAt'] != null
-          ? DateTime.parse(json['lastFetchedAt'] as String)
+          ? parseIsoDateTime(json['lastFetchedAt'] as String)
           : null,
       scriptCount: json['scriptCount'] as int?,
     );
@@ -239,7 +240,7 @@ class InstalledScript {
     return InstalledScript(
       scriptId: json['scriptId'] as String,
       version: json['version'] as String,
-      installedAt: DateTime.parse(json['installedAt'] as String),
+      installedAt: parseIsoDateTime(json['installedAt'] as String),
       sourceId: json['sourceId'] as String,
     );
   }

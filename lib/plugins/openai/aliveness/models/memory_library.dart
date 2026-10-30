@@ -1,3 +1,4 @@
+import 'package:shared_models/shared_models.dart';
 class MemoryLibrary {
   const MemoryLibrary({
     required this.id,
@@ -24,7 +25,7 @@ class MemoryLibrary {
   factory MemoryLibrary.fromJson(Map<String, dynamic> json) => MemoryLibrary(
     id: json['id'] as String,
     name: json['name'] as String,
-    createdAt: DateTime.parse(json['createdAt'] as String),
+    createdAt: parseIsoDateTime(json['createdAt'] as String),
     description: (json['description'] as String? ?? '').trim(),
     allowedKeyPrefixes: _readPrefixes(json['allowedKeyPrefixes']),
   );

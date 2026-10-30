@@ -5,6 +5,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 动作实例状态
 enum ActionInstanceStatus {
   enabled,    // 已启用
@@ -129,10 +130,10 @@ class ActionInstance {
               fontFamily: json['customIconFontFamily'] as String?,
             )
           : null,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      createdAt: parseIsoDateTime(json['createdAt'] as String),
+      updatedAt: parseIsoDateTime(json['updatedAt'] as String),
       lastExecutedAt: json['lastExecutedAt'] != null
-          ? DateTime.parse(json['lastExecutedAt'] as String)
+          ? parseIsoDateTime(json['lastExecutedAt'] as String)
           : null,
       executionCount: json['executionCount'] as int? ?? 0,
       successCount: json['successCount'] as int? ?? 0,

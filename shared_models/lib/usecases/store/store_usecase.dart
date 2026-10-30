@@ -7,6 +7,7 @@ import 'package:shared_models/utils/result.dart';
 import 'package:shared_models/utils/pagination.dart';
 import 'package:shared_models/utils/validation.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// Store 插件 UseCase - 封装所有业务逻辑
 class StoreUseCase {
   final IStoreRepository repository;
@@ -91,10 +92,10 @@ class StoreUseCase {
         stock: stock ?? 0,
         price: price ?? 0,
         exchangeStart: params['exchangeStart'] != null
-            ? DateTime.parse(params['exchangeStart'] as String)
+            ? parseIsoDateTime(params['exchangeStart'] as String)
             : now,
         exchangeEnd: params['exchangeEnd'] != null
-            ? DateTime.parse(params['exchangeEnd'] as String)
+            ? parseIsoDateTime(params['exchangeEnd'] as String)
             : DateTime(now.year + 1, now.month, now.day),
         useDuration: useDuration ?? 30,
       );
@@ -141,10 +142,10 @@ class StoreUseCase {
         stock: stock,
         price: price,
         exchangeStart: params['exchangeStart'] != null
-            ? DateTime.parse(params['exchangeStart'] as String)
+            ? parseIsoDateTime(params['exchangeStart'] as String)
             : null,
         exchangeEnd: params['exchangeEnd'] != null
-            ? DateTime.parse(params['exchangeEnd'] as String)
+            ? parseIsoDateTime(params['exchangeEnd'] as String)
             : null,
         useDuration: useDuration,
       );

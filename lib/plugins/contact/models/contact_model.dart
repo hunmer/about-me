@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'custom_activity_event_model.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 
+import 'package:shared_models/shared_models.dart';
 enum ContactGender {
   male,
   female,
@@ -104,8 +105,8 @@ class Contact {
       customActivityEvents: (json['customActivityEvents'] as List? ?? [])
           .map((e) => CustomActivityEvent.fromJson(e))
           .toList(),
-      createdTime: DateTime.parse(json['createdTime'] as String),
-      lastContactTime: DateTime.parse(json['lastContactTime'] as String),
+      createdTime: parseIsoDateTime(json['createdTime'] as String),
+      lastContactTime: parseIsoDateTime(json['lastContactTime'] as String),
     );
   }
 

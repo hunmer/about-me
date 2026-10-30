@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'action_instance.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 动作组操作符
 enum GroupOperator {
   sequence,    // 顺序执行
@@ -198,10 +199,10 @@ class ActionGroup {
       color: json['color'] != null
           ? Color(json['color'] as int)
           : null,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      createdAt: parseIsoDateTime(json['createdAt'] as String),
+      updatedAt: parseIsoDateTime(json['updatedAt'] as String),
       lastExecutedAt: json['lastExecutedAt'] != null
-          ? DateTime.parse(json['lastExecutedAt'] as String)
+          ? parseIsoDateTime(json['lastExecutedAt'] as String)
           : null,
       executionCount: json['executionCount'] as int? ?? 0,
       successCount: json['successCount'] as int? ?? 0,

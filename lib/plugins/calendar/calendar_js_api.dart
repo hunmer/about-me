@@ -77,8 +77,8 @@ Future<String> _jsGetEventsByDateRange(Map<String, dynamic> params) async {
     return jsonEncode({'error': '缺少必需参数: endDate'});
   }
 
-  final startDate = DateTime.parse(startDateStr);
-  final endDate = DateTime.parse(endDateStr);
+  final startDate = parseIsoDateTime(startDateStr);
+  final endDate = parseIsoDateTime(endDateStr);
 
   // 添加日期过滤参数
   final filteredParams = Map<String, dynamic>.from(params);

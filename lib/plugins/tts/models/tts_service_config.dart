@@ -1,6 +1,7 @@
 import 'package:uuid/uuid.dart';
 import 'tts_service_type.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// TTS服务配置模型
 class TTSServiceConfig {
   /// 唯一标识 (UUID)
@@ -133,8 +134,8 @@ class TTSServiceConfig {
       speed: (json['speed'] as num?)?.toDouble() ?? 1.0,
       volume: (json['volume'] as num?)?.toDouble() ?? 1.0,
       voice: json['voice'] as String?,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      createdAt: parseIsoDateTime(json['createdAt'] as String),
+      updatedAt: parseIsoDateTime(json['updatedAt'] as String),
     );
   }
 

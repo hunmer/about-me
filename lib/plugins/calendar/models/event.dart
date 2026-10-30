@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 
+import 'package:shared_models/shared_models.dart';
 class CalendarEvent {
   final String id;
   final String title;
@@ -75,13 +76,13 @@ class CalendarEvent {
     id: json['id'],
     title: json['title'],
     description: json['description'] ?? '',
-    startTime: DateTime.parse(json['startTime']),
-    endTime: json['endTime'] != null ? DateTime.parse(json['endTime']) : null,
+    startTime: parseIsoDateTime(json['startTime']),
+    endTime: json['endTime'] != null ? parseIsoDateTime(json['endTime']) : null,
     icon: dynamicIconData(json['icon'], fontFamily: 'MaterialIcons'),
     color: Color(json['color']),
     source: json['source'] ?? 'default',
     reminderMinutes: json['reminderMinutes'],
-    completedTime: json['completedTime'] != null ? DateTime.parse(json['completedTime']) : null,
+    completedTime: json['completedTime'] != null ? parseIsoDateTime(json['completedTime']) : null,
     systemEventId: json['systemEventId'],
   );
 }

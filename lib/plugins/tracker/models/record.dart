@@ -1,5 +1,6 @@
 import './goal.dart';
 
+import 'package:shared_models/shared_models.dart';
 class Record {
   final String id;
   final String goalId;
@@ -23,7 +24,7 @@ class Record {
       goalId: json['goalId'],
       value: (json['value'] as num).toDouble(),
       note: json['note'],
-      recordedAt: DateTime.parse(json['recordedAt']),
+      recordedAt: parseIsoDateTime(json['recordedAt']),
       durationSeconds: json['durationSeconds'],
     );
   }

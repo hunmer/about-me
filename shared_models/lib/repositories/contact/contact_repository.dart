@@ -4,6 +4,7 @@ library;
 import 'package:shared_models/utils/result.dart';
 import 'package:shared_models/utils/pagination.dart';
 
+import 'package:shared_models/shared_models.dart';
 // ============ DTOs ============
 
 /// 联系人 DTO
@@ -66,8 +67,8 @@ class ContactDto {
               [])
           .map((e) => InteractionRecordDto.fromJson(e as Map<String, dynamic>))
           .toList(),
-      createdTime: DateTime.parse(json['createdTime'] as String),
-      lastContactTime: DateTime.parse(json['lastContactTime'] as String),
+      createdTime: parseIsoDateTime(json['createdTime'] as String),
+      lastContactTime: parseIsoDateTime(json['lastContactTime'] as String),
     );
   }
 
@@ -155,7 +156,7 @@ class InteractionRecordDto {
     return InteractionRecordDto(
       id: json['id'] as String,
       contactId: json['contactId'] as String,
-      date: DateTime.parse(json['date'] as String),
+      date: parseIsoDateTime(json['date'] as String),
       notes: json['notes'] as String,
       participants: List<String>.from(json['participants'] as List? ?? []),
     );
@@ -208,10 +209,10 @@ class FilterConfigDto {
     return FilterConfigDto(
       nameKeyword: json['nameKeyword'] as String?,
       startDate: json['startDate'] != null
-          ? DateTime.tryParse(json['startDate'] as String? ?? '')
+          ? tryParseIsoDateTime(json['startDate'] as String? ?? '')
           : null,
       endDate: json['endDate'] != null
-          ? DateTime.tryParse(json['endDate'] as String? ?? '')
+          ? tryParseIsoDateTime(json['endDate'] as String? ?? '')
           : null,
       uncontactedDays: json['uncontactedDays'] as int?,
       selectedTags: List<String>.from(json['selectedTags'] as List? ?? []),

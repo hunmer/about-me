@@ -2,6 +2,7 @@
 ///
 /// 存储指定日期的活动数据，包括24小时时间轴、活动列表和统计信息
 library;
+import 'package:shared_models/shared_models.dart';
 
 /// 24小时时间轴数据项
 class HourActivityItem {
@@ -233,7 +234,7 @@ class ActivityDailyWidgetData {
   /// 从JSON反序列化
   factory ActivityDailyWidgetData.fromJson(Map<String, dynamic> json) {
     return ActivityDailyWidgetData(
-      date: DateTime.parse(json['date'] as String),
+      date: parseIsoDateTime(json['date'] as String),
       hourlyActivities: (json['hourlyActivities'] as List<dynamic>)
           .map((e) => HourActivityItem.fromJson(e as Map<String, dynamic>))
           .toList(),

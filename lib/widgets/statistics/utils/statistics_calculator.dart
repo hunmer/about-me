@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/widgets/statistics/models/statistics_models.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 通用的统计计算工具类
 class StatisticsCalculator {
   /// 根据标签计算活动分布数据
@@ -75,7 +76,7 @@ class StatisticsCalculator {
 
     for (var record in records) {
       final dateStr = record[dateField]?.toString() ?? '';
-      final date = DateTime.tryParse(dateStr);
+      final date = tryParseIsoDateTime(dateStr);
       if (date == null) continue;
 
       final value = (record[valueField] ?? 0.0).toDouble();
@@ -116,7 +117,7 @@ class StatisticsCalculator {
 
     for (var record in records) {
       final dateStr = record[dateField]?.toString() ?? '';
-      final date = DateTime.tryParse(dateStr);
+      final date = tryParseIsoDateTime(dateStr);
       if (date == null) continue;
 
       final value = (record[valueField] ?? 0.0).toDouble();
@@ -151,7 +152,7 @@ class StatisticsCalculator {
 
     for (var record in records) {
       final dateStr = record[dateField]?.toString() ?? '';
-      final date = DateTime.tryParse(dateStr);
+      final date = tryParseIsoDateTime(dateStr);
       if (date == null) continue;
 
       final value = (record[valueField] ?? 0.0).toDouble();
@@ -235,7 +236,7 @@ class StatisticsCalculator {
   }) {
     return records.where((record) {
       final dateStr = record[dateField]?.toString() ?? '';
-      final date = DateTime.tryParse(dateStr);
+      final date = tryParseIsoDateTime(dateStr);
       if (date == null) return false;
 
       final normalizedDate = DateTime(date.year, date.month, date.day);

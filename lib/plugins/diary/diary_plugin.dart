@@ -25,6 +25,7 @@ import 'utils/diary_utils.dart';
 import 'repositories/client_diary_repository.dart';
 import 'package:shared_models/usecases/diary/diary_usecase.dart';
 
+import 'package:shared_models/shared_models.dart';
 part 'diary_js_api.dart';
 part 'diary_data_selectors.dart';
 
@@ -387,7 +388,7 @@ class DiaryPlugin extends BasePlugin with JSBridgePlugin {
   ) {
     if (method != 'saveDiary' && method != 'saveDiaryEntry') return null;
     final dateValue = created['date'];
-    final date = dateValue is String ? DateTime.tryParse(dateValue) : null;
+    final date = dateValue is String ? tryParseIsoDateTime(dateValue) : null;
     if (date == null) return null;
     return () async {
       final entry = await DiaryUtils.loadDiaryEntry(date);

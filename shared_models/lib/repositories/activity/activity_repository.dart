@@ -6,6 +6,7 @@ library;
 import 'package:shared_models/utils/result.dart';
 import 'package:shared_models/utils/pagination.dart';
 
+import 'package:shared_models/shared_models.dart';
 // ============ DTOs ============
 
 /// 活动记录 DTO
@@ -33,8 +34,8 @@ class ActivityDto {
   factory ActivityDto.fromJson(Map<String, dynamic> json) {
     return ActivityDto(
       id: json['id'] as String,
-      startTime: DateTime.parse(json['startTime'] as String),
-      endTime: DateTime.parse(json['endTime'] as String),
+      startTime: parseIsoDateTime(json['startTime'] as String),
+      endTime: parseIsoDateTime(json['endTime'] as String),
       title: json['title'] as String,
       tags: (json['tags'] as List<dynamic>?)?.cast<String>() ?? [],
       description: json['description'] as String?,

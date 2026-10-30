@@ -30,6 +30,9 @@ class MessageInput extends StatefulWidget {
   final Message? replyTo;
   final FocusNode? focusNode;
 
+  /// 选择模式工具栏动作（多选消息的复制/删除）；非 null 时替换常规输入 UI
+  final List<common.MessageInputQuickAction>? selectionActions;
+
   const MessageInput({
     super.key,
     required this.controller,
@@ -37,6 +40,7 @@ class MessageInput extends StatefulWidget {
     required this.onSaveDraft,
     this.replyTo,
     this.focusNode,
+    this.selectionActions,
   });
 
   @override
@@ -344,6 +348,8 @@ class _MessageInputState extends State<MessageInput> {
       controller: widget.controller,
       focusNode: _focusNode,
       hintText: 'chat_enterMessage'.tr,
+      // 多选模式工具栏（复制/删除）；非 null 时替换常规输入 UI
+      selectionActions: widget.selectionActions,
       onChanged: (text) => widget.onSaveDraft(text),
       quickActions: _buildQuickActions(),
       // 工具栏右组：表情（语音入口移至输入框内嵌后缀，与 agent_chat 对齐）

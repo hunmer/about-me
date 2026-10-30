@@ -614,17 +614,23 @@ class Live2DPlugin extends BasePlugin {
     return response;
   }
 
+  /// [videoAnimations] 非空时按视频桌宠处理：候选动作来自该列表
+  /// （编辑器中启用的动画），不使用 Live2D 模型的表情/动作。
   Future<Map<String, String>> decideAppearance(
     String reply, {
     required Live2DModelDefinition model,
+    List<String>? videoAnimations,
   }) => DecisionService.instance.decideLive2D(
     reply: reply,
     note: selected?.note ?? '',
-    expressions: model.expressions.map((item) => item.label).toList(),
-    motions: model.motions
-        .where((item) => item.group.toLowerCase() != 'idle')
-        .map((item) => item.label)
-        .toList(),
+    expressions: videoAnimations == null
+        ? model.expressions.map((item) => item.label).toList()
+        : const <String>[],
+    motions: videoAnimations ??
+        model.motions
+            .where((item) => item.group.toLowerCase() != 'idle')
+            .map((item) => item.label)
+            .toList(),
   );
 
   @override

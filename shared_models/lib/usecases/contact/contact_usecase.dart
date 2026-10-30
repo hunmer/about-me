@@ -7,6 +7,7 @@ import 'package:shared_models/utils/result.dart';
 import 'package:shared_models/utils/pagination.dart';
 import 'package:shared_models/utils/validation.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// Contact 插件 UseCase - 封装所有业务逻辑
 class ContactUseCase {
   final IContactRepository repository;
@@ -166,7 +167,7 @@ class ContactUseCase {
                 existing.customActivityEvents
             : existing.customActivityEvents,
         lastContactTime: params.containsKey('lastContactTime')
-            ? DateTime.parse(params['lastContactTime'] as String)
+            ? parseIsoDateTime(params['lastContactTime'] as String)
             : existing.lastContactTime,
       );
 
@@ -203,10 +204,10 @@ class ContactUseCase {
             ? List<String>.from(params['tags'] as List)
             : null,
         startDate: params['startDate'] != null
-            ? DateTime.parse(params['startDate'] as String)
+            ? parseIsoDateTime(params['startDate'] as String)
             : null,
         endDate: params['endDate'] != null
-            ? DateTime.parse(params['endDate'] as String)
+            ? parseIsoDateTime(params['endDate'] as String)
             : null,
         uncontactedDays: params['uncontactedDays'] as int?,
         pagination: _extractPagination(params),
@@ -310,7 +311,7 @@ class ContactUseCase {
         id: params['id'] as String? ?? _uuid.v4(),
         contactId: params['contactId'] as String,
         date: params['date'] != null
-            ? DateTime.parse(params['date'] as String)
+            ? parseIsoDateTime(params['date'] as String)
             : DateTime.now(),
         notes: params['notes'] as String,
         participants: (params['participants'] as List<dynamic>?)
@@ -351,7 +352,7 @@ class ContactUseCase {
       final updated = existing.copyWith(
         contactId: params['contactId'] as String?,
         date: params['date'] != null
-            ? DateTime.parse(params['date'] as String)
+            ? parseIsoDateTime(params['date'] as String)
             : existing.date,
         notes: params['notes'] as String?,
         participants: params.containsKey('participants')
@@ -420,10 +421,10 @@ class ContactUseCase {
       final query = InteractionRecordQuery(
         contactId: contactId,
         startDate: params['startDate'] != null
-            ? DateTime.parse(params['startDate'] as String)
+            ? parseIsoDateTime(params['startDate'] as String)
             : null,
         endDate: params['endDate'] != null
-            ? DateTime.parse(params['endDate'] as String)
+            ? parseIsoDateTime(params['endDate'] as String)
             : null,
         pagination: _extractPagination(params),
       );
@@ -468,10 +469,10 @@ class ContactUseCase {
       final config = FilterConfigDto(
         nameKeyword: params['nameKeyword'] as String?,
         startDate: params['startDate'] != null
-            ? DateTime.parse(params['startDate'] as String)
+            ? parseIsoDateTime(params['startDate'] as String)
             : null,
         endDate: params['endDate'] != null
-            ? DateTime.parse(params['endDate'] as String)
+            ? parseIsoDateTime(params['endDate'] as String)
             : null,
         uncontactedDays: params['uncontactedDays'] as int?,
         selectedTags: (params['selectedTags'] as List<dynamic>?)

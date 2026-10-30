@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 提醒频率类型
 enum ReminderFrequency {
   none, // 无（手动触发）
@@ -98,12 +99,12 @@ class Reminder {
       ),
       pushMethod: ReminderPushMethod.values[json['pushMethod'] as int? ?? 0],
       isEnabled: json['isEnabled'] as bool? ?? true,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: parseIsoDateTime(json['createdAt'] as String),
       lastTriggeredAt: json['lastTriggeredAt'] != null
-          ? DateTime.parse(json['lastTriggeredAt'] as String)
+          ? parseIsoDateTime(json['lastTriggeredAt'] as String)
           : null,
       nextTriggerAt: json['nextTriggerAt'] != null
-          ? DateTime.parse(json['nextTriggerAt'] as String)
+          ? parseIsoDateTime(json['nextTriggerAt'] as String)
           : null,
       groupId: json['groupId'] as String?,
       priority: json['priority'] as int? ?? 0,

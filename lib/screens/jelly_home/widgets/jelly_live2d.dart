@@ -684,6 +684,7 @@ class _JellyLive2DState extends State<JellyLive2D>
                                   resolvedSources: _videoResolvedSources,
                                   active: _routeVisible,
                                   animationRequest: _videoAnimationRequest,
+                                  frameAnimationRequest: playback.frameRequest,
                                   onTap: _handleVideoTap,
                                   onContextMenu: _showControls,
                                   movementAnimationId: playback.animationId,

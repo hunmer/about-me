@@ -9,6 +9,7 @@ import 'package:shared_models/utils/result.dart';
 import 'package:shared_models/utils/pagination.dart';
 import '../../data_contracts/chat_codec.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 频道数据传输对象
 class ChannelDto {
   final String id;
@@ -48,7 +49,7 @@ class ChannelDto {
       priority: json['priority'] as int? ?? 0,
       groups: (json['groups'] as List<dynamic>?)?.cast<String>() ?? [],
       lastMessageTime: json['lastMessageTime'] != null
-          ? DateTime.tryParse(json['lastMessageTime'] as String)
+          ? tryParseIsoDateTime(json['lastMessageTime'] as String)
           : null,
       metadata: json['metadata'] as Map<String, dynamic>?,
       extensions: Map<String, dynamic>.from(json)..remove('_sdkVersion'),
@@ -129,7 +130,7 @@ class MessageDto {
       channelId: json['channelId'] as String? ?? '',
       user: _parseUser(json['user']),
       type: json['type'] as String? ?? 'sent',
-      date: DateTime.parse(json['date'] as String),
+      date: parseIsoDateTime(json['date'] as String),
       replyToId: json['replyToId'] as String?,
       metadata: json['metadata'] as Map<String, dynamic>?,
       extensions: Map<String, dynamic>.from(json),

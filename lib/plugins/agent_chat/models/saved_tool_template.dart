@@ -1,6 +1,7 @@
 import 'package:uuid/uuid.dart';
 import 'tool_call_step.dart';
 
+import 'package:shared_models/shared_models.dart';
 const _uuid = Uuid();
 
 /// 保存的工具模板
@@ -75,9 +76,9 @@ class SavedToolTemplate {
       steps: (json['steps'] as List<dynamic>)
           .map((e) => ToolCallStep.fromJson(e as Map<String, dynamic>))
           .toList(),
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: parseIsoDateTime(json['createdAt'] as String),
       lastUsedAt: json['lastUsedAt'] != null
-          ? DateTime.parse(json['lastUsedAt'] as String)
+          ? parseIsoDateTime(json['lastUsedAt'] as String)
           : null,
       usageCount: json['usageCount'] as int? ?? 0,
       declaredTools: (json['declaredTools'] as List<dynamic>?)

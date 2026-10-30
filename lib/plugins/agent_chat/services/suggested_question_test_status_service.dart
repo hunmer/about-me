@@ -1,3 +1,4 @@
+import 'package:shared_models/shared_models.dart';
 /// 预设问题最近一次测试状态（用于选择面板的错误标记）
 class SuggestedQuestionTestStatus {
   const SuggestedQuestionTestStatus({
@@ -63,5 +64,5 @@ SuggestedQuestionTestStatus? latestSuggestedQuestionTestStatus(
 
 DateTime? _parseDate(Object? value) {
   if (value is! String || value.isEmpty) return null;
-  return DateTime.tryParse(value);
+  return tryParseIsoDateTime(value);
 }

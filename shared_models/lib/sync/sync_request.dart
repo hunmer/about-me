@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:shared_models/shared_models.dart';
 /// 同步请求模型 - 用于推送加密文件到服务器
 class SyncRequest {
   /// 文件路径 (相对于用户数据目录)
@@ -45,7 +46,7 @@ class SyncRequest {
         encryptedData: json['encrypted_data'] as String,
         oldMd5: json['old_md5'] as String?,
         newMd5: json['new_md5'] as String,
-        timestamp: DateTime.parse(json['timestamp'] as String),
+        timestamp: parseIsoDateTime(json['timestamp'] as String),
         deviceId: json['device_id'] as String,
       );
 
@@ -84,6 +85,6 @@ class BatchSyncRequest {
             .map((f) => SyncRequest.fromJson(f as Map<String, dynamic>))
             .toList(),
         deviceId: json['device_id'] as String,
-        timestamp: DateTime.parse(json['timestamp'] as String),
+        timestamp: parseIsoDateTime(json['timestamp'] as String),
       );
 }

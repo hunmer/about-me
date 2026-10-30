@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 import 'agent_chain_node.dart';
 import 'voice_call_config.dart';
 
+import 'package:shared_models/shared_models.dart';
 const _uuid = Uuid();
 
 /// 工具调用 Agent 配置
@@ -192,9 +193,9 @@ class Conversation {
 
     final now = DateTime.now();
     final createdAt =
-        DateTime.tryParse(json['createdAt'] as String? ?? '') ?? now;
+        tryParseIsoDateTime(json['createdAt'] as String? ?? '') ?? now;
     final lastMessageAt =
-        DateTime.tryParse(json['lastMessageAt'] as String? ?? '') ?? createdAt;
+        tryParseIsoDateTime(json['lastMessageAt'] as String? ?? '') ?? createdAt;
 
     final agentId = (json['agentId'] as String?)?.trim();
 

@@ -5,6 +5,7 @@ import 'package:aboutme/core/services/timer/models/timer_state.dart';
 import 'subtask.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 
+import 'package:shared_models/shared_models.dart';
 enum TaskPriority { q1, q2, q3, q4 }
 
 enum TaskStatus { todo, inProgress, done }
@@ -128,9 +129,9 @@ class Task {
     // 兼容 TaskDto 格式：completedAt -> completedDate
     DateTime? completedDate;
     if (json['completedDate'] != null) {
-      completedDate = DateTime.parse(json['completedDate']);
+      completedDate = parseIsoDateTime(json['completedDate']);
     } else if (json['completedAt'] != null) {
-      completedDate = DateTime.parse(json['completedAt']);
+      completedDate = parseIsoDateTime(json['completedAt']);
     }
 
     // 兼容 TaskDto 格式：priority (0-3 映射到 q1-q4)
@@ -151,11 +152,11 @@ class Task {
       id: json['id'],
       title: json['title'],
       description: json['description'],
-      createdAt: DateTime.parse(json['createdAt']),
+      createdAt: parseIsoDateTime(json['createdAt']),
       startDate: json['startDate'] != null
-          ? DateTime.parse(json['startDate'])
+          ? parseIsoDateTime(json['startDate'])
           : null,
-      dueDate: json['dueDate'] != null ? DateTime.parse(json['dueDate']) : null,
+      dueDate: json['dueDate'] != null ? parseIsoDateTime(json['dueDate']) : null,
       priority: priority,
       status: status,
       tags: json['tags'] != null ? List<String>.from(json['tags']) : [],
@@ -166,12 +167,12 @@ class Task {
           [],
       reminders:
           (json['reminders'] as List?)
-              ?.map((e) => DateTime.parse(e))
+              ?.map((e) => parseIsoDateTime(e))
               .toList() ??
           [],
       completedDate: completedDate,
       startTime: json['startTime'] != null
-          ? DateTime.parse(json['startTime'])
+          ? parseIsoDateTime(json['startTime'])
           : null,
       duration: json['duration'] != null
           ? Duration(milliseconds: json['duration'])

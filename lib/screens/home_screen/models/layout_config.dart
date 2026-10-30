@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 布局配置数据模型
 ///
 /// 用于保存和管理多个主页布局配置
@@ -64,8 +65,8 @@ class LayoutConfig {
       name: json['name'] as String,
       items: itemsList,
       gridCrossAxisCount: json['gridCrossAxisCount'] as int? ?? 4,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      createdAt: parseIsoDateTime(json['createdAt'] as String),
+      updatedAt: parseIsoDateTime(json['updatedAt'] as String),
       isDefault: json['isDefault'] as bool? ?? false,
       backgroundImagePath: json['backgroundImagePath'] as String?,
       backgroundFit: boxFitFromString(json['backgroundFit'] as String?),

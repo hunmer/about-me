@@ -5,6 +5,7 @@ library;
 
 import 'package:flutter/foundation.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 习惯统计小组件配置
 class HabitStatsWidgetConfig {
   /// 习惯ID
@@ -57,7 +58,7 @@ class HabitStatsWidgetConfig {
           final lastUpdatedStr = topLastUpdated.toString();
           if (lastUpdatedStr.isNotEmpty) {
             try {
-              lastUpdated = DateTime.parse(lastUpdatedStr);
+              lastUpdated = parseIsoDateTime(lastUpdatedStr);
             } catch (_) {
               // 忽略解析错误
             }
@@ -126,7 +127,7 @@ class HabitStatsWidgetConfig {
       final lastUpdatedStr = dataMap['lastUpdated']?.toString();
       if (lastUpdatedStr != null && lastUpdatedStr.isNotEmpty) {
         try {
-          lastUpdated = DateTime.parse(lastUpdatedStr);
+          lastUpdated = parseIsoDateTime(lastUpdatedStr);
         } catch (_) {
           // 忽略解析错误
         }

@@ -4,6 +4,7 @@ import 'script_input.dart';
 import 'package:aboutme/widgets/form_fields/types.dart';
 import 'package:aboutme/widgets/form_fields/config.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 从JSON解析FormFieldConfig列表
 List<FormFieldConfig> _parseConfigFormFields(List<dynamic>? jsonList) {
   if (jsonList == null) return [];
@@ -156,10 +157,10 @@ class ScriptInfo {
       configFormFields: _parseConfigFormFields(
           json['configFormFields'] as List<dynamic>?),
       createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'] as String)
+          ? parseIsoDateTime(json['createdAt'] as String)
           : null,
       updatedAt: json['updatedAt'] != null
-          ? DateTime.parse(json['updatedAt'] as String)
+          ? parseIsoDateTime(json['updatedAt'] as String)
           : null,
       localScriptPath: json['localScriptPath'] as String?,
     );

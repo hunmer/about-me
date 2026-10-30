@@ -7,6 +7,7 @@ import 'custom_field.dart';
 import 'path_constants.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 
+import 'package:shared_models/shared_models.dart';
 class GoodsItem {
   final String id;
   final String title;
@@ -124,11 +125,11 @@ class GoodsItem {
       tags: (json['tags'] as List?)?.map((e) => e as String).toList() ?? [],
       purchaseDate:
           json['purchaseDate'] != null
-              ? DateTime.parse(json['purchaseDate'] as String)
+              ? parseIsoDateTime(json['purchaseDate'] as String)
               : null,
       expirationDate:
           json['expirationDate'] != null
-              ? DateTime.parse(json['expirationDate'] as String)
+              ? parseIsoDateTime(json['expirationDate'] as String)
               : null,
       purchasePrice:
           json['purchasePrice'] != null

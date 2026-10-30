@@ -1,3 +1,4 @@
+import 'package:shared_models/shared_models.dart';
 
 class PointsLog {
   final String id;
@@ -21,7 +22,7 @@ class PointsLog {
       type: json['type'],
       value: json['value'],
       reason: json['reason'],
-      timestamp: DateTime.parse(json['timestamp']),
+      timestamp: parseIsoDateTime(json['timestamp']),
     );
   }
 

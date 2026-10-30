@@ -1,3 +1,4 @@
+import 'package:shared_models/shared_models.dart';
 /// 贴图合集
 ///
 /// 贴图文件统一存放在 `stickers/{id}/` 目录（相对 app_data），
@@ -47,10 +48,10 @@ class StickerCollection {
               .map((e) => e.toString())
               .toList(),
       createdAt:
-          DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+          tryParseIsoDateTime(json['createdAt'] as String? ?? '') ??
           DateTime.now(),
       updatedAt:
-          DateTime.tryParse(json['updatedAt'] as String? ?? '') ??
+          tryParseIsoDateTime(json['updatedAt'] as String? ?? '') ??
           DateTime.now(),
     );
   }

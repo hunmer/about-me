@@ -29,7 +29,12 @@ class ConversationController extends ChangeNotifier {
   final List<String> _selectedGroupFilters = [];
 
   /// 选中的Agent过滤器（null表示不显示带 Agent 的会话）
-  String? _selectedAgentFilter;
+  /// Agent 过滤哨兵值：表示【本插件】（agentId == null 的手动创建会话）
+  static const String localPluginFilter = '__local_plugin__';
+
+  /// "全部"（null 或空串）：不按 Agent 过滤；
+  /// [localPluginFilter]：仅本插件手动创建会话；其他：指定 Agent 的会话
+  String? _selectedAgentFilter = localPluginFilter;
 
   /// 默认上下文消息数量（全局设置）
   int _defaultContextMessageCount = 10;
@@ -245,13 +250,17 @@ class ConversationController extends ChangeNotifier {
       }).toList();
     }
 
-    // 应用Agent过滤：带 Agent 的会话（角色卡/Live2D 入口创建）默认不进
-    // 主列表，仅在选中具体 Agent 时显示该 Agent 的会话
-    if (_selectedAgentFilter != null) {
-      filtered =
-          filtered.where((conv) => conv.agentId == _selectedAgentFilter).toList();
-    } else {
-      filtered = filtered.where((conv) => conv.agentId == null).toList();
+    // 应用Agent过滤：null/空 = 全部不过滤；
+    // [localPluginFilter] = 本插件手动创建会话（agentId == null）；
+    // 其他 = 指定 Agent 的会话
+    final agentFilter = _selectedAgentFilter;
+    if (agentFilter != null && agentFilter.isNotEmpty) {
+      if (agentFilter == localPluginFilter) {
+        filtered = filtered.where((conv) => conv.agentId == null).toList();
+      } else {
+        filtered =
+            filtered.where((conv) => conv.agentId == agentFilter).toList();
+      }
     }
 
     return filtered;

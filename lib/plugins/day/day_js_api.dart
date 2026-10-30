@@ -69,7 +69,7 @@ Future<String> _jsGetMemorialDays(Map<String, dynamic> params) async {
         return jsonEncode({'error': '缺少必需参数: date'});
       }
 
-      final targetDate = DateTime.parse(date);
+      final targetDate = parseIsoDateTime(date);
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);
       final target = DateTime(

@@ -1,3 +1,4 @@
+import 'package:shared_models/shared_models.dart';
 /// WebView 标签页模型
 class WebViewTab {
   final String id;
@@ -55,8 +56,8 @@ class WebViewTab {
       url: json['url'] as String,
       title: json['title'] as String? ?? '',
       favicon: json['favicon'] as String?,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      lastAccessedAt: DateTime.parse(json['lastAccessedAt'] as String),
+      createdAt: parseIsoDateTime(json['createdAt'] as String),
+      lastAccessedAt: parseIsoDateTime(json['lastAccessedAt'] as String),
       isActive: json['isActive'] as bool? ?? false,
       scrollPosition: (json['scrollPosition'] as num?)?.toDouble() ?? 0.0,
       canGoBack: json['canGoBack'] as bool? ?? false,

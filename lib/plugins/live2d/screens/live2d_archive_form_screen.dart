@@ -451,6 +451,19 @@ class _Live2DArchiveFormScreenState extends State<Live2DArchiveFormScreen> {
             ],
           ),
           const SizedBox(height: 12),
+          DSListItem(
+            title: _videoText('Jev 智能动作', 'Jev smart animation'),
+            subtitle: _videoText(
+              '根据 AI 回复自动播放合适的动作（仅编辑器中启用的动作）',
+              'Auto-play a matching animation based on AI replies (enabled animations only)',
+            ),
+            leading: DsIcon(DsIconKind.moon, color: theme.primary),
+            trailing: DSSwitch(
+              value: current.jevEnabled,
+              onChanged: (value) => setState(() => current.jevEnabled = value),
+            ),
+          ),
+          const SizedBox(height: 12),
           Text(
             _videoText(
               '默认素材来自 dsh-pet，禁止商用；来源和许可保存在资源包中。',

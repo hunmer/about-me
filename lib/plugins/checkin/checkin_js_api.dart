@@ -155,17 +155,17 @@ Future<String> _jsGetCheckinHistory(Map<String, dynamic> params) async {
     DateTime? start;
     DateTime? end;
     if (startDate != null) {
-      start = DateTime.parse(startDate);
+      start = parseIsoDateTime(startDate);
     }
     if (endDate != null) {
-      end = DateTime.parse(endDate);
+      end = parseIsoDateTime(endDate);
     }
 
     // 收集符合日期范围的记录
     final List<Map<String, dynamic>> history = [];
 
     item.checkInRecords.forEach((dateStr, records) {
-      final date = DateTime.parse(dateStr);
+      final date = parseIsoDateTime(dateStr);
 
       // 检查是否在日期范围内
       if (start != null && date.isBefore(start)) return;

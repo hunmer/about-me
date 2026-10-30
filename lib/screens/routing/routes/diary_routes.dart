@@ -5,6 +5,7 @@ import 'package:aboutme/plugins/diary/diary_plugin.dart';
 import 'package:aboutme/plugins/diary/screens/diary_editor_screen.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// Diary 插件路由注册表
 class DiaryRoutes implements RouteRegistry {
   @override
@@ -40,7 +41,7 @@ class DiaryRoutes implements RouteRegistry {
               final dateStr = args['date'] as String?;
               if (dateStr != null) {
                 try {
-                  selectedDate = DateTime.parse(dateStr);
+                  selectedDate = parseIsoDateTime(dateStr);
                 } catch (e) {
                   debugPrint('解析日期失败: $e');
                 }
@@ -62,7 +63,7 @@ class DiaryRoutes implements RouteRegistry {
               final dateStr = args['date'] as String?;
               if (dateStr != null) {
                 try {
-                  selectedDate = DateTime.parse(dateStr);
+                  selectedDate = parseIsoDateTime(dateStr);
                 } catch (e) {
                   debugPrint('解析日期失败: $e');
                 }
@@ -89,7 +90,7 @@ class DiaryRoutes implements RouteRegistry {
               final dateStr = args['date'] as String?;
               if (dateStr != null) {
                 try {
-                  selectedDate = DateTime.parse(dateStr);
+                  selectedDate = parseIsoDateTime(dateStr);
                 } catch (e) {
                   debugPrint('解析日期失败: $e');
                 }

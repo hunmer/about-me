@@ -36,6 +36,8 @@ const Map<String, String> agentChatTranslationsZh = {
   'agent_chat_restoreDefaultDescription': '此操作将删除所有自定义配置,恢复到默认配置。是否继续?',
   'agent_chat_restoreDefault': '恢复默认',
   'agent_chat_all': '全部',
+  'agent_chat_thisPlugin': '本插件',
+  'agent_chat_groupFilter': '分组',
   'agent_chat_disabledTools': '已禁用的工具',
   'agent_chat_enableAll': '全部启用',
   'agent_chat_confirmEnableAll': '确认全部启用',

@@ -12,6 +12,7 @@ import 'package:aboutme/core/app_initializer.dart' show globalStorage;
 import 'package:aboutme/utils/image_utils.dart';
 import 'aboutme_data_service.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 宿主只处理所选媒体的字节，所有持久化由 SDK 资源服务执行。
 /// 转换与裁剪均在上传前完成，不修改已物化的不可变资源。
 class SdkMediaService {
@@ -61,7 +62,7 @@ class SdkMediaService {
           StorageFileInfo(
             path: asset.reference,
             size: asset.size,
-            updatedAt: DateTime.parse(asset.createdAt),
+            updatedAt: parseIsoDateTime(asset.createdAt),
           ),
         );
       }

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:uuid/uuid.dart';
 
+import 'package:shared_models/shared_models.dart';
 class CalendarEntry {
   final String id;
   final String title;
@@ -120,8 +121,8 @@ class CalendarEntry {
       id: json['id'],
       title: json['title'],
       content: json['content'],
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
+      createdAt: parseIsoDateTime(json['createdAt']),
+      updatedAt: parseIsoDateTime(json['updatedAt']),
       tags: List<String>.from(json['tags'] ?? []),
       location: json['location'],
       latLng: json['latLng'],

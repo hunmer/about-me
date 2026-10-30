@@ -12,6 +12,7 @@ import 'package:aboutme/utils/image_utils.dart';
 import 'package:aboutme/widgets/event_listener_container.dart';
 import '../events/store_cache_updated_event_args.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 用户物品选择器小组件
 class UserItemSelectorWidget extends StatefulWidget {
   final Map<String, dynamic> config;
@@ -69,7 +70,7 @@ class _UserItemSelectorWidgetState extends State<UserItemSelectorWidget> {
             as String?;
     final purchasePrice = itemData['purchase_price'] as int? ?? 0;
     final remaining = itemData['remaining'] as int? ?? 0;
-    final expireDate = DateTime.parse(itemData['expire_date'] as String);
+    final expireDate = parseIsoDateTime(itemData['expire_date'] as String);
 
     final remainingDays = expireDate.difference(DateTime.now()).inDays;
     final isExpired = remainingDays < 0;

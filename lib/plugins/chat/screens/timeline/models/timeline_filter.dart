@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 时间线筛选器，用于筛选消息列表
 class TimelineFilter {
   /// 筛选器类型
@@ -158,8 +159,8 @@ class TimelineFilter {
       includeChannels: json['includeChannels'] ?? true,
       includeUsernames: json['includeUsernames'] ?? true,
       includeContent: json['includeContent'] ?? true,
-      startDate: json['startDate'] != null ? DateTime.parse(json['startDate']) : null,
-      endDate: json['endDate'] != null ? DateTime.parse(json['endDate']) : null,
+      startDate: json['startDate'] != null ? parseIsoDateTime(json['startDate']) : null,
+      endDate: json['endDate'] != null ? parseIsoDateTime(json['endDate']) : null,
       selectedChannelIds: json['selectedChannelIds'] != null
           ? Set<String>.from(json['selectedChannelIds'])
           : {},

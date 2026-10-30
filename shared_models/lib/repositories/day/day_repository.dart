@@ -6,6 +6,7 @@ library;
 import 'package:shared_models/utils/result.dart';
 import 'package:shared_models/utils/pagination.dart';
 
+import 'package:shared_models/shared_models.dart';
 // ============ DTOs ============
 
 /// 纪念日 DTO
@@ -34,8 +35,8 @@ class MemorialDayDto {
     return MemorialDayDto(
       id: json['id'] as String,
       title: json['title'] as String,
-      creationDate: DateTime.parse(json['creationDate'] as String),
-      targetDate: DateTime.parse(json['targetDate'] as String),
+      creationDate: parseIsoDateTime(json['creationDate'] as String),
+      targetDate: parseIsoDateTime(json['targetDate'] as String),
       notes: (json['notes'] as List<dynamic>?)?.cast<String>() ?? [],
       backgroundColor: json['backgroundColor'] as int,
       backgroundImageUrl: json['backgroundImageUrl'] as String?,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_models/shared_models.dart';
 import 'package:aboutme/plugins/goods/models/custom_field.dart'
     as goods_custom_field;
 
@@ -75,14 +76,14 @@ class Node {
       sdkVersion: json['_sdkVersion'] as int?,
       id: json['id'] as String,
       title: json['title'] as String,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: parseIsoDateTime(json['createdAt'] as String),
       tags: tagsList,
       status: NodeStatus.values[json['status'] as int],
       startDate: json['startDate'] != null
-          ? DateTime.parse(json['startDate'] as String)
+          ? parseIsoDateTime(json['startDate'] as String)
           : null,
       endDate: json['endDate'] != null
-          ? DateTime.parse(json['endDate'] as String)
+          ? parseIsoDateTime(json['endDate'] as String)
           : null,
       customFields: customFieldsList,
       notes: json['notes'] as String,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
+import 'package:shared_models/shared_models.dart';
 class ActivityRecord {
   final String id;
   final DateTime startTime;
@@ -50,8 +51,8 @@ class ActivityRecord {
     
     return ActivityRecord(
       id: json['id'],
-      startTime: DateTime.parse(json['startTime']),
-      endTime: DateTime.parse(json['endTime']),
+      startTime: parseIsoDateTime(json['startTime']),
+      endTime: parseIsoDateTime(json['endTime']),
       title: json['title'],
       tags: List<String>.from(json['tags'] ?? []),
       description: json['description'],

@@ -6,6 +6,7 @@ library;
 import 'package:shared_models/utils/result.dart';
 import 'package:shared_models/utils/pagination.dart';
 
+import 'package:shared_models/shared_models.dart';
 // ============ DTOs ============
 
 /// 日期设置 DTO
@@ -28,10 +29,10 @@ class DateSettingsDto {
     return DateSettingsDto(
       type: json['type'] as String,
       startDate: json['startDate'] != null
-          ? DateTime.parse(json['startDate'] as String)
+          ? parseIsoDateTime(json['startDate'] as String)
           : null,
       endDate: json['endDate'] != null
-          ? DateTime.parse(json['endDate'] as String)
+          ? parseIsoDateTime(json['endDate'] as String)
           : null,
       selectedDays: (json['selectedDays'] as List<dynamic>?)
           ?.map((e) => e as String)
@@ -124,7 +125,7 @@ class GoalDto {
           json['dateSettings'] as Map<String, dynamic>),
       reminderTime: json['reminderTime'] as String?,
       isLoopReset: json['isLoopReset'] as bool,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: parseIsoDateTime(json['createdAt'] as String),
     );
   }
 
@@ -206,7 +207,7 @@ class RecordDto {
       goalId: json['goalId'] as String,
       value: (json['value'] as num).toDouble(),
       note: json['note'] as String?,
-      recordedAt: DateTime.parse(json['recordedAt'] as String),
+      recordedAt: parseIsoDateTime(json['recordedAt'] as String),
       durationSeconds: json['durationSeconds'] as int?,
     );
   }

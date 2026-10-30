@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -14,6 +15,7 @@ class JellyVideoPetPlayback {
     required this.animationId,
     this.dragAnimationId,
     required this.loop,
+    required this.frameRequest,
     required this.onComplete,
     required this.onBusyChanged,
     required this.onAnimationFrame,
@@ -25,6 +27,9 @@ class JellyVideoPetPlayback {
   final String? animationId;
   final String? dragAnimationId;
   final bool loop;
+
+  /// 一次性点播请求（撞墙动画），由舞台发出、播放器消费。
+  final ValueListenable<VideoPetManualAnimation?> frameRequest;
   final VoidCallback onComplete;
   final ValueChanged<bool> onBusyChanged;
   final ValueChanged<VideoPetAnimationFrame> onAnimationFrame;
@@ -92,6 +97,11 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
   int _generation = 0;
   int _phase = 0;
   bool _facingLeft = false;
+
+  /// 撞墙动画等一次性点播请求（nonce 每次递增去重）。
+  final ValueNotifier<VideoPetManualAnimation?> _frameRequest =
+      ValueNotifier<VideoPetManualAnimation?>(null);
+  int _wallBumpNonce = 0;
 
   String? get _movementAnimationId => _turning
       ? (_left
@@ -218,6 +228,8 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
       _dragging = false;
       _left = false;
       _facingLeft = false;
+      _frameRequest.value = null;
+      _wallBumpNonce = 0;
       unawaited(_load());
     } else if (oldWidget.active != widget.active ||
         oldWidget.movement != widget.movement) {
@@ -353,15 +365,37 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
 
   void _move(double distance) {
     final remaining = _target - _position.dx;
+    final arrived = remaining.abs() <= distance;
+    // 到达的目标恰好在左右边界 = 撞墙（仅在配置了撞墙动画时生效）。
+    final atBound =
+        (_minX - _target).abs() < 0.5 || (_target - _maxX).abs() < 0.5;
+    final hitWall =
+        arrived && atBound && widget.movement.wallBumpEnabled;
     setState(() {
-      final x = remaining.abs() <= distance
+      final x = arrived
           ? _target
           : _position.dx + (remaining.isNegative ? -distance : distance);
       _position = Offset(x.clamp(_minX, _maxX), _position.dy);
       _rememberPosition();
-      if (remaining.abs() <= distance) _stop();
+      if (arrived) _stop();
     });
+    if (hitWall) _bumpWall();
     _schedule();
+  }
+
+  /// 撞墙：请求播放撞墙动画（可带帧区间）；busy 期间走动自动暂停，
+  /// 动画播完后 busy 解除、恢复调度。
+  void _bumpWall() {
+    final movement = widget.movement;
+    final id = movement.wallBumpAnimationId;
+    if (id.isEmpty) return;
+    _frameRequest.value = VideoPetManualAnimation(
+      animationId: id,
+      startFrame: movement.wallBumpStartFrame,
+      endFrame: movement.wallBumpEndFrame,
+      nonce: ++_wallBumpNonce,
+    );
+    _log('wall bump animation=$id nonce=$_wallBumpNonce');
   }
 
   void _rememberPosition() {
@@ -488,6 +522,7 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
                       ? movement.dragAnimationId
                       : null,
                   loop: !_turning,
+                  frameRequest: _frameRequest,
                   onComplete: () {
                     if (mounted && phase == _phase && _turning && _canWalk) {
                       _log('turn complete phase=$phase');
@@ -522,6 +557,7 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
     widget.enabled.removeListener(_enabledChanged);
     WidgetsBinding.instance.removeObserver(this);
     _stop();
+    _frameRequest.dispose();
     _ticker.dispose();
     super.dispose();
   }

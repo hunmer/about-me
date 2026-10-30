@@ -7,6 +7,7 @@ import 'package:shared_models/utils/result.dart';
 import 'package:shared_models/utils/pagination.dart';
 import 'package:shared_models/utils/validation.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// Nodes 插件 UseCase - 封装所有业务逻辑
 class NodesUseCase {
   final INodesRepository repository;
@@ -255,10 +256,10 @@ class NodesUseCase {
             const [],
         status: status ?? NodeStatus.todo,
         startDate: params['startDate'] != null
-            ? DateTime.parse(params['startDate'] as String)
+            ? parseIsoDateTime(params['startDate'] as String)
             : null,
         endDate: params['endDate'] != null
-            ? DateTime.parse(params['endDate'] as String)
+            ? parseIsoDateTime(params['endDate'] as String)
             : null,
         customFields: (params['customFields'] as List<dynamic>?)
                 ?.map((e) => CustomFieldDto.fromJson(e as Map<String, dynamic>))
@@ -324,10 +325,10 @@ class NodesUseCase {
             : existing.tags,
         status: status ?? existing.status,
         startDate: params['startDate'] != null
-            ? DateTime.parse(params['startDate'] as String)
+            ? parseIsoDateTime(params['startDate'] as String)
             : existing.startDate,
         endDate: params['endDate'] != null
-            ? DateTime.parse(params['endDate'] as String)
+            ? parseIsoDateTime(params['endDate'] as String)
             : existing.endDate,
         customFields: params.containsKey('customFields')
             ? (params['customFields'] as List<dynamic>?)

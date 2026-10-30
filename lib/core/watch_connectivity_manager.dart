@@ -14,6 +14,7 @@ import '../plugins/diary/diary_plugin.dart';
 import '../plugins/diary/utils/diary_utils.dart';
 import 'package:intl/intl.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 手表连接管理器 - 响应手表的数据请求
 class WatchConnectivityManager extends ChangeNotifier {
   static WatchConnectivityManager? _instance;
@@ -313,7 +314,7 @@ class WatchConnectivityManager extends ChangeNotifier {
   /// 获取指定日期的日记详情
   Future<Map<String, dynamic>> _getDiaryEntry(String dateStr) async {
     try {
-      final date = DateTime.parse(dateStr);
+      final date = parseIsoDateTime(dateStr);
       final entry = await DiaryUtils.loadDiaryEntry(date);
 
       if (entry == null) {

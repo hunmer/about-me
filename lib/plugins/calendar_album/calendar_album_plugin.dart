@@ -21,6 +21,7 @@ import 'package:aboutme/plugins/webview/services/local_http_server.dart';
 import 'package:aboutme/core/services/plugin_data_selector/index.dart';
 import 'calendar_album_widget_methods.dart';
 
+import 'package:shared_models/shared_models.dart';
 part 'calendar_album_js_api.dart';
 part 'calendar_album_data_selectors.dart';
 

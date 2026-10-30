@@ -1,5 +1,6 @@
 /// 媒体记录（阅读/观影）数据模型
 library;
+import 'package:shared_models/shared_models.dart';
 
 /// 记录类型：阅读 / 观影
 enum MediaKind { reading, watching }
@@ -72,7 +73,7 @@ class MediaReview {
     return MediaReview(
       id: json['id'] as String,
       text: json['text'] as String? ?? '',
-      timestamp: DateTime.tryParse(json['timestamp'] as String? ?? '') ??
+      timestamp: tryParseIsoDateTime(json['timestamp'] as String? ?? '') ??
           DateTime.now(),
       rating: (json['rating'] as num?)?.toDouble(),
       author: json['author'] as String?,
@@ -181,9 +182,9 @@ class MediaItem {
       rating: (json['rating'] as num?)?.toDouble(),
       overview: json['overview'] as String?,
       tags: (json['tags'] as List?)?.cast<String>() ?? const [],
-      finishedAt: DateTime.tryParse(json['finishedAt'] as String? ?? ''),
+      finishedAt: tryParseIsoDateTime(json['finishedAt'] as String? ?? ''),
       createdAt:
-          DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+          tryParseIsoDateTime(json['createdAt'] as String? ?? '') ??
               DateTime.now(),
       reviews: (json['reviews'] as List?)
               ?.map((r) => MediaReview.fromJson(Map<String, dynamic>.from(r)))

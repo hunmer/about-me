@@ -1,5 +1,6 @@
 import 'package:uuid/uuid.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// TTS队列项状态
 enum TTSQueueItemStatus {
   /// 等待中
@@ -56,7 +57,7 @@ class TTSQueueItem {
         orElse: () => TTSQueueItemStatus.pending,
       ),
       error: json['error'] as String?,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: parseIsoDateTime(json['createdAt'] as String),
     );
   }
 

@@ -1,3 +1,4 @@
+import 'package:shared_models/shared_models.dart';
 class FilterConfig {
   final String? nameKeyword;
   final DateTime? startDate;
@@ -28,11 +29,11 @@ class FilterConfig {
       nameKeyword: json['nameKeyword'] as String?,
       startDate:
           json['startDate'] != null
-              ? DateTime.tryParse(json['startDate'] as String? ?? '')
+              ? tryParseIsoDateTime(json['startDate'] as String? ?? '')
               : null,
       endDate:
           json['endDate'] != null
-              ? DateTime.tryParse(json['endDate'] as String? ?? '')
+              ? tryParseIsoDateTime(json['endDate'] as String? ?? '')
               : null,
       uncontactedDays: json['uncontactedDays'] as int?,
       selectedTags: List<String>.from(json['selectedTags'] as List? ?? []),

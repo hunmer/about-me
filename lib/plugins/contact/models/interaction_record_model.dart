@@ -1,3 +1,4 @@
+import 'package:shared_models/shared_models.dart';
 class InteractionRecord {
   final String id;
   final String contactId;
@@ -37,7 +38,7 @@ class InteractionRecord {
     return InteractionRecord(
       id: json['id'] as String,
       contactId: json['contactId'] as String,
-      date: DateTime.parse(json['date'] as String),
+      date: parseIsoDateTime(json['date'] as String),
       notes: json['notes'] as String,
       participants: List<String>.from(json['participants'] as List? ?? []),
     );

@@ -5,6 +5,7 @@ library;
 
 import 'package:aboutme/core/event/event_manager.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 计时器事件类型
 enum TimerEventType {
   /// 计时器启动
@@ -58,7 +59,7 @@ class UnifiedTimerEventArgs extends EventArgs {
       json['timerState'],
       TimerEventType.values[json['eventType'] as int],
       data: json['data'] as Map<String, dynamic>?,
-      timestamp: DateTime.parse(json['timestamp'] as String),
+      timestamp: parseIsoDateTime(json['timestamp'] as String),
     );
   }
 
@@ -219,7 +220,7 @@ class TimerStatsEventArgs {
       startCount: json['startCount'] as int,
       completeCount: json['completeCount'] as int,
       averageDuration: Duration(milliseconds: json['averageDuration'] as int),
-      timestamp: DateTime.parse(json['timestamp'] as String),
+      timestamp: parseIsoDateTime(json['timestamp'] as String),
     );
   }
 
@@ -271,7 +272,7 @@ class TimerErrorEventArgs {
       timerId: json['timerId'] as String,
       error: json['error'] as String,
       stackTrace: json['stackTrace'] as String?,
-      timestamp: DateTime.parse(json['timestamp'] as String),
+      timestamp: parseIsoDateTime(json['timestamp'] as String),
     );
   }
 

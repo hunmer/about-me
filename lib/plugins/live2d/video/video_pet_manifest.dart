@@ -303,6 +303,7 @@ class VideoPetAnimation {
     this.sources = const {},
     this.spritesheet,
     this.moving,
+    this.enabled = true,
   });
 
   final String id;
@@ -314,6 +315,9 @@ class VideoPetAnimation {
 
   /// Null means legacy continuous movement; empty means explicitly no movement.
   final List<VideoPetLocomotion>? moving;
+
+  /// 是否参与 Jev 决策（false 的动作不会出现在候选列表中）。
+  final bool enabled;
 
   /// Validated spritesheets have exactly one image source.
   String? get imageFormat => sources.containsKey('webp')
@@ -368,6 +372,7 @@ class VideoPetAnimation {
       facing: _string(json, 'facing'),
       sources: Map.unmodifiable(sources.cast<String, String>()),
       moving: moving == null ? null : List.unmodifiable(moving),
+      enabled: json['enabled'] as bool? ?? true,
       spritesheet: spritesheetJson == null
           ? null
           : VideoPetSpritesheet.fromJson(
@@ -382,6 +387,7 @@ class VideoPetAnimation {
     'category': category,
     if (facing.isNotEmpty) 'facing': facing,
     'sources': Map<String, String>.of(sources),
+    if (!enabled) 'enabled': false,
     if (spritesheet != null) 'spritesheet': spritesheet!.toJson(),
     if (moving != null)
       'moving': moving!.map((item) => item.toJsonList()).toList(),
@@ -393,6 +399,7 @@ class VideoPetAnimation {
     String? category,
     String? facing,
     Map<String, String>? sources,
+    bool? enabled,
     Object? spritesheet = _unset,
     Object? moving = _unset,
   }) => VideoPetAnimation(
@@ -401,6 +408,7 @@ class VideoPetAnimation {
     category: category ?? this.category,
     facing: facing ?? this.facing,
     sources: Map.unmodifiable(sources ?? this.sources),
+    enabled: enabled ?? this.enabled,
     spritesheet: identical(spritesheet, _unset)
         ? this.spritesheet
         : spritesheet as VideoPetSpritesheet?,

@@ -349,7 +349,7 @@ Future<String> _jsAddUsageRecord(Map<String, dynamic> params) async {
     }
 
     // 解析日期
-    final date = dateStr != null ? DateTime.parse(dateStr) : DateTime.now();
+    final date = dateStr != null ? parseIsoDateTime(dateStr) : DateTime.now();
 
     // 添加使用记录
     final updatedItem = result.item.addUsageRecord(date, note: note);

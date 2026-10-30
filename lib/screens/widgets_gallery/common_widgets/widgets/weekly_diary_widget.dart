@@ -11,6 +11,7 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/screens/home_screen/models/home_widget_size.dart';
 import 'package:intl/intl.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 七日周报小组件
 ///
 /// 显示本周七天日记的概览，包括日期、心情和标题
@@ -178,7 +179,7 @@ class WeeklyDiaryWidget extends StatelessWidget {
     if (dateStr.isEmpty) return;
 
     try {
-      final date = DateTime.parse(dateStr);
+      final date = parseIsoDateTime(dateStr);
 
       // 使用路由导航到日记编辑器
       Navigator.of(context).pushNamed(

@@ -19,7 +19,7 @@ class DiaryUtils {
 
   static Map<DateTime, DiaryEntry> _entries(Map<String, dynamic> response) => {
     for (final raw in (_result(response) as Map)['data'] as List)
-      DateTime.parse(raw['date'] as String): DiaryEntry.fromJson({
+      parseIsoDateTime(raw['date'] as String): DiaryEntry.fromJson({
         ...Map<String, dynamic>.from(raw as Map),
         '_sdkVersion': response['version'],
       }),

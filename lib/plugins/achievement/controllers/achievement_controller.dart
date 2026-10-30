@@ -9,6 +9,7 @@ import 'package:aboutme/plugins/achievement/models/achievement_definition.dart';
 import 'package:aboutme/plugins/base_plugin.dart';
 import 'package:aboutme/plugins/store/store_plugin.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 单个成就系列的运行时进度
 class AchievementProgress {
   /// 当前累计值（自维护计数：事件增量累加，删除源数据不回退）
@@ -42,7 +43,7 @@ class AchievementProgress {
       value: (json['value'] as num?)?.toInt() ?? 0,
       unlockedLevel: (json['unlockedLevel'] as num?)?.toInt() ?? 0,
       unlockedDates: (json['unlockedDates'] as List<dynamic>?)
-              ?.map((d) => d == null ? null : DateTime.tryParse(d.toString()))
+              ?.map((d) => d == null ? null : tryParseIsoDateTime(d.toString()))
               .toList() ??
           [],
       earnedPoints: (json['earnedPoints'] as num?)?.toInt() ?? 0,

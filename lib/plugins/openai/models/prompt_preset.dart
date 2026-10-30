@@ -1,5 +1,6 @@
 import 'ai_agent.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// Prompt 预设模型
 /// 用于管理可复用的系统提示词模板
 class PromptPreset {
@@ -48,8 +49,8 @@ class PromptPreset {
     tags: (json['tags'] as List?)?.cast<String>() ?? [],
     category: json['category'] as String?,
     isDefault: json['isDefault'] as bool? ?? false,
-    createdAt: DateTime.parse(json['createdAt'] as String),
-    updatedAt: DateTime.parse(json['updatedAt'] as String),
+    createdAt: parseIsoDateTime(json['createdAt'] as String),
+    updatedAt: parseIsoDateTime(json['updatedAt'] as String),
     prompts: (json['prompts'] as List?)
         ?.map((p) => Prompt.fromJson(p as Map<String, dynamic>))
         .toList(),

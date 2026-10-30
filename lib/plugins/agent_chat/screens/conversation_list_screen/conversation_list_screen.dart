@@ -160,7 +160,7 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
     return [
       FilterItem(
         id: 'groups',
-        title: '分组',
+        title: 'agent_chat_groupFilter'.tr,
         type: FilterType.tagsMultiple,
         builder: (context, currentValue, onChanged) {
           final selectedGroups = currentValue as List<String>? ?? [];
@@ -225,14 +225,16 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
     ];
   }
 
-  /// 构建 Agent 过滤的 FilterItem（单选：全部 + 各角色卡）
+  /// 构建 Agent 过滤的 FilterItem（单选：全部 + 本插件 + 各角色卡）
   ///
-  /// 带 agentId 的会话（角色卡/Live2D 入口创建）默认不展示，
-  /// 选中具体 Agent 后仅显示该 Agent 的会话
+  /// 默认选中【本插件】（agentId == null 的手动创建会话）；
+  /// 【全部】不按 Agent 过滤；选中具体 Agent 后仅显示该 Agent 的会话
   List<FilterItem> _buildAgentFilterItems() {
     if (_agents.isEmpty) {
       return [];
     }
+
+    const localFilter = ConversationController.localPluginFilter;
 
     return [
       FilterItem(
@@ -240,7 +242,7 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
         title: 'Agent',
         type: FilterType.tagsSingle,
         builder: (context, currentValue, onChanged) {
-          final selectedAgentId = currentValue as String? ?? '';
+          final selectedAgentId = currentValue as String? ?? localFilter;
 
           // 第三方过滤面板回调内构建 DS 组件需包 DSThemeBridge
           return DSThemeBridge(
@@ -248,7 +250,7 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
               builder: (context) {
                 return Row(
                   children: [
-                    // "全部"按钮：清除 Agent 过滤，仅显示无 Agent 的普通会话
+                    // "全部"按钮：清除 Agent 过滤，显示全部会话
                     Padding(
                       padding: const EdgeInsets.only(right: 8),
                       child: Center(
@@ -258,6 +260,21 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
                           onSelected: (selected) {
                             if (selected || selectedAgentId.isNotEmpty) {
                               onChanged('', done: true);
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                    // "本插件"按钮：仅显示本插件手动创建的会话
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: Center(
+                        child: DSChip(
+                          label: '本插件',
+                          selected: selectedAgentId == localFilter,
+                          onSelected: (selected) {
+                            if (selected) {
+                              onChanged(localFilter, done: true);
                             }
                           },
                         ),
@@ -290,6 +307,7 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
         getBadge: (value) {
           final id = value as String? ?? '';
           if (id.isEmpty) return null;
+          if (id == localFilter) return '本插件';
           for (final agent in _agents) {
             if (agent.id == id) {
               return agent.name.length > 6
@@ -299,7 +317,7 @@ class _ConversationListScreenState extends State<ConversationListScreen> {
           }
           return null;
         },
-        initialValue: '',
+        initialValue: localFilter,
       ),
     ];
   }

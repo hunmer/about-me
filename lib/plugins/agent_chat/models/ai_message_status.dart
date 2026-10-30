@@ -1,3 +1,4 @@
+import 'package:shared_models/shared_models.dart';
 /// AI 消息生成状态枚举
 enum AIMessageStatus {
   /// 待生成 - 消息已创建但尚未开始生成
@@ -152,7 +153,7 @@ class AIMessageStatusData {
         (e) => e.name == json['status'],
         orElse: () => AIMessageStatus.pending,
       ),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      updatedAt: parseIsoDateTime(json['updatedAt'] as String),
       generatedByAgentId: json['generatedByAgentId'] as String?,
       chainExecutionId: json['chainExecutionId'] as String?,
       chainStepIndex: json['chainStepIndex'] as int?,
@@ -276,10 +277,10 @@ class ToolCallStepInfo {
       result: json['result'] as String?,
       error: json['error'] as String?,
       startedAt: json['startedAt'] != null
-          ? DateTime.parse(json['startedAt'] as String)
+          ? parseIsoDateTime(json['startedAt'] as String)
           : null,
       completedAt: json['completedAt'] != null
-          ? DateTime.parse(json['completedAt'] as String)
+          ? parseIsoDateTime(json['completedAt'] as String)
           : null,
     );
   }

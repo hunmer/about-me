@@ -4,6 +4,7 @@ library;
 import 'package:shared_models/utils/result.dart';
 import 'package:shared_models/utils/pagination.dart';
 
+import 'package:shared_models/shared_models.dart';
 // ============ DTOs ============
 
 /// 日历事件 DTO
@@ -42,22 +43,22 @@ class CalendarEventDto {
       id: json['id'] as String,
       title: json['title'] as String,
       description: json['description'] as String? ?? '',
-      startTime: DateTime.parse(json['startTime'] as String),
+      startTime: parseIsoDateTime(json['startTime'] as String),
       endTime: json['endTime'] != null
-          ? DateTime.parse(json['endTime'] as String)
+          ? parseIsoDateTime(json['endTime'] as String)
           : null,
       icon: json['icon'] as int,
       color: json['color'] as int,
       source: json['source'] as String? ?? 'default',
       reminderMinutes: json['reminderMinutes'] as int?,
       completedTime: json['completedTime'] != null
-          ? DateTime.parse(json['completedTime'] as String)
+          ? parseIsoDateTime(json['completedTime'] as String)
           : null,
       createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'] as String)
+          ? parseIsoDateTime(json['createdAt'] as String)
           : null,
       updatedAt: json['updatedAt'] != null
-          ? DateTime.parse(json['updatedAt'] as String)
+          ? parseIsoDateTime(json['updatedAt'] as String)
           : null,
     );
   }

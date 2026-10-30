@@ -6,6 +6,7 @@ library;
 import 'package:shared_models/utils/result.dart';
 import 'package:shared_models/utils/pagination.dart';
 
+import 'package:shared_models/shared_models.dart';
 // ============ DTOs ============
 
 /// 笔记 DTO
@@ -39,8 +40,8 @@ class NoteDto {
       content: json['content'] as String? ?? '',
       folderId: json['folderId'] as String?,
       tags: (json['tags'] as List<dynamic>?)?.cast<String>() ?? [],
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      createdAt: parseIsoDateTime(json['createdAt'] as String),
+      updatedAt: parseIsoDateTime(json['updatedAt'] as String),
       isPinned: json['isPinned'] as bool? ?? false,
       metadata: json['metadata'] as Map<String, dynamic>?,
     );
@@ -112,8 +113,8 @@ class FolderDto {
       parentId: json['parentId'] as String?,
       icon: json['icon'] as int?,
       color: json['color'] as String?,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      createdAt: parseIsoDateTime(json['createdAt'] as String),
+      updatedAt: parseIsoDateTime(json['updatedAt'] as String),
     );
   }
 

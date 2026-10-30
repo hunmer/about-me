@@ -24,6 +24,8 @@ import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'widgets/message_list.dart';
 import 'widgets/message_input/index.dart';
+// 通用输入组件的快捷动作类型（多选工具栏按钮）
+import 'package:aboutme/widgets/message_input/message_input.dart' as common_input;
 import 'widgets/chat_screen_scaffold.dart';
 import 'dialogs/clear_messages_dialog.dart';
 import 'utils/message_list_builder.dart';
@@ -705,23 +707,8 @@ class _ChatScreenState extends State<ChatScreen> {
   List<Widget> _buildActions() {
     final ds = AppTheme.of(context);
     if (_controller.isMultiSelectMode) {
+      // 复制/删除移至底部输入栏的多选工具栏，AppBar 仅保留退出入口
       return [
-        DSIconButton(
-          icon: DsIconKind.copy,
-          size: 36,
-          color: ds.surfaceAlt,
-          iconColor: ds.textSub,
-          onPressed: _copySelectedMessages,
-          tooltip: '复制选中消息',
-        ),
-        DSIconButton(
-          icon: DsIconKind.trash,
-          size: 36,
-          color: ds.surfaceAlt,
-          iconColor: ds.danger,
-          onPressed: _deleteSelectedMessages,
-          tooltip: '删除选中消息',
-        ),
         DSIconButton(
           icon: DsIconKind.close,
           size: 36,
@@ -908,6 +895,21 @@ class _ChatScreenState extends State<ChatScreen> {
         // 已封存频道禁止发送消息，用提示条替换输入框
         _isChannelArchived() ? _buildArchivedBanner() : MessageInput(
               controller: _controller.draftController,
+              // 多选模式：输入框替换为一行工具栏（复制/删除选中消息）
+              selectionActions: _controller.isMultiSelectMode
+                  ? [
+                      common_input.MessageInputQuickAction(
+                        icon: DsIconKind.copy,
+                        tooltip: '复制选中消息',
+                        onPressed: _copySelectedMessages,
+                      ),
+                      common_input.MessageInputQuickAction(
+                        icon: DsIconKind.trash,
+                        tooltip: '删除选中消息',
+                        onPressed: _deleteSelectedMessages,
+                      ),
+                    ]
+                  : null,
               onSendMessage:
                   (content, {metadata, String type = 'text', replyTo}) async {
                 // 频道开启自动回复时，把配置的 agent 并入消息元数据，

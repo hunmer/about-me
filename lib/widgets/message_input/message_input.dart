@@ -63,6 +63,10 @@ class MessageInput extends StatefulWidget {
   /// 素描面板描边用虚线（需 [showPanelStroke] 为 true）
   final bool dashedPanelStroke;
 
+  /// 选择模式工具栏动作（如多选消息的复制/删除）；
+  /// 非 null 时隐藏常规输入 UI，整行替换为该水平工具栏
+  final List<MessageInputQuickAction>? selectionActions;
+
   const MessageInput({
     super.key,
     required this.controller,
@@ -84,6 +88,7 @@ class MessageInput extends StatefulWidget {
     this.useSketchPanel = false,
     this.showPanelStroke = true,
     this.dashedPanelStroke = false,
+    this.selectionActions,
   });
 
   @override
@@ -190,6 +195,20 @@ class _MessageInputState extends State<MessageInput> {
               ),
             ];
           }
+          // 选择模式（如消息多选）：隐藏常规输入 UI，整行替换为水平工具栏
+          if (widget.selectionActions != null) {
+            return _buildInCurrentWrapper(
+              context,
+              theme,
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: MessageInputQuickToolbar(
+                  actions: widget.selectionActions!,
+                  trailingActions: const [],
+                ),
+              ),
+            );
+          }
           final body = Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -247,41 +266,50 @@ class _MessageInputState extends State<MessageInput> {
             ],
           );
 
-          if (widget.useSketchPanel) {
-            // 素描面板风格：纸底 + 排线 + 墨线框（design.md §9.1，去柔影）
-            return SafeArea(
-              top: false,
-              left: false,
-              right: false,
-              child: DsSketchPanel(
-                theme: theme,
-                radius: theme.radii.xl,
-                stroke: widget.showPanelStroke
-                    ? null
-                    : DsColors.transparent,
-                dashedStroke: widget.showPanelStroke && widget.dashedPanelStroke,
-                child: body,
-              ),
-            );
-          }
-
-          // 悬浮输入框风格：与屏幕底部保持间距（含底部安全边距），
-          // 圆角卡片浮于列表之上
-          return Container(
-            margin: EdgeInsets.only(
-              left: 8.0,
-              right: 8.0,
-              bottom: 8.0 + MediaQuery.of(context).padding.bottom,
-            ),
-            decoration: BoxDecoration(
-              color: theme.surface,
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: theme.shadows.soft,
-            ),
-            child: body,
-          );
+          return _buildInCurrentWrapper(context, theme, body);
         },
       ),
+    );
+  }
+
+  /// 按容器风格包装内容：素描面板（纸底+墨线框）或悬浮圆角卡片
+  Widget _buildInCurrentWrapper(
+    BuildContext context,
+    AppThemeData theme,
+    Widget child,
+  ) {
+    if (widget.useSketchPanel) {
+      // 素描面板风格：纸底 + 排线 + 墨线框（design.md §9.1，去柔影）
+      return SafeArea(
+        top: false,
+        left: false,
+        right: false,
+        child: DsSketchPanel(
+          theme: theme,
+          radius: theme.radii.xl,
+          stroke: widget.showPanelStroke
+              ? null
+              : DsColors.transparent,
+          dashedStroke: widget.showPanelStroke && widget.dashedPanelStroke,
+          child: child,
+        ),
+      );
+    }
+
+    // 悬浮输入框风格：与屏幕底部保持间距（含底部安全边距），
+    // 圆角卡片浮于列表之上
+    return Container(
+      margin: EdgeInsets.only(
+        left: 8.0,
+        right: 8.0,
+        bottom: 8.0 + MediaQuery.of(context).padding.bottom,
+      ),
+      decoration: BoxDecoration(
+        color: theme.surface,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: theme.shadows.soft,
+      ),
+      child: child,
     );
   }
 }

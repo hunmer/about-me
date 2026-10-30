@@ -701,10 +701,10 @@ Future<String> _jsFindTasksByStatus(Map<String, dynamic> params) async {
     DateTime? endDate;
 
     if (startDateStr != null && startDateStr.isNotEmpty) {
-      startDate = DateTime.tryParse(startDateStr);
+      startDate = tryParseIsoDateTime(startDateStr);
     }
     if (endDateStr != null && endDateStr.isNotEmpty) {
-      endDate = DateTime.tryParse(endDateStr);
+      endDate = tryParseIsoDateTime(endDateStr);
     }
 
     tasks = tasks.where((task) {

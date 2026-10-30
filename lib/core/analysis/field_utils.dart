@@ -6,6 +6,7 @@ library;
 
 import 'dart:convert';
 
+import 'package:shared_models/shared_models.dart';
 /// 字段工具类
 class FieldUtils {
   FieldUtils._(); // 私有构造函数，禁止实例化
@@ -268,7 +269,7 @@ class FieldUtils {
     if (params.containsKey('startDate')) {
       final startDateStr = params['startDate']?.toString();
       if (startDateStr != null) {
-        startDate = DateTime.tryParse(startDateStr);
+        startDate = tryParseIsoDateTime(startDateStr);
       }
     }
 
@@ -276,7 +277,7 @@ class FieldUtils {
     if (params.containsKey('endDate')) {
       final endDateStr = params['endDate']?.toString();
       if (endDateStr != null) {
-        endDate = DateTime.tryParse(endDateStr);
+        endDate = tryParseIsoDateTime(endDateStr);
       }
     }
 

@@ -1,3 +1,4 @@
+import 'package:shared_models/shared_models.dart';
 
 /// 下载状态枚举
 enum DownloadStatus {
@@ -58,9 +59,9 @@ class AppStoreSource {
       url: json['url'] as String,
       baseUrl: json['baseUrl'] as String,
       isDefault: json['isDefault'] as bool? ?? false,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: parseIsoDateTime(json['createdAt'] as String),
       lastFetchedAt: json['lastFetchedAt'] != null
-          ? DateTime.parse(json['lastFetchedAt'] as String)
+          ? parseIsoDateTime(json['lastFetchedAt'] as String)
           : null,
       appCount: json['appCount'] as int?,
     );
@@ -253,7 +254,7 @@ class InstalledApp {
     return InstalledApp(
       appId: json['appId'] as String,
       version: json['version'] as String,
-      installedAt: DateTime.parse(json['installedAt'] as String),
+      installedAt: parseIsoDateTime(json['installedAt'] as String),
       sourceId: json['sourceId'] as String,
       cardId: json['cardId'] as String,
     );

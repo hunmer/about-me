@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'form_field_wrapper.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 提醒日期选择器类型
 enum ReminderDateType {
   none, // 无
@@ -42,7 +43,7 @@ class ReminderDateData {
       time:
           map['time'] != null
               ? TimeOfDay.fromDateTime(
-                DateTime.parse('1970-01-01 ${map['time']}'),
+                parseIsoDateTime('1970-01-01 ${map['time']}'),
               )
               : null,
     );

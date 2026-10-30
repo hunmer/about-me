@@ -591,7 +591,7 @@ Future<String> _jsFindBillsByCategory(Map<String, dynamic> params) async {
 
   if (startDate != null && startDate.isNotEmpty) {
     try {
-      start = DateTime.parse(startDate);
+      start = parseIsoDateTime(startDate);
     } catch (e) {
       return jsonEncode({'error': '日期格式错误: $startDate，应为 YYYY-MM-DD 格式'});
     }
@@ -599,7 +599,7 @@ Future<String> _jsFindBillsByCategory(Map<String, dynamic> params) async {
 
   if (endDate != null && endDate.isNotEmpty) {
     try {
-      end = DateTime.parse(endDate);
+      end = parseIsoDateTime(endDate);
     } catch (e) {
       return jsonEncode({'error': '日期格式错误: $endDate，应为 YYYY-MM-DD 格式'});
     }
@@ -651,7 +651,7 @@ num? _subscriptionNumber(dynamic value) {
 
 DateTime? _subscriptionDate(dynamic value) {
   if (value is DateTime) return value;
-  if (value is String && value.isNotEmpty) return DateTime.tryParse(value);
+  if (value is String && value.isNotEmpty) return tryParseIsoDateTime(value);
   return null;
 }
 

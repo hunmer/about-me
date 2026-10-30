@@ -4,6 +4,7 @@ library;
 import 'package:shared_models/utils/result.dart';
 import 'package:shared_models/utils/pagination.dart';
 
+import 'package:shared_models/shared_models.dart';
 // ============ DTOs ============
 
 /// 商品 DTO
@@ -42,8 +43,8 @@ class ProductDto {
       category: json['category'] as String?,
       stock: json['stock'] as int,
       price: json['price'] as int,
-      exchangeStart: DateTime.parse(json['exchangeStart'] as String),
-      exchangeEnd: DateTime.parse(json['exchangeEnd'] as String),
+      exchangeStart: parseIsoDateTime(json['exchangeStart'] as String),
+      exchangeEnd: parseIsoDateTime(json['exchangeEnd'] as String),
       useDuration: json['useDuration'] as int,
     );
   }
@@ -117,8 +118,8 @@ class UserItemDto {
       id: json['id'] as String,
       productId: json['productId'] as String,
       remaining: json['remaining'] as int,
-      expireDate: DateTime.parse(json['expireDate'] as String),
-      purchaseDate: DateTime.parse(json['purchaseDate'] as String),
+      expireDate: parseIsoDateTime(json['expireDate'] as String),
+      purchaseDate: parseIsoDateTime(json['purchaseDate'] as String),
       purchasePrice: json['purchasePrice'] as int,
       productSnapshot:
           Map<String, dynamic>.from(json['productSnapshot'] as Map),
@@ -180,7 +181,7 @@ class PointsLogDto {
       type: json['type'] as String,
       value: json['value'] as int,
       reason: json['reason'] as String,
-      timestamp: DateTime.parse(json['timestamp'] as String),
+      timestamp: parseIsoDateTime(json['timestamp'] as String),
     );
   }
 
@@ -229,7 +230,7 @@ class UsedItemDto {
     return UsedItemDto(
       id: json['id'] as String,
       productId: json['productId'] as String,
-      useDate: DateTime.parse(json['useDate'] as String),
+      useDate: parseIsoDateTime(json['useDate'] as String),
       productSnapshot:
           Map<String, dynamic>.from(json['productSnapshot'] as Map),
     );

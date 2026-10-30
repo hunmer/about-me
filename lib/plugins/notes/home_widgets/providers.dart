@@ -13,6 +13,7 @@ import '../models/note.dart';
 import '../models/folder.dart';
 import 'utils.dart' show notesColor;
 
+import 'package:shared_models/shared_models.dart';
 /// 笔记列表小组件提供者
 ///
 /// 支持过滤器：文件夹、标签、日期范围
@@ -35,14 +36,14 @@ Future<Map<String, Map<String, dynamic>>> provideNotesListWidgets(
   DateTime? endDate;
   if (startDateStr != null) {
     try {
-      startDate = DateTime.parse(startDateStr);
+      startDate = parseIsoDateTime(startDateStr);
     } catch (e) {
       debugPrint('[NotesListWidgets] 解析 startDate 失败: $e');
     }
   }
   if (endDateStr != null) {
     try {
-      endDate = DateTime.parse(endDateStr);
+      endDate = parseIsoDateTime(endDateStr);
     } catch (e) {
       debugPrint('[NotesListWidgets] 解析 endDate 失败: $e');
     }

@@ -7,6 +7,7 @@ import 'package:aboutme/plugins/openai/models/ai_agent.dart';
 import 'aliveness_store.dart';
 import 'memory_service.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 独立的记忆批次调度器。每个来源、频道、Agent 保存待处理轮次和成功水位。
 /// 时间模式仅在有待处理轮次时运行；重启后恢复，失败不推进成功水位。
 class MemoryExtractionService {
@@ -170,11 +171,11 @@ class MemoryExtractionService {
         _inFlight.contains(key)) {
       return;
     }
-    final retryAt = DateTime.tryParse(state['retryAt'] as String? ?? '');
+    final retryAt = tryParseIsoDateTime(state['retryAt'] as String? ?? '');
     if (retryAt != null && now().isBefore(retryAt)) return;
     final since =
-        DateTime.tryParse(state['lastExtractedAt'] as String? ?? '') ??
-        DateTime.parse(pending.first['at'] as String);
+        tryParseIsoDateTime(state['lastExtractedAt'] as String? ?? '') ??
+        parseIsoDateTime(pending.first['at'] as String);
     final due = config!.memoryExtractionMode == 'interval'
         ? now().difference(since) >=
               Duration(

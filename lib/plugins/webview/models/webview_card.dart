@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 卡片类型枚举
 enum CardType {
   url,       // 在线 URL
@@ -103,8 +104,8 @@ class WebViewCard {
       backgroundColor:
           json['backgroundColor'] != null ? Color(json['backgroundColor'] as int) : null,
       iconCodePoint: json['iconCodePoint'] as int?,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      createdAt: parseIsoDateTime(json['createdAt'] as String),
+      updatedAt: parseIsoDateTime(json['updatedAt'] as String),
       openCount: json['openCount'] as int? ?? 0,
       isPinned: json['isPinned'] as bool? ?? false,
       tags: (json['tags'] as List<dynamic>?)?.cast<String>() ?? [],

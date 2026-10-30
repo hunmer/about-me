@@ -24,7 +24,7 @@ class ClientActivityRepository implements IActivityRepository {
     PaginationParams? pagination,
   }) async {
     try {
-      final dateTime = DateTime.parse(date);
+      final dateTime = parseIsoDateTime(date);
       final activities = await activityService.getActivitiesForDate(dateTime);
 
       // 转换为 DTO
@@ -52,7 +52,7 @@ class ClientActivityRepository implements IActivityRepository {
     required String date,
   }) async {
     try {
-      final dateTime = DateTime.parse(date);
+      final dateTime = parseIsoDateTime(date);
       final activities = await activityService.getActivitiesForDate(dateTime);
 
       final activity = activities.where((a) => a.id == id).firstOrNull;
@@ -85,7 +85,7 @@ class ClientActivityRepository implements IActivityRepository {
   }) async {
     try {
       // 获取旧活动
-      final dateTime = DateTime.parse(date);
+      final dateTime = parseIsoDateTime(date);
       final activities = await activityService.getActivitiesForDate(dateTime);
       final oldActivity = activities.where((a) => a.id == id).firstOrNull;
 
@@ -109,7 +109,7 @@ class ClientActivityRepository implements IActivityRepository {
     required String date,
   }) async {
     try {
-      final dateTime = DateTime.parse(date);
+      final dateTime = parseIsoDateTime(date);
       final activities = await activityService.getActivitiesForDate(dateTime);
 
       final activity = activities.where((a) => a.id == id).firstOrNull;
@@ -166,8 +166,8 @@ class ClientActivityRepository implements IActivityRepository {
     required String endDate,
   }) async {
     try {
-      final start = DateTime.parse(startDate);
-      final end = DateTime.parse(endDate);
+      final start = parseIsoDateTime(startDate);
+      final end = parseIsoDateTime(endDate);
 
       int totalActivities = 0;
       int totalMinutes = 0;

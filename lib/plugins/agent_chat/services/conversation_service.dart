@@ -7,6 +7,7 @@ import 'package:aboutme/plugins/agent_chat/models/agent_chain_node.dart';
 import 'package:aboutme/plugins/agent_chat/data/sample_data.dart';
 import 'package:aboutme/plugins/agent_chat/services/conversation_sync_service.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 会话服务
 ///
 /// 管理会话的CRUD操作
@@ -388,7 +389,7 @@ class ConversationService extends ChangeNotifier {
 
         // 检查是否过期
         if (expiresAtStr != null) {
-          final expiresAt = DateTime.parse(expiresAtStr);
+          final expiresAt = parseIsoDateTime(expiresAtStr);
           if (now.isAfter(expiresAt)) return false;
         }
 
@@ -412,7 +413,7 @@ class ConversationService extends ChangeNotifier {
       final expiresAtStr = metadata['expiresAt'] as String?;
 
       if (isTemporary && expiresAtStr != null) {
-        final expiresAt = DateTime.parse(expiresAtStr);
+        final expiresAt = parseIsoDateTime(expiresAtStr);
         if (now.isAfter(expiresAt)) {
           expiredConversations.add(conversation);
         }

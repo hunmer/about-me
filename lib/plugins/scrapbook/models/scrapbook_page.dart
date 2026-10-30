@@ -1,5 +1,6 @@
 import '../../../../screens/widgets_gallery/common_widgets/widgets/scrapbook_canvas_card/scrapbook_canvas_card.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// 一页手账：画布条目 + 涂鸦笔画 + 元数据
 ///
 /// 画布元素复用 widgets_gallery 的 ScrapItemData/ScrapStroke 模型，
@@ -43,8 +44,8 @@ class ScrapbookPage {
               .map(ScrapStroke.fromMap)
               .toList() ??
           [],
-      createdAt: DateTime.tryParse(map['createdAt'] as String? ?? ''),
-      updatedAt: DateTime.tryParse(map['updatedAt'] as String? ?? ''),
+      createdAt: tryParseIsoDateTime(map['createdAt'] as String? ?? ''),
+      updatedAt: tryParseIsoDateTime(map['updatedAt'] as String? ?? ''),
     );
   }
 

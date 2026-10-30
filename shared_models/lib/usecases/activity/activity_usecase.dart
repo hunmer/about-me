@@ -10,6 +10,7 @@ import 'package:shared_models/utils/result.dart';
 import 'package:shared_models/utils/pagination.dart';
 import 'package:shared_models/utils/validation.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// Activity UseCase - 封装所有业务逻辑
 class ActivityUseCase {
   final IActivityRepository repository;
@@ -26,7 +27,7 @@ class ActivityUseCase {
 
   /// ISO 偏移表示真实时刻；转为本地时间后再进行日期分组。
   DateTime _parseActivityTime(String value) {
-    return DateTime.parse(value).toLocal();
+    return parseIsoDateTime(value).toLocal();
   }
 
   /// 从参数提取分页配置
@@ -337,8 +338,8 @@ class ActivityUseCase {
 
     try {
       // 验证日期格式
-      DateTime.parse(startDate);
-      DateTime.parse(endDate);
+      parseIsoDateTime(startDate);
+      parseIsoDateTime(endDate);
 
       final result = await repository.getRangeStats(
         startDate: startDate,

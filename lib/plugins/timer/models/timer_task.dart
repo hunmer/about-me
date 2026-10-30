@@ -7,6 +7,7 @@ import '../../../../core/services/timer/unified_timer_controller.dart';
 import '../../../../core/services/timer/models/timer_state.dart';
 import 'package:aboutme/core/utils/icon_utils.dart';
 
+import 'package:shared_models/shared_models.dart';
 class TimerTaskEventArgs extends EventArgs {
   final TimerTask task;
   TimerTaskEventArgs(this.task, [String eventName = 'timer_task_changed'])
@@ -60,7 +61,7 @@ class TimerTask {
           (json['timerItems'] as List)
               .map((item) => TimerItem.fromJson(item))
               .toList(),
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: parseIsoDateTime(json['createdAt'] as String),
       isRunning: json['isRunning'] as bool,
       group: json['group'] as String? ?? '默认',
       repeatCount: json['repeatCount'] as int? ?? 1,

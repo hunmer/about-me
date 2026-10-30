@@ -8,6 +8,7 @@ import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/plugins/chat/chat_plugin.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// AI 线程内单条消息（用户追问 / AI 回复）
 class AiThreadMessage {
   final String id;
@@ -55,7 +56,7 @@ class AiThreadMessage {
     audioPath: json['audioPath'] as String?,
     audioDurationSec: json['audioDurationSec'] as int?,
     status: json['status'] as String? ?? 'done',
-    date: DateTime.tryParse(json['date'] as String? ?? '') ?? DateTime.now(),
+    date: tryParseIsoDateTime(json['date'] as String? ?? '') ?? DateTime.now(),
     agentId: json['agentId'] as String?,
     agentName: json['agentName'] as String?,
   );

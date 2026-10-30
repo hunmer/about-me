@@ -47,7 +47,11 @@ extension _ChatScreenMessageListExt on _ChatScreenState {
           return const SizedBox.shrink();
         }
 
-        return _BubbleEntrance(
+        // 选中集合监听：bubbleBuilder 产物不随 ValueNotifier 自动重建，
+        // 点击切换选中后靠这里局部重绘气泡（复选框/选中底色）
+        return ValueListenableBuilder<Set<String>>(
+          valueListenable: _selectedMessageIds,
+          builder: (context, selectedIds, _) => _BubbleEntrance(
           isNew: source.timestamp.isAfter(
             DateTime.now().subtract(const Duration(seconds: 5)),
           ),
@@ -55,7 +59,7 @@ extension _ChatScreenMessageListExt on _ChatScreenState {
           // chat 气泡框架：头像/时间戳/悬浮操作栏，内容由 agent 组件注入
           child: chat_bubble.MessageBubble(
             message: message,
-            isSelected: _selectedMessageIds.value.contains(source.id),
+            isSelected: selectedIds.contains(source.id),
             isMultiSelectMode: _isMultiSelectMode,
             // 多选模式下点击气泡切换选中
             onTap: _isMultiSelectMode
@@ -106,6 +110,7 @@ extension _ChatScreenMessageListExt on _ChatScreenState {
             infoBarTrailing: _buildThinkingEntry(source),
             actionsOverride: _buildAgentActionRow(source),
             showActionsOnOwnMessage: true,
+          ),
           ),
         );
       },

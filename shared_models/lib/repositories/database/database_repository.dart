@@ -4,6 +4,7 @@ library;
 import 'package:shared_models/utils/result.dart';
 import 'package:shared_models/utils/pagination.dart';
 
+import 'package:shared_models/shared_models.dart';
 // ============ DTOs ============
 
 /// 数据库模型 DTO
@@ -37,8 +38,8 @@ class DatabaseModelDto {
               ?.map((e) => DatabaseFieldDto.fromJson(e as Map<String, dynamic>))
               .toList() ??
           const [],
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      createdAt: parseIsoDateTime(json['createdAt'] as String),
+      updatedAt: parseIsoDateTime(json['updatedAt'] as String),
     );
   }
 
@@ -145,8 +146,8 @@ class DatabaseRecordDto {
       id: json['id'] as String,
       tableId: json['tableId'] as String,
       fields: Map<String, dynamic>.from(json['fields'] as Map),
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      createdAt: parseIsoDateTime(json['createdAt'] as String),
+      updatedAt: parseIsoDateTime(json['updatedAt'] as String),
     );
   }
 

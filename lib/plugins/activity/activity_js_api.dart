@@ -77,7 +77,7 @@ Future<String> _jsUpdateActivity(Map<String, dynamic> params) async {
     // 如果没有 date，从 startTime 推断
     if (!updatedParams.containsKey('date') && updatedParams.containsKey('startTime')) {
       final startTimeStr = updatedParams['startTime'] as String;
-      final startTime = DateTime.parse(startTimeStr).toLocal();
+      final startTime = parseIsoDateTime(startTimeStr).toLocal();
       updatedParams['date'] =
           '${startTime.year}-${startTime.month.toString().padLeft(2, '0')}-${startTime.day.toString().padLeft(2, '0')}';
     }

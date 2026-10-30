@@ -16,6 +16,7 @@ import 'package:aboutme/plugins/goods/screens/goods_item_detail_screen.dart';
 import 'package:aboutme/plugins/goods/widgets/goods_item_card.dart';
 import 'package:aboutme/plugins/goods/widgets/goods_item_list_tile.dart';
 
+import 'package:shared_models/shared_models.dart';
 class GoodsListScreen extends StatefulWidget {
   const GoodsListScreen({
     super.key,
@@ -63,7 +64,7 @@ class _GoodsListScreenState extends State<GoodsListScreen> {
     // 如果有初始日期筛选
     if (widget.initialFilterStartDate != null) {
       try {
-        _multiFilters['startDate'] = DateTime.parse(
+        _multiFilters['startDate'] = parseIsoDateTime(
           widget.initialFilterStartDate!,
         );
       } catch (e) {
@@ -73,7 +74,7 @@ class _GoodsListScreenState extends State<GoodsListScreen> {
 
     if (widget.initialFilterEndDate != null) {
       try {
-        _multiFilters['endDate'] = DateTime.parse(widget.initialFilterEndDate!);
+        _multiFilters['endDate'] = parseIsoDateTime(widget.initialFilterEndDate!);
       } catch (e) {
         debugPrint('[GoodsListScreen] 解析 endDate 失败: $e');
       }

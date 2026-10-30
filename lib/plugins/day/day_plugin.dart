@@ -15,6 +15,7 @@ import 'models/memorial_day.dart';
 import 'repositories/client_day_repository.dart';
 import 'package:shared_models/usecases/day/day_usecase.dart';
 
+import 'package:shared_models/shared_models.dart';
 part 'day_js_api.dart';
 part 'day_data_selectors.dart';
 

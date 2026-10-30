@@ -4,6 +4,7 @@ library;
 import 'package:shared_models/utils/result.dart';
 import 'package:shared_models/utils/pagination.dart';
 
+import 'package:shared_models/shared_models.dart';
 // ============ DTOs ============
 
 /// 账户 DTO
@@ -35,8 +36,8 @@ class AccountDto {
       balance: (json['balance'] as num?)?.toDouble() ?? 0.0,
       icon: json['icon'] as String?,
       color: json['color'] as String?,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      createdAt: parseIsoDateTime(json['createdAt'] as String),
+      updatedAt: parseIsoDateTime(json['updatedAt'] as String),
       metadata: json['metadata'] as Map<String, dynamic>?,
     );
   }
@@ -113,9 +114,9 @@ class BillDto {
       type: json['type'] as String,
       category: json['category'] as String,
       description: json['description'] as String?,
-      date: DateTime.parse(json['date'] as String),
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      date: parseIsoDateTime(json['date'] as String),
+      createdAt: parseIsoDateTime(json['createdAt'] as String),
+      updatedAt: parseIsoDateTime(json['updatedAt'] as String),
       tags: (json['tags'] as List<dynamic>?)?.cast<String>() ?? [],
       metadata: json['metadata'] as Map<String, dynamic>?,
     );

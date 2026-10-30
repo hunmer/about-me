@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:shared_models/shared_models.dart';
 /// 独立记忆库中的键值记录，tags 用于相关性检索。
 class MemoryFragment {
   final String id;
@@ -75,7 +76,7 @@ class MemoryFragment {
     id: json['id'] as String,
     key: json['key'] as String?,
     content: (json['value'] ?? json['content']) as String,
-    updatedAt: DateTime.tryParse(json['updatedAt'] as String? ?? ''),
+    updatedAt: tryParseIsoDateTime(json['updatedAt'] as String? ?? ''),
     revision: json['revision'] as int? ?? 1,
     source: json['source'] as String? ?? 'legacy',
     confidence: ((json['confidence'] as num?)?.toDouble() ?? 1.0).clamp(
@@ -93,10 +94,10 @@ class MemoryFragment {
     userMarked: json['userMarked'] as bool? ?? false,
     archived: json['archived'] as bool? ?? false,
     createdAt: json['createdAt'] != null
-        ? DateTime.parse(json['createdAt'] as String)
+        ? parseIsoDateTime(json['createdAt'] as String)
         : DateTime.now(),
     lastActivatedAt: json['lastActivatedAt'] != null
-        ? DateTime.parse(json['lastActivatedAt'] as String)
+        ? parseIsoDateTime(json['lastActivatedAt'] as String)
         : null,
     activateCount: json['activateCount'] as int? ?? 0,
   );
@@ -135,10 +136,10 @@ class OpenLoop {
     id: json['id'] as String,
     description: json['description'] as String,
     createdAt: json['createdAt'] != null
-        ? DateTime.parse(json['createdAt'] as String)
+        ? parseIsoDateTime(json['createdAt'] as String)
         : DateTime.now(),
     followUpBy: json['followUpBy'] != null
-        ? DateTime.parse(json['followUpBy'] as String)
+        ? parseIsoDateTime(json['followUpBy'] as String)
         : null,
     closed: json['closed'] as bool? ?? false,
   );

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:shared_models/shared_models.dart';
 /// App 累计使用时长统计（仅前台时间）
 ///
 /// - 生命周期 resumed → 离开前台区间累计，切后台/熄屏/退出时落盘
@@ -43,7 +44,7 @@ class AppUsageService with WidgetsBindingObserver {
     _totalSeconds = prefs.getInt(_kTotalSeconds) ?? 0;
 
     final stored = prefs.getString(_kFirstUseDate);
-    _firstUseDate = DateTime.tryParse(stored ?? '') ?? DateTime.now();
+    _firstUseDate = tryParseIsoDateTime(stored ?? '') ?? DateTime.now();
     if (stored == null) {
       await prefs.setString(_kFirstUseDate, _firstUseDate.toIso8601String());
     }

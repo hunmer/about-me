@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:shared_models/shared_models.dart';
 /// 用户注册请求
 class RegisterRequest {
   /// 用户名 (通常是邮箱)
@@ -116,7 +117,7 @@ class AuthResponse {
         userId: json['user_id'] as String?,
         token: json['token'] as String?,
         expiresAt: json['expires_at'] != null
-            ? DateTime.parse(json['expires_at'] as String)
+            ? parseIsoDateTime(json['expires_at'] as String)
             : null,
         userSalt: json['user_salt'] as String?,
         error: json['error'] as String?,
@@ -197,9 +198,9 @@ class UserInfo {
         username: json['username'] as String,
         passwordHash: json['password_hash'] as String,
         salt: json['salt'] as String,
-        createdAt: DateTime.parse(json['created_at'] as String),
+        createdAt: parseIsoDateTime(json['created_at'] as String),
         lastLoginAt: json['last_login_at'] != null
-            ? DateTime.parse(json['last_login_at'] as String)
+            ? parseIsoDateTime(json['last_login_at'] as String)
             : null,
         devices: json['devices'] != null
             ? (json['devices'] as List)
@@ -261,9 +262,9 @@ class DeviceInfo {
         deviceId: json['device_id'] as String,
         deviceName: json['device_name'] as String?,
         lastSyncAt: json['last_sync_at'] != null
-            ? DateTime.parse(json['last_sync_at'] as String)
+            ? parseIsoDateTime(json['last_sync_at'] as String)
             : null,
-        createdAt: DateTime.parse(json['created_at'] as String),
+        createdAt: parseIsoDateTime(json['created_at'] as String),
       );
 }
 
