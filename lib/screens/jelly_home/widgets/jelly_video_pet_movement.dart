@@ -133,6 +133,7 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
   }
 
   int? _frameGeneration;
+  String? _lastFrameReject;
 
   void _animationFrame(VideoPetAnimationFrame frame, int phase) {
     if (!mounted ||
@@ -141,6 +142,21 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
         _turning ||
         !_canWalk ||
         frame.animationId != _movementAnimationId) {
+      final reason = !mounted
+          ? 'unmounted'
+          : phase != _phase
+          ? 'stalePhase($phase/${_phase})'
+          : !_walking
+          ? 'notWalking'
+          : _turning
+          ? 'turning'
+          : !_canWalk
+          ? 'blocked(${_blocked.join(',')})'
+          : 'animMismatch(${frame.animationId}/$_movementAnimationId)';
+      if (reason != _lastFrameReject) {
+        _lastFrameReject = reason;
+        _log('frame move REJECTED $reason');
+      }
       return;
     }
     final moving = _moving;
@@ -407,6 +423,10 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
     final turn = left
         ? movement.turnLeftAnimationId
         : movement.turnRightAnimationId;
+    _log(
+      'depart left=$left target=$_target from=${_position.dx} facingLeft=$_facingLeft '
+      'turn=$turn canWalk=$_canWalk blocked=[${_blocked.join(',')}] phase=$_phase',
+    );
     setState(() {
       ++_phase;
       _turning = left != _facingLeft && turn.isNotEmpty;
@@ -419,12 +439,17 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
   }
 
   void _startWalking() {
-    if (!_canWalk) return;
+    if (!_canWalk) {
+      _log('walk REJECTED blocked=[${_blocked.join(',')}]');
+      return;
+    }
     _facingLeft = _left;
     _turning = false;
     _walking = true;
+    _lastFrameReject = null;
     _log(
-      'walk start left=$_left from=${_position.dx} target=$_target speed=${widget.movement.speed} phase=$_phase',
+      'walk start left=$_left from=${_position.dx} target=$_target speed=${widget.movement.speed} '
+      'drive=${_moving == null ? 'ticker' : 'frames(${_movementAnimationId})'} phase=$_phase',
     );
     _previous = Duration.zero;
     if (_moving == null) _ticker.start();
@@ -635,7 +660,14 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
                   frameRequest: _frameRequest,
                   movementInterrupt: _interruptToken,
                   onComplete: () {
-                    if (mounted && phase == _phase && _turning && _canWalk) {
+                    if (!mounted) return;
+                    if (phase != _phase) {
+                      _log('turn complete REJECTED stalePhase=$phase phase=$_phase turning=$_turning');
+                    } else if (!_turning) {
+                      _log('turn complete REJECTED notTurning phase=$phase');
+                    } else if (!_canWalk) {
+                      _log('turn complete REJECTED blocked=[${_blocked.join(',')}]');
+                    } else {
                       _log('turn complete phase=$phase');
                       setState(_startWalking);
                     }
