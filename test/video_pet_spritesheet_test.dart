@@ -13,12 +13,16 @@ void main() {
   final animations = (manifest['animations'] as List)
       .cast<Map<String, dynamic>>();
 
-  test('default manifest contains all 108 distinct WebP animations', () {
+  test('default manifest contains only distinct base-action WebP animations', () {
     VideoPetManifest.fromJson(manifest).validate();
-    expect(animations, hasLength(108));
+    expect(animations, isNotEmpty);
+    expect(
+      animations.map((animation) => animation['category']).toSet(),
+      unorderedEquals(['移动', '待机', '拖拽']),
+    );
     expect(
       animations.map((animation) => animation['id']).toSet(),
-      hasLength(108),
+      hasLength(animations.length),
     );
     final sources = <String>{};
     for (final animation in animations) {
@@ -29,7 +33,7 @@ void main() {
       expect(source, endsWith('.webp'));
       sources.add(source);
     }
-    expect(sources, hasLength(108));
+    expect(sources, hasLength(animations.length));
   });
 
   test('Flutter decodes a full-size bundled WebP', () async {

@@ -6,6 +6,9 @@ import 'package:get/get.dart';
 
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/plugins/live2d/video/pet_store_catalog.dart';
+import 'package:aboutme/plugins/live2d/video/pet_store_service.dart';
+import 'package:aboutme/plugins/live2d/video/video_pet_import.dart';
 import 'package:aboutme/plugins/live2d/video/video_pet_manifest.dart';
 import 'package:aboutme/plugins/live2d/video/video_pet_player.dart';
 import 'package:aboutme/screens/jelly_home/widgets/jelly_video_pet_movement.dart';
@@ -30,11 +33,16 @@ class VideoPetEditorScreen extends StatefulWidget {
     required this.manifest,
     required this.baseUri,
     this.resolvedSources = const {},
+    this.petStoreService,
   });
 
   final VideoPetManifest manifest;
   final String baseUri;
   final Map<String, String> resolvedSources;
+
+  /// 宠物商店服务（服务端动作下载）；null 时若 manifest 带商店标记
+  /// 则按默认配置自建（测试可注入）
+  final PetStoreService? petStoreService;
 
   @override
   State<VideoPetEditorScreen> createState() => _VideoPetEditorScreenState();
@@ -75,6 +83,16 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen>
   String? _gestureRegionId;
   _RegionGestureMode _gestureMode = _RegionGestureMode.none;
 
+  // ===== 服务端动作（动作商店）状态 =====
+  /// 服务端未下载动作列表（加载成功后）
+  List<VideoPetAnimation> _serverAnimations = const [];
+  bool _serverLoading = false;
+  String? _serverError;
+  /// 正在下载的动作 id 集合
+  final Set<String> _downloadingIds = {};
+  /// 编辑器自建的商店服务（dispose 时释放；注入的由宿主管理）
+  PetStoreService? _ownStoreService;
+
   @override
   void initState() {
     super.initState();
@@ -82,10 +100,15 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen>
       Map<String, dynamic>.from(widget.manifest.toJson()),
     );
     _selectedRegionId = _draft.regions.isEmpty ? null : _draft.regions.first.id;
+    // manifest 带商店标记时自动拉取服务端动作列表
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _serverActionsEnabled) _loadServerActions();
+    });
   }
 
   @override
   void dispose() {
+    _ownStoreService?.close();
     _narrowTabs.dispose();
     _animationRequest.dispose();
     _frameLoopRequest.dispose();
@@ -124,6 +147,89 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen>
       ],
     ),
   );
+
+  // ===== 服务端动作（动作商店）=====
+
+  /// manifest metadata 携带商店动作地址时启用服务端动作区块
+  bool get _serverActionsEnabled =>
+      (widget.manifest.metadata[kPetStoreMetadataActionsUrl] ?? '')
+          .isNotEmpty;
+
+  /// 商店服务：优先注入实例；未注入且区块启用时自建默认实例
+  PetStoreService? get _storeService => widget.petStoreService ?? (_serverActionsEnabled ? (_ownStoreService ??= PetStoreService()) : null);
+
+  /// 拉取服务端动作列表；草稿中已有的动作不再展示
+  Future<void> _loadServerActions() async {
+    final service = _storeService;
+    if (service == null) return;
+    setState(() {
+      _serverLoading = true;
+      _serverError = null;
+    });
+    try {
+      final actions = await service.fetchActions(widget.manifest);
+      if (!mounted) return;
+      setState(() {
+        _serverAnimations = actions
+            .where((action) => !_draft.animations.any(
+                  (owned) => owned.id == action.id,
+                ))
+            .toList();
+        _serverLoading = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _serverError = '$error';
+        _serverLoading = false;
+      });
+    }
+  }
+
+  /// 下载服务端动作：成功后合入草稿并立即点播预览。
+  ///
+  /// 取消编辑时草稿整体丢弃，未保存的下载动作不会写回档案。
+  Future<void> _downloadServerAction(VideoPetAnimation animation) async {
+    final service = _storeService;
+    if (service == null) return;
+    if (_downloadingIds.contains(animation.id)) return;
+    // 幂等：已在草稿中的动作不重复下载
+    if (_draft.animations.any((owned) => owned.id == animation.id)) return;
+    setState(() => _downloadingIds.add(animation.id));
+    try {
+      final package = await service.downloadAction(
+        package: VideoPetPackage(
+          manifest: _draft,
+          baseUri: widget.baseUri,
+          resolvedSources: widget.resolvedSources,
+        ),
+        animation: animation,
+      );
+      // 仅合入该动作，不整包替换（避免覆盖草稿中的其它修改）
+      final resolved = package.manifest.animation(animation.id);
+      if (resolved == null) {
+        throw FormatException('下载结果缺少动作 ${animation.id}');
+      }
+      if (!mounted) return;
+      _setDraft(
+        _draft.copyWith(animations: [..._draft.animations, resolved]),
+      );
+      setState(() {
+        _serverAnimations = _serverAnimations
+            .where((item) => item.id != animation.id)
+            .toList();
+        _downloadingIds.remove(animation.id);
+      });
+      // 立即点播，方便预览新动作
+      _requestAnimation(resolved.id);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _downloadingIds.remove(animation.id));
+      _showMessage(
+        'videoPet_serverDownloadFailed'.trParams({'error': '$error'}),
+      );
+    }
+  }
 
   void _save() {
     try {
@@ -199,6 +305,20 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen>
         .map((animation) => animation.category)
         .where((category) => category.isNotEmpty),
   };
+
+  /// 服务端动作按动画搜索框联动过滤（不做分类过滤）
+  List<VideoPetAnimation> get _visibleServerAnimations {
+    final query = _searchController.text.trim().toLowerCase();
+    if (query.isEmpty) return _serverAnimations;
+    return _serverAnimations
+        .where(
+          (action) =>
+              action.name.toLowerCase().contains(query) ||
+              action.id.toLowerCase().contains(query) ||
+              action.category.toLowerCase().contains(query),
+        )
+        .toList();
+  }
 
   void _importJson() {
     final decoded = jsonDecode(_jsonController.text);

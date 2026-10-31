@@ -6,3 +6,7 @@ Future<String?> persistFiles(
   Map<String, Uint8List> files,
   String manifestPath,
 ) async => null;
+Future<String?> appendFiles(
+  String baseUri,
+  Map<String, Uint8List> files,
+) async => null;

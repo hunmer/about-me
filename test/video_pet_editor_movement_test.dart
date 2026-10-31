@@ -49,16 +49,28 @@ void main() {
     await tester.tap(find.text('打开编辑器'));
     await tester.pumpAndSettle();
     expect(find.text('随机移动'), findsOneWidget);
-    // 移动动画 5 个选择器已切换为 DS 可搜索下拉（DSCombobox）。
+    // 预设面板现有 7 个 DS 可搜索下拉：Idle 选择器 + 6 个移动选择器
+    // （向左/向右移动、向左/向右转向、拖拽悬空、撞墙动画）。
     final combos = find.byType(DSCombobox<String>);
-    expect(combos, findsNWidgets(5));
-    await tester.ensureVisible(combos.at(0));
-    await tester.tap(combos.at(0));
+    expect(combos, findsNWidgets(7));
+    // 按标签语义定位 selector 内的下拉，不依赖渲染顺序。
+    Finder selectorCombo(String label) => find.descendant(
+      of: find
+          .ancestor(of: find.text(label), matching: find.byType(Column))
+          .first,
+      matching: find.byType(DSCombobox<String>),
+    );
+    final leftCombo = selectorCombo('向左移动');
+    final dragCombo = selectorCombo('拖拽悬空');
+    expect(leftCombo, findsOneWidget);
+    expect(dragCombo, findsOneWidget);
+    await tester.ensureVisible(leftCombo);
+    await tester.tap(leftCombo);
     await tester.pumpAndSettle();
     await tester.tap(find.text('自定义走路').last);
     await tester.pumpAndSettle();
-    await tester.ensureVisible(combos.at(4));
-    await tester.tap(combos.at(4));
+    await tester.ensureVisible(dragCombo);
+    await tester.tap(dragCombo);
     await tester.pumpAndSettle();
     await tester.tap(find.text('自定义走路').last);
     await tester.pumpAndSettle();
@@ -124,9 +136,11 @@ void main() {
     // 该 fixture 无 spritesheet（webm 源）：应有禁用说明。
     expect(find.textContaining('缺少 spritesheet'), findsOneWidget);
 
-    // 拖拽分隔条可调整工具区高度。
+    // 拖拽分隔条可调整工具区高度。工具面板的 TabController 由编辑器
+    // state 持有（不再有 DefaultTabController 组件），以工具面板内容区
+    // TabBarView 的高度变化代表面板高度变化。
     final divider = find.byKey(const ValueKey('videoPetNarrowDivider'));
-    final tools = find.byType(DefaultTabController);
+    final tools = find.byType(TabBarView);
     final before = tester.getSize(tools).height;
     await tester.drag(divider, const Offset(0, -80));
     await tester.pumpAndSettle();

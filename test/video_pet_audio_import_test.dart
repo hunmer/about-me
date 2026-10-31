@@ -53,18 +53,11 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   const service = VideoPetImportService(persistToDisk: false);
 
-  test('bundled new animations include playable audio assets', () async {
+  test('bundled base actions exclude store-only audio animations', () async {
     final package = await service.loadDefault();
     package.manifest.validate();
     for (final id in ['工作加班', '熬夜刷手机']) {
-      final animation = package.manifest.animation(id)!;
-      expect(animation.spritesheet!.frameCount, 360);
-      expect(animation.spritesheet!.fps, 12);
-      expect(animation.audio, 'audio/$id.m4a');
-      final bytes = await rootBundle.load(
-        Uri.decodeFull(package.resolveSource(animation.audio!)),
-      );
-      expect(bytes.lengthInBytes, greaterThan(0));
+      expect(package.manifest.animation(id), isNull);
     }
   });
 

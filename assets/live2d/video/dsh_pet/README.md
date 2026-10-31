@@ -15,6 +15,10 @@
 - 本地保留 106 个 WebM 及 16 个透明 ProRes 4444 MOV 转换输入，合计 7,518,843,474 字节（约 7.01 GiB）：WebM 共 54,351,332 字节，MOV 共 7,464,492,142 字节（“工作加班”/“熬夜刷手机” 1,373,698,564 + 2026-10-31 新增 14 个 6,090,793,578）。该目录已加入根 `.gitignore`，不打包进 Flutter assets。
 - `checksums.json` 记录 368 个资源的字节数及 SHA-256：106 个 WebM、16 个 MOV、122 个 WebP、122 个动作 JSON、2 个 M4A。
 
+## 2026-11-01 动作商店迁移
+
+117 个非基础动作（余额/吃什么/小动作/工作状态/文字/时节/点击回应/玩耍/碎碎念/转向 类）的 JSON/WebP 成对迁移至宠物商店目录 `/Users/Zhuanz/Documents/aboutme-pets/pets/dsh/`，由 `http-server`（http://127.0.0.1:8765 ，CORS 全开、禁缓存）托管；5 个保留动作（移动×3、待机×1、拖拽×1）同时复制到商店。本包 manifest 仅保留基础动作并清理无效引用（movement 去除 turn*、hover/click/regions 置空），metadata 新增 `storePetId` 与 `storeActionsUrl` 指向商店额外动作包。`checksums.json` 已同步移除迁出条目；上游 WebM/MOV 转换输入不受影响。
+
 ## manifest 和兼容
 
 `manifest.json` 保留原有包 ID、名称、640×360 逻辑画布、动作 ID/名称/分类、待机、悬浮、点击及区域绑定。

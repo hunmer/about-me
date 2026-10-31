@@ -54,7 +54,7 @@ extension _VideoPetEditorLayout on _VideoPetEditorScreenState {
             child: _buildPreview(),
           ),
         ),
-        SizedBox(height: 220, child: _buildAnimationPanel()),
+        SizedBox(height: 260, child: _buildAnimationPanel()),
       ],
     );
   }
@@ -499,10 +499,101 @@ extension _VideoPetEditorLayout on _VideoPetEditorScreenState {
                 },
               ),
             ),
+            // 服务端动作（动作商店）：展示未下载动作，点击下载加入草稿
+            if (_serverActionsEnabled) ..._buildServerActionsSection(),
           ],
         ),
       ),
     );
+  }
+
+  /// 服务端动作区块：标题 + 加载中 / 失败重试 / 可下载动作横向列表
+  List<Widget> _buildServerActionsSection() {
+    final theme = DSThemeBridge.resolve(context);
+    final textTheme = Theme.of(context).textTheme;
+    final actions = _visibleServerAnimations;
+    return [
+      const Divider(height: 1),
+      Padding(
+        padding: const EdgeInsets.only(top: 6),
+        child: Row(
+          children: [
+            DsIcon(DsIconKind.download, size: 14, color: theme.textSub),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                _text('videoPet_serverActions', '服务端动作'),
+                style: textTheme.titleSmall?.copyWith(fontSize: 13),
+              ),
+            ),
+            if (_serverError != null)
+              DSButton(
+                key: const ValueKey('videoPetServerRetryButton'),
+                label: _text('videoPet_serverRetry', '重试'),
+                size: DSButtonSize.sm,
+                variant: DSButtonVariant.ghost,
+                onPressed: _loadServerActions,
+              ),
+          ],
+        ),
+      ),
+      if (_serverLoading)
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Text(
+            _text('videoPet_serverLoading', '正在获取服务端动作…'),
+            style: textTheme.bodySmall?.copyWith(color: theme.textSub),
+          ),
+        )
+      else if (_serverError != null)
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Text(
+            'videoPet_serverLoadFailed'.trParams({'error': _serverError!}),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: textTheme.bodySmall?.copyWith(color: theme.textSub),
+          ),
+        )
+      else if (actions.isEmpty)
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Text(
+            _text('videoPet_serverActionsHint', '未下载的动作，点击下载并加入预览'),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: textTheme.bodySmall?.copyWith(color: theme.textSub),
+          ),
+        )
+      else
+        SizedBox(
+          height: 38,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: actions.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 6),
+            itemBuilder: (context, index) {
+              final action = actions[index];
+              final downloading = _downloadingIds.contains(action.id);
+              final label = action.name.isEmpty ? action.id : action.name;
+              return ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 160),
+                child: DSButton(
+                  key: ValueKey('videoPetServerAction_${action.id}'),
+                  label: label,
+                  size: DSButtonSize.sm,
+                  variant: DSButtonVariant.secondary,
+                  icon: downloading ? null : DsIconKind.download,
+                  loading: downloading,
+                  onPressed: downloading
+                      ? null
+                      : () => _downloadServerAction(action),
+                ),
+              );
+            },
+          ),
+        ),
+    ];
   }
 }
 

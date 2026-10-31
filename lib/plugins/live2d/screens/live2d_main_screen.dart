@@ -9,10 +9,13 @@ import 'package:aboutme/plugins/live2d/live2d_plugin.dart';
 import 'package:aboutme/plugins/live2d/models/live2d_archive.dart';
 import 'package:aboutme/plugins/openai/controllers/agent_controller.dart';
 import 'package:aboutme/widgets/adaptive_image.dart';
+import 'package:aboutme/widgets/lazy_indexed_stack.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
+import 'package:aboutme/screens/jelly_home/live2d_online_models.dart';
 import 'live2d_archive_form_screen.dart';
+import 'live2d_store_screen.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 /// Live2D 主界面：存档卡片列表，点击卡片进入存档设置
@@ -28,6 +31,9 @@ class _Live2DMainScreenState extends State<Live2DMainScreen> {
   Map<String, String> agentNames = {};
   Map<String, dynamic> _multiFilters = {};
   String _searchQuery = '';
+
+  /// 底部导航当前 tab：0 = 存档，1 = 商店
+  int _currentTab = 0;
 
   @override
   void initState() {
@@ -141,14 +147,14 @@ class _Live2DMainScreenState extends State<Live2DMainScreen> {
       enableSearchBar: true,
       searchPlaceholder: 'live2d_searchPlaceholder'.tr,
       onSearchChanged: (query) => setState(() => _searchQuery = query),
-      searchBody: _buildBody(),
+      searchBody: _buildTabbedBody(),
       enableMultiFilter: true,
       multiFilterItems: _buildFilterItems(),
       onMultiFilterChanged: (filters) =>
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) setState(() => _multiFilters = filters);
           }),
-      body: _buildBody(),
+      body: _buildTabbedBody(),
       actions: [
         // actions 经 Overlay 渲染，DS 组件需自带 DSThemeBridge
         DSThemeBridge(
@@ -170,28 +176,98 @@ class _Live2DMainScreenState extends State<Live2DMainScreen> {
     );
   }
 
-  Widget _buildBody() {
+  /// tab 化主体：0 存档列表 / 1 商店，底部弧形圆盘导航悬浮 dock
+  Widget _buildTabbedBody() {
+    return DSThemeBridge(
+      child: Builder(
+        builder: (context) {
+          return Stack(
+            children: [
+              LazyIndexedStack(
+                index: _currentTab,
+                children: [
+                  _buildArchivesTab(),
+                  Live2DStoreScreen(
+                    onLive2DModelSelected: _addArchiveFromModel,
+                  ),
+                ],
+              ),
+              // 弧形圆盘底部导航（悬浮 dock）
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: SafeArea(
+                  top: false,
+                  child: _buildDock(context),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildDock(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 8, right: 8, bottom: 10),
+      child: DSBottomNavigation(
+        key: const ValueKey('live2dMainBottomNav'),
+        items: [
+          DSNavItem(icon: DsIconKind.grid, label: 'live2d_tabArchives'.tr),
+          DSNavItem(icon: DsIconKind.store, label: 'live2d_tabStore'.tr),
+        ],
+        currentIndex: _currentTab,
+        onTap: (index) => setState(() => _currentTab = index),
+        frosted: true,
+      ),
+    );
+  }
+
+  /// 商店在线模型仓库选中模型后建档（行为与存档表单内选择在线模型一致）
+  Future<void> _addArchiveFromModel(Live2DModelDefinition model) async {
+    final created = Live2DArchive.create(
+      modelLabel: model.label,
+      modelDir: model.modelDir,
+      modelFile: model.modelFile,
+    );
+    await _showArchiveForm(created.id, draft: created);
+    if (mounted) {
+      setState(() {});
+      _loadAgents();
+    }
+  }
+
+  Widget _buildArchivesTab() {
     return DSThemeBridge(
       child: Builder(
         builder: (context) {
           final theme = DSThemeBridge.resolve(context);
           final archives = _filteredArchives;
           if (plugin.archives.isEmpty) {
-            return Center(
-              child: DSEmptyState(
-                emoji: '🐱',
-                title: 'live2d_noArchives'.tr,
-                message: 'live2d_noArchivesHint'.tr,
-                actionLabel: 'live2d_newArchive'.tr,
-                onAction: _createArchive,
+            return Padding(
+              // 给悬浮 dock 让位
+              padding: const EdgeInsets.only(bottom: 110),
+              child: Center(
+                child: DSEmptyState(
+                  emoji: '🐱',
+                  title: 'live2d_noArchives'.tr,
+                  message: 'live2d_noArchivesHint'.tr,
+                  actionLabel: 'live2d_newArchive'.tr,
+                  onAction: _createArchive,
+                ),
               ),
             );
           }
           if (archives.isEmpty) {
-            return Center(
-              child: Text(
-                'live2d_noMatchArchives'.tr,
-                style: DsTypography.body.copyWith(color: theme.textSub),
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 110),
+              child: Center(
+                child: Text(
+                  'live2d_noMatchArchives'.tr,
+                  style: DsTypography.body.copyWith(color: theme.textSub),
+                ),
               ),
             );
           }
@@ -200,7 +276,8 @@ class _Live2DMainScreenState extends State<Live2DMainScreen> {
               16,
               16,
               16,
-              16 + MediaQuery.paddingOf(context).bottom,
+              // 16 + 安全区 + 悬浮 dock 让位
+              126 + MediaQuery.paddingOf(context).bottom,
             ),
             crossAxisCount: 2,
             // ≥ 贴条出血,避免上一列贴条压盖

@@ -40,3 +40,42 @@ Future<String?> persistFiles(
     rethrow;
   }
 }
+
+/// 向已持久化的宠物包目录追加文件（动作商店下载的精灵图/音频）。
+///
+/// [baseUri] 必须是 persistFiles 返回的 file: 目录 URI，否则返回 null
+/// 表示调用方应回落到 data URI。已存在的目标文件一律拒绝覆盖（防止
+/// 不同批次下载互相破坏）；任何写入失败时只回滚删除本次新写入的文件
+/// 并重新抛出，包内原有文件不受影响。
+Future<String?> appendFiles(String baseUri, Map<String, Uint8List> files) async {
+  final directory = Uri.tryParse(baseUri);
+  if (directory == null || !directory.isScheme('file')) return null;
+  final written = <Uri>[];
+  try {
+    for (final entry in files.entries) {
+      final segments = entry.key.split('/');
+      if (segments.contains('..') || segments.first.isEmpty) {
+        throw FormatException('包内路径越界: ${entry.key}');
+      }
+      final target = File.fromUri(
+        directory.resolve(Uri(pathSegments: segments).toString()),
+      );
+      if (await target.exists()) {
+        throw FormatException('包内文件已存在，拒绝覆盖: ${entry.key}');
+      }
+      await target.parent.create(recursive: true);
+      await target.writeAsBytes(entry.value, flush: true);
+      written.add(target.uri);
+    }
+    return baseUri;
+  } catch (_) {
+    for (final uri in written.reversed) {
+      try {
+        await File.fromUri(uri).delete();
+      } catch (_) {
+        // 回滚尽力而为，原始错误优先上抛。
+      }
+    }
+    rethrow;
+  }
+}

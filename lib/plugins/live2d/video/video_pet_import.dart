@@ -6,10 +6,20 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
 
+import 'pet_store_catalog.dart';
 import 'video_pet_manifest.dart';
 import 'video_pet_import_stub.dart'
     if (dart.library.io) 'video_pet_import_io.dart'
     as platform;
+
+/// 该 manifest 是否来自宠物商店安装（metadata 携带 storePetId）。
+///
+/// 商店包与内置包可能共用 id（如 `dsh-pet`），但资源已各自持久化，
+/// 播放准备时绝不能按内置 assets 刷新或裁剪商店包。
+bool isStorePetManifest(VideoPetManifest manifest) {
+  final value = manifest.metadata[kPetStoreMetadataPetId];
+  return value is String && value.isNotEmpty;
+}
 
 class VideoPetPackage {
   const VideoPetPackage({
@@ -55,7 +65,18 @@ class VideoPetImportService {
     Map<String, String> resolvedSources = const {},
   }) async {
     manifest.validate();
-    final isBuiltIn = manifest.id == 'dsh-pet';
+    // 商店安装包不做内置刷新：其源已是绝对 file/data URI（自包含），
+    // 且动作集合与内置 assets 不再一一对应。注意内置 assets manifest 本身
+    // 也带 storePetId 元数据（标记商店身份供动作下载用），但其源是相对
+    // 路径，仍应按内置包刷新。
+    final isStoreInstall =
+        isStorePetManifest(manifest) &&
+        manifest.animations.any((animation) {
+          final source = animation.imageSource;
+          return source != null &&
+              (Uri.tryParse(source)?.hasScheme ?? false);
+        });
+    final isBuiltIn = manifest.id == 'dsh-pet' && !isStoreInstall;
     final needsMigration = manifest.animations.any(
       (animation) =>
           animation.spritesheet == null || animation.imageSource == null,
@@ -78,9 +99,27 @@ class VideoPetImportService {
         if (replacement == null ||
             replacement.spritesheet == null ||
             replacement.imageSource == null) {
-          throw FormatException(
-            '内置动作 ${animation.name} 缺少 PNG/WebP 精灵图，请先生成资源',
-          );
+          // 内置包已不再附带该动作（如资源迁往商店）。降级策略：
+          // 1) 自带绝对源（file:/data:/http:）且精灵图完整的动作原样保留
+          //    （商店下载、编辑器导入的扩展动作不受内置裁剪影响）；
+          // 2) 仍引用内置相对源的动作，仅当 assets 中文件仍存在时保留；
+          // 3) 其余丢弃，稍后统一清理绑定引用。
+          final source = animation.imageSource;
+          final selfContained =
+              source != null &&
+              animation.spritesheet != null &&
+              (Uri.tryParse(source)?.hasScheme ?? false);
+          if (selfContained) {
+            migrated.add(animation);
+            continue;
+          }
+          if (source != null &&
+              animation.spritesheet != null &&
+              await _bundledAssetExists(source)) {
+            migrated.add(animation);
+            continue;
+          }
+          continue;
         }
         migrated.add(
           animation.copyWith(
@@ -92,6 +131,9 @@ class VideoPetImportService {
                 : animation.facing,
           ),
         );
+      }
+      if (migrated.isEmpty) {
+        throw const FormatException('内置动作全部缺少 PNG/WebP 精灵图，无法降级播放');
       }
       // 仅追加明确发布的新动作；已同步过的存档不会恢复用户删除的动作。
       final additions = defaults.manifest.metadata['bundledAdditions'];
@@ -110,12 +152,26 @@ class VideoPetImportService {
           migratedAdditions.add(id);
         }
       }
-      var movement = _shouldFillDefaultMovement(manifest.movement)
+      // 降级丢弃动作后清理所有引用，保证 validate 通过且绑定始终有效。
+      final keptIds = {for (final animation in migrated) animation.id};
+      final idleId = keptIds.contains(manifest.idleAnimationId)
+          ? manifest.idleAnimationId
+          : migrated.first.id;
+      VideoPetBinding? pruneBinding(VideoPetBinding? binding) => binding?.copyWith(
+              animationIds: binding.animationIds
+                  .where(keptIds.contains)
+                  .toList(),
+            );
+      final prunedMovement = _pruneMovementReferences(
+        manifest.movement,
+        keptIds,
+      );
+      var movement = _shouldFillDefaultMovement(prunedMovement)
           ? _defaultMovement(
               defaults.manifest,
               migrated,
-            ).copyWith(dragAnimationId: manifest.movement.dragAnimationId)
-          : manifest.movement;
+            ).copyWith(dragAnimationId: prunedMovement.dragAnimationId)
+          : prunedMovement;
       // Refresh the old built-in wait range without overriding custom ranges.
       if (movement.minIdleSeconds == 5 && movement.maxIdleSeconds == 15) {
         movement = movement.copyWith(minIdleSeconds: 10, maxIdleSeconds: 10);
@@ -126,11 +182,36 @@ class VideoPetImportService {
           migrated.any((a) => a.id == dragId)) {
         movement = movement.copyWith(dragAnimationId: dragId);
       }
+      // 迁移时补齐内置默认的商店关联：旧存档没有 storeActionsUrl 的话
+      // 将无法解锁动作下载。只补缺失字段，用户已有的值不覆盖。
+      bool missingMetadata(String key) {
+        final value = manifest.metadata[key];
+        return value is! String || value.isEmpty;
+      }
+
+      final defaultsMetadata = defaults.manifest.metadata;
       final migratedManifest = manifest.copyWith(
         animations: migrated,
+        idleAnimationId: idleId,
+        hover: pruneBinding(manifest.hover),
+        click: pruneBinding(manifest.click),
         movement: movement,
+        regions: [
+          for (final region in manifest.regions)
+            region.copyWith(
+              hover: pruneBinding(region.hover),
+              click: pruneBinding(region.click),
+            ),
+        ],
         metadata: {
           ...manifest.metadata,
+          if (missingMetadata(kPetStoreMetadataPetId) &&
+              defaultsMetadata[kPetStoreMetadataPetId] != null)
+            kPetStoreMetadataPetId: defaultsMetadata[kPetStoreMetadataPetId],
+          if (missingMetadata(kPetStoreMetadataActionsUrl) &&
+              defaultsMetadata[kPetStoreMetadataActionsUrl] != null)
+            kPetStoreMetadataActionsUrl:
+                defaultsMetadata[kPetStoreMetadataActionsUrl],
           if (migratedAdditions.isNotEmpty)
             'bundledAdditions': migratedAdditions.toList(),
         },
@@ -159,6 +240,49 @@ class VideoPetImportService {
       movement.rightAnimationId.isEmpty &&
       movement.turnLeftAnimationId.isEmpty &&
       movement.turnRightAnimationId.isEmpty;
+
+  /// 降级丢弃动作后，清空 movement 中指向缺失动作的引用（空串=禁用）。
+  VideoPetMovement _pruneMovementReferences(
+    VideoPetMovement movement,
+    Set<String> keptIds,
+  ) {
+    String clearIfMissing(String id) =>
+        id.isEmpty || keptIds.contains(id) ? id : '';
+    final wallBumpId = clearIfMissing(movement.wallBumpAnimationId);
+    var result = movement.copyWith(
+      leftAnimationId: clearIfMissing(movement.leftAnimationId),
+      rightAnimationId: clearIfMissing(movement.rightAnimationId),
+      turnLeftAnimationId: clearIfMissing(movement.turnLeftAnimationId),
+      turnRightAnimationId: clearIfMissing(movement.turnRightAnimationId),
+      dragAnimationId: clearIfMissing(movement.dragAnimationId),
+      wallBumpAnimationId: wallBumpId,
+    );
+    if (wallBumpId.isEmpty) {
+      // 撞墙动画被清空时同步清空帧区间（显式传 null 表示清除）。
+      result = result.copyWith(
+        wallBumpStartFrame: null,
+        wallBumpEndFrame: null,
+      );
+    }
+    return result;
+  }
+
+  /// 内置 assets 中是否仍存在 [source] 指向的资源文件。
+  Future<bool> _bundledAssetExists(String source) async {
+    try {
+      final key = Uri.decodeFull(
+        Uri.parse(kDefaultVideoPetManifestAsset)
+            .resolve('.')
+            .resolve(source)
+            .toString(),
+      );
+      final data = await rootBundle.load(key);
+      return data.lengthInBytes > 0;
+    } catch (_) {
+      return false;
+    }
+  }
+
   VideoPetMovement _defaultMovement(
     VideoPetManifest defaults,
     List<VideoPetAnimation> migrated,
@@ -232,7 +356,7 @@ class VideoPetImportService {
             }
             final extension = resource == source
                 ? animation.imageFormat!
-                : _audioExtension(resource);
+                : audioExtension(resource);
             final relative = 'media/${copied.length}.$extension';
             copied[uri.toString()] = relative;
             files[relative] = data;
@@ -266,7 +390,7 @@ class VideoPetImportService {
           mapping[entry.key] = savedBase == null
               ? Uri.dataFromBytes(
                   files[entry.value]!,
-                  mimeType: _mediaMimeType(entry.value),
+                  mimeType: mediaMimeType(entry.value),
                 ).toString()
               : Uri.parse(savedBase).resolve(entry.value).toString();
         }
@@ -336,7 +460,7 @@ class VideoPetImportService {
           throw FormatException('ZIP 缺少$label资源: $resource');
         }
         resources[uri.toString()] = content;
-        resourceFormats[uri.toString()] = _mediaMimeType(resource);
+        resourceFormats[uri.toString()] = mediaMimeType(resource);
       }
     }
     final packageFiles = <String, Uint8List>{
@@ -373,7 +497,8 @@ VideoPetManifest _decode(String text) {
   return VideoPetManifest.fromJson(decoded);
 }
 
-String _audioExtension(String source) {
+/// 从资源地址推断音频扩展名（未知扩展统一回落到 m4a）。
+String audioExtension(String source) {
   final extension = Uri.parse(source).path.split('.').last.toLowerCase();
   return const {
         'm4a',
@@ -390,7 +515,8 @@ String _audioExtension(String source) {
       : 'm4a';
 }
 
-String _mediaMimeType(String source) =>
+/// 从资源地址推断 MIME 类型（图/音频，未知回落 application/octet-stream）。
+String mediaMimeType(String source) =>
     switch (Uri.parse(source).path.split('.').last.toLowerCase()) {
       'png' => 'image/png',
       'webp' => 'image/webp',

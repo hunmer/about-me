@@ -39,6 +39,22 @@ const Map<String, String> live2dTranslationsEn = {
   'live2d_deleteArchiveConfirm': 'Delete "@name"?',
   // Main screen
   'live2d_searchPlaceholder': 'Search Live2D profiles',
+  // 底部导航与商店
+  'live2d_tabArchives': 'Archives',
+  'live2d_tabStore': 'Store',
+  'live2d_storeSectionLive2d': 'Live2D Models',
+  'live2d_storeSectionPets': 'Pets',
+  'live2d_storeLive2dHint':
+      'Browse the online model repository and create a profile',
+  'live2d_storeOpenLive2D': 'Open online repository',
+  'live2d_storePetsLoading': 'Loading pet catalog…',
+  'live2d_storePetsEmpty': 'No pets in the store yet',
+  'live2d_storePetsError': 'Failed to load pet catalog: @error',
+  'live2d_storeInstall': 'Install',
+  'live2d_storeInstalling': 'Installing…',
+  'live2d_storeEditAnimations': 'Edit animations',
+  'live2d_storeInstallFailed': 'Install failed: @error',
+  'live2d_storeInstalledToast': 'Installed “@name”',
   'live2d_filterAllModels': 'All models',
   'live2d_noArchives': 'No Live2D profiles yet',
   'live2d_noArchivesHint': 'Create one to get started',
@@ -107,6 +123,14 @@ const Map<String, String> live2dTranslationsEn = {
   'videoPet_resume': 'Resume',
   'videoPet_save': 'Save',
   'videoPet_searchAnimation': 'Search animations',
+  // 服务端动作（动作商店）
+  'videoPet_serverActions': 'Server actions',
+  'videoPet_serverActionsHint':
+      'Not downloaded yet — tap to download and preview',
+  'videoPet_serverLoading': 'Loading server actions…',
+  'videoPet_serverLoadFailed': 'Failed to load server actions: @error',
+  'videoPet_serverRetry': 'Retry',
+  'videoPet_serverDownloadFailed': 'Download failed: @error',
   'videoPet_selectAnimations': 'Select animations',
   'videoPet_showRegions': 'Show regions',
   'videoPet_strategy': 'Play strategy',

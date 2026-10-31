@@ -828,7 +828,10 @@ void main() {
     );
     expect(prepared.baseUri, defaults.baseUri);
     expect(prepared.resolvedSources, isEmpty);
-    expect(prepared.manifest.animations, hasLength(108));
+    expect(
+      prepared.manifest.animations,
+      hasLength(defaults.manifest.animations.length),
+    );
     expect(
       prepared.manifest.animations.every((a) => a.sources.keys.length == 1),
       isTrue,
@@ -895,15 +898,20 @@ void main() {
     },
   );
 
-  test('default asset manifest contains 108 WebP spritesheets', () async {
+  test('default asset manifest contains base-action WebP spritesheets', () async {
     const service = VideoPetImportService();
     final package = await service.loadDefault();
     expect(package.baseUri, 'assets/live2d/video/dsh_pet/');
-    expect(package.manifest.animations.length, 108);
+    expect(package.manifest.animations, isNotEmpty);
+    expect(
+      package.manifest.animations.map((animation) => animation.category).toSet(),
+      unorderedEquals(['移动', '待机', '拖拽']),
+    );
     expect(package.manifest.canvasWidth, 640);
     expect(package.manifest.canvasHeight, 360);
     expect(package.manifest.idleAnimationId, '待机呼吸休闲');
-    expect(package.manifest.click.animationIds.length, 5);
+    final ids = package.manifest.animations.map((animation) => animation.id).toSet();
+    expect(package.manifest.click.animationIds.every(ids.contains), isTrue);
     for (final animation in package.manifest.animations) {
       expect(animation.sources.keys, ['webp']);
       final sheet = animation.spritesheet!;
