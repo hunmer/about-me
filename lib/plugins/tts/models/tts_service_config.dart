@@ -70,6 +70,9 @@ class TTSServiceConfig {
   /// 语音名称/ID (系统TTS用语言代码如zh-CN, HTTP用自定义值)
   String? voice;
 
+  /// 朗读前是否去除括号文本（中英文括号内的动作描述等，不播报语音）
+  bool? stripParentheses;
+
   /// 创建时间
   final DateTime createdAt;
 
@@ -100,6 +103,7 @@ class TTSServiceConfig {
     this.speed = 1.0,
     this.volume = 1.0,
     this.voice,
+    this.stripParentheses,
     DateTime? createdAt,
     DateTime? updatedAt,
   })  : id = id ?? const Uuid().v4(),
@@ -134,6 +138,7 @@ class TTSServiceConfig {
       speed: (json['speed'] as num?)?.toDouble() ?? 1.0,
       volume: (json['volume'] as num?)?.toDouble() ?? 1.0,
       voice: json['voice'] as String?,
+      stripParentheses: json['stripParentheses'] as bool?,
       createdAt: parseIsoDateTime(json['createdAt'] as String),
       updatedAt: parseIsoDateTime(json['updatedAt'] as String),
     );
@@ -165,6 +170,7 @@ class TTSServiceConfig {
       'speed': speed,
       'volume': volume,
       if (voice != null) 'voice': voice,
+      if (stripParentheses != null) 'stripParentheses': stripParentheses,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };
@@ -191,6 +197,7 @@ class TTSServiceConfig {
     double? speed,
     double? volume,
     String? voice,
+    bool? stripParentheses,
   }) {
     return TTSServiceConfig(
       id: id,
@@ -213,6 +220,7 @@ class TTSServiceConfig {
       speed: speed ?? this.speed,
       volume: volume ?? this.volume,
       voice: voice ?? this.voice,
+      stripParentheses: stripParentheses ?? this.stripParentheses,
       createdAt: createdAt,
       updatedAt: DateTime.now(),
     );

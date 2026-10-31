@@ -122,6 +122,11 @@ const Map<String, String> ttsTranslationsEn = {
   'tts_apiKeyHint': 'Get it at https://platform.minimaxi.com',
   'tts_voiceIdHint': 'Supports system, cloned and generated voices',
 
+  /// Strip parenthesized text
+  'tts_stripParentheses': 'Strip Parenthesized Text',
+  'tts_stripParenthesesHint':
+      'Remove text inside () or （） before speaking, e.g. action descriptions',
+
   // Voice gender
   'tts_male': 'Male',
   'tts_female': 'Female',

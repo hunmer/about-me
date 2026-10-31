@@ -566,6 +566,7 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
         if (animation == null) return {'error': '找不到动画 ID: $id'};
         widget.videoAnimationRequest.value = null;
         widget.videoAnimationRequest.value = id;
+        debugPrint('[VideoPetTool] play_animation 注入动画: $id');
         return {'success': true, 'id': id, 'name': animation.name};
       },
     ),

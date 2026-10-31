@@ -154,6 +154,7 @@ class _JellyLive2DState extends State<JellyLive2D>
   bool get _isVideo => _selectedModel.isVideo;
 
   void _requestVideoAnimation(String id) {
+    debugPrint('[VideoPetRequest] _requestVideoAnimation: $id (stack: ${StackTrace.current.toString().split('\n').take(4).join(' | ')})');
     _videoAnimationRequest.value = null;
     _videoAnimationRequest.value = id;
   }

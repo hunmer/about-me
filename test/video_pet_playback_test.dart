@@ -92,6 +92,21 @@ void main() {
     expect(state.ended(looping.generation), isNull);
   });
 
+  // 回归：走动的 movement interrupt 不得打断工具/外部点播的 manual 动画
+  // （play_animation 播放期间随机走动启动时，manual 必须播完）。
+  test('manual animation survives movement interrupt', () {
+    final state = VideoPetPlaybackState(manifest);
+    final manual = state.playManual('manual')!;
+    expect(manual.kind, VideoPetPlaybackKind.manual);
+    expect(state.busy, isTrue);
+    // 走动强制打断：movement 只记录目标，manual 继续播放。
+    final moved = state.setMovement('idle', interrupt: true)!;
+    expect(moved.animationId, 'manual');
+    expect(moved.kind, VideoPetPlaybackKind.manual);
+    // manual 播完后 movement 接管。
+    expect(state.ended(manual.generation)!.kind, VideoPetPlaybackKind.movement);
+  });
+
   test(
     'drag overrides interactions without busy and restores latest state',
     () {

@@ -50,6 +50,7 @@ class _TtsServiceFormState extends State<TtsServiceForm> {
   late double _pitch;
   late double _speed;
   late double _volume;
+  late bool _stripParentheses;
   late TextEditingController _voiceController;
 
   // HTTP 配置
@@ -85,6 +86,7 @@ class _TtsServiceFormState extends State<TtsServiceForm> {
     _pitch = service?.pitch ?? 1.0;
     _speed = service?.speed ?? 1.0;
     _volume = service?.volume ?? 1.0;
+    _stripParentheses = service?.stripParentheses ?? false;
     _voiceController = TextEditingController(text: service?.voice ?? 'zh-CN');
 
     _urlController = TextEditingController(text: service?.url ?? '');
@@ -229,6 +231,7 @@ class _TtsServiceFormState extends State<TtsServiceForm> {
         pitch: _pitch,
         speed: _speed,
         volume: _volume,
+        stripParentheses: _stripParentheses,
         voice: (_selectedType == TTSServiceType.system || _selectedType == TTSServiceType.http)
             ? _voiceController.text.trim()
             : null,
@@ -541,6 +544,14 @@ class _TtsServiceFormState extends State<TtsServiceForm> {
             label: 'tts_voice'.tr,
             hint: 'tts_fillAccordingToApi'.tr,
           ),
+
+        _buildSwitchRow(
+          theme,
+          title: 'tts_stripParentheses'.tr,
+          subtitle: 'tts_stripParenthesesHint'.tr,
+          value: _stripParentheses,
+          onChanged: (value) => setState(() => _stripParentheses = value),
+        ),
 
         // ===== HTTP 配置 =====
         if (_selectedType == TTSServiceType.http) ...[

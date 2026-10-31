@@ -122,6 +122,10 @@ const Map<String, String> ttsTranslationsZh = {
   'tts_apiKeyHint': '在 https://platform.minimaxi.com 获取',
   'tts_voiceIdHint': '支持系统音色、复刻音色和文生音色',
 
+  /// 括号文本过滤
+  'tts_stripParentheses': '去除括号文本',
+  'tts_stripParenthesesHint': '朗读前去除中英文括号 () 内的动作描述等文本',
+
   // 语音性别
   'tts_male': '男',
   'tts_female': '女',

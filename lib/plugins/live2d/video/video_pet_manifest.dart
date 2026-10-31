@@ -204,8 +204,8 @@ class VideoPetMovement {
       wallBumpStartFrame: (json['wallBumpStartFrame'] as num?)?.toInt(),
       wallBumpEndFrame: (json['wallBumpEndFrame'] as num?)?.toInt(),
       speed: _number(json, 'speed', 40),
-      minIdleSeconds: _number(json, 'minIdleSeconds', 10),
-      maxIdleSeconds: _number(json, 'maxIdleSeconds', 10),
+      minIdleSeconds: _number(json, 'minIdleSeconds', 15),
+      maxIdleSeconds: _number(json, 'maxIdleSeconds', 60),
     );
     result.validate();
     return result;

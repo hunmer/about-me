@@ -198,9 +198,17 @@ class TTSManagerService extends ChangeNotifier {
       _currentService = _createService(config);
       await _currentService!.initialize();
 
+      // 按配置去除括号文本（角色扮演动作描述等）
+      final textToSpeak = _stripParenthesesIfEnabled(text, config);
+      if (textToSpeak.isEmpty) {
+        _log.info('括号过滤后无剩余文本，跳过朗读: ${config.name}');
+        onComplete?.call();
+        return;
+      }
+
       // 朗读
       await _currentService!.speak(
-        text,
+        textToSpeak,
         onStart: onStart,
         onComplete: onComplete,
         onError: onError,
@@ -212,6 +220,20 @@ class TTSManagerService extends ChangeNotifier {
       _log.severe('朗读失败: $e');
       onError?.call(e.toString());
     }
+  }
+
+  /// 配置开启去除括号时，正则去除中英文括号 () （） 及其内容（支持简单嵌套）
+  String _stripParenthesesIfEnabled(String text, TTSServiceConfig config) {
+    if (config.stripParentheses != true) return text;
+    // 循环替换以处理一层嵌套括号
+    var result = text;
+    final pattern = RegExp(r'[（(][^()（）]*[)）]');
+    while (true) {
+      final next = result.replaceAll(pattern, '');
+      if (next == result) break;
+      result = next;
+    }
+    return result.trim();
   }
 
   /// 合成语音写入指定文件（语音消息场景，不播放）。

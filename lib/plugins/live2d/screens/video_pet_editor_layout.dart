@@ -127,29 +127,19 @@ extension _VideoPetEditorLayout on _VideoPetEditorScreenState {
                               ),
                               DSMenuItem(
                                 icon: DsIconKind.refresh,
-                                label: _text(
-                                  'videoPet_resetPosition',
-                                  '复位',
-                                ),
+                                label: _text('videoPet_resetPosition', '复位'),
                                 onTap: () =>
                                     _stageKey.currentState?.resetPosition(),
                               ),
                               DSMenuItem(
                                 icon: DsIconKind.chevronLeft,
-                                label: _text(
-                                  'videoPet_walkLeft',
-                                  '向左走动',
-                                ),
-                                onTap: () => _stageKey.currentState?.walkNow(
-                                  left: true,
-                                ),
+                                label: _text('videoPet_walkLeft', '向左走动'),
+                                onTap: () =>
+                                    _stageKey.currentState?.walkNow(left: true),
                               ),
                               DSMenuItem(
                                 icon: DsIconKind.chevronRight,
-                                label: _text(
-                                  'videoPet_walkRight',
-                                  '向右走动',
-                                ),
+                                label: _text('videoPet_walkRight', '向右走动'),
                                 onTap: () => _stageKey.currentState?.walkNow(
                                   left: false,
                                 ),
@@ -201,15 +191,15 @@ extension _VideoPetEditorLayout on _VideoPetEditorScreenState {
                                               playback.frameRequest,
                                           interactive: true,
                                           showRegions: _showRegions,
-                                          onInteraction: (regionId,
-                                              animationId) {
-                                            setState(() {
-                                              _selectedRegionId = regionId;
-                                              _lastHitRegion = regionId;
-                                              _lastActionAnimation =
-                                                  animationId;
-                                            });
-                                          },
+                                          onInteraction:
+                                              (regionId, animationId) {
+                                                setState(() {
+                                                  _selectedRegionId = regionId;
+                                                  _lastHitRegion = regionId;
+                                                  _lastActionAnimation =
+                                                      animationId;
+                                                });
+                                              },
                                           onTap: (regionId, regionName) {
                                             setState(
                                               () => _lastHitRegion =
@@ -247,7 +237,8 @@ extension _VideoPetEditorLayout on _VideoPetEditorScreenState {
                                     animationRequest: _animationRequest,
                                     frameAnimationRequest: _frameLoopRequest,
                                     interactive: false,
-                                    onEditPointer: (type, x, y) => _onEditPointer(type, x, y),
+                                    onEditPointer: (type, x, y) =>
+                                        _onEditPointer(type, x, y),
                                     showRegions: _showRegions,
                                     onInteraction: (regionId, animationId) {
                                       setState(() {
@@ -390,6 +381,7 @@ extension _VideoPetEditorLayout on _VideoPetEditorScreenState {
       ),
     );
   }
+
   Widget _buildAnimationPanel() {
     return Material(
       color: DSThemeBridge.resolve(context).surfaceAlt,
@@ -533,12 +525,21 @@ class _DsNumberFieldState extends State<_DsNumberField> {
   late final _controller = TextEditingController(
     text: widget.value.toStringAsFixed(3),
   );
+  late final _focusNode = FocusNode()..addListener(_handleFocusChange);
+
+  void _handleFocusChange() {
+    if (!_focusNode.hasFocus &&
+        double.tryParse(_controller.text) != widget.value) {
+      _controller.text = widget.value.toStringAsFixed(3);
+    }
+  }
 
   @override
   void didUpdateWidget(covariant _DsNumberField oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // 外部 clamp / 联动改变值且当前输入不可解析为该值时同步文本。
-    if (widget.value != oldWidget.value &&
+    // 输入期间保留用户文本；失焦后由焦点监听器同步外部 clamp / 联动值。
+    if (!_focusNode.hasFocus &&
+        widget.value != oldWidget.value &&
         double.tryParse(_controller.text) != widget.value) {
       _controller.text = widget.value.toStringAsFixed(3);
     }
@@ -546,6 +547,7 @@ class _DsNumberFieldState extends State<_DsNumberField> {
 
   @override
   void dispose() {
+    _focusNode.dispose();
     _controller.dispose();
     super.dispose();
   }

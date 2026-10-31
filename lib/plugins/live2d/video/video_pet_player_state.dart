@@ -187,10 +187,15 @@ class VideoPetPlaybackState {
     if (interrupt) {
       // 强制打断：清掉一次性点播/悬停动画（拖拽除外），
       // 让 movement 立即成为活动动画，而不是等当前动画播完。
-      _onceId = null;
-      _onceStartFrame = null;
-      _onceEndFrame = null;
-      _onceLoop = false;
+      // 例外：manual（工具/外部点播，如 play_animation）优先于走动，
+      // 不被 movement interrupt 清空——播完后 movement 自然接管
+      // （activeAnimationId 中 once 优先级本就高于 movement）。
+      if (_onceKind != VideoPetPlaybackKind.manual) {
+        _onceId = null;
+        _onceStartFrame = null;
+        _onceEndFrame = null;
+        _onceLoop = false;
+      }
       _hoverId = null;
     }
     // interrupt 清空后 busy 必为 false，自然走 _bump() 立即切换；
