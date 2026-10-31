@@ -681,9 +681,12 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
                   onAnimationFrame: (frame) => _animationFrame(frame, phase),
                   onBusyChanged: (busy) {
                     if (_busy == busy || !mounted) return;
+                    final wasBusy = _busy;
                     setState(() {
                       _busy = busy;
-                      _stop();
+                      // 只有真实进入/退出 busy 状态才停止当前动作；
+                      // 播放器初始化时的 busy=false 不应取消转身流程。
+                      if (busy || wasBusy) _stop();
                     });
                     _schedule();
                   },

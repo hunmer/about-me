@@ -80,7 +80,12 @@ class _ActivityStatisticsScreenState extends State<ActivityStatisticsScreen> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+      // TabBarView 懒构建：首次切入本页时数据异步加载中，
+      // 无 Scaffold 背景会透出底层黑色造成闪黑
+      return Scaffold(
+        backgroundColor: dsScaffoldBackground(DSThemeBridge.resolve(context)),
+        body: const Center(child: CircularProgressIndicator()),
+      );
     }
 
     final theme = Theme.of(context);
