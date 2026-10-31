@@ -193,7 +193,14 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen>
   /// 下载服务端动作：成功后合入草稿并立即点播预览。
   ///
   /// 取消编辑时草稿整体丢弃，未保存的下载动作不会写回档案。
-  Future<void> _downloadServerAction(VideoPetAnimation animation) async {
+  /// 下载服务端动作：成功后合入草稿；手动单个下载立即点播预览，
+  /// 批量下载（[autoplay] 为 false）不触发自动播放。
+  ///
+  /// 取消编辑时草稿整体丢弃，未保存的下载动作不会写回档案。
+  Future<void> _downloadServerAction(
+    VideoPetAnimation animation, {
+    bool autoplay = true,
+  }) async {
     final service = _storeService;
     if (service == null) return;
     if (_downloadingIds.contains(animation.id)) return;
@@ -228,8 +235,8 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen>
         _downloadingIds.remove(animation.id);
         _downloadFailedIds.remove(animation.id);
       });
-      // 立即点播，方便预览新动作
-      _requestAnimation(resolved.id);
+      // 手动单个下载立即点播，方便预览新动作
+      if (autoplay) _requestAnimation(resolved.id);
     } catch (error) {
       if (!mounted) return;
       setState(() {
@@ -268,7 +275,8 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen>
     setState(() => _downloadingAll = true);
     try {
       for (final action in pending) {
-        await _downloadServerAction(action);
+        // 串行逐个下载，且不触发自动播放
+        await _downloadServerAction(action, autoplay: false);
       }
     } finally {
       if (mounted) setState(() => _downloadingAll = false);
