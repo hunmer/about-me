@@ -153,8 +153,15 @@ class _JellyLive2DState extends State<JellyLive2D>
 
   bool get _isVideo => _selectedModel.isVideo;
 
+  /// 视频桌宠当前是否有 manual（工具/外部点播）动画在播；
+  /// 随机反应动画不得打断它。
+  bool _videoManualBusy = false;
+
   void _requestVideoAnimation(String id) {
-    debugPrint('[VideoPetRequest] _requestVideoAnimation: $id (stack: ${StackTrace.current.toString().split('\n').take(4).join(' | ')})');
+    debugPrint(
+      '[VideoPetRequest] _requestVideoAnimation: $id (caller: '
+      '${StackTrace.current.toString().split('\n')[1].trim()})',
+    );
     _videoAnimationRequest.value = null;
     _videoAnimationRequest.value = id;
   }
@@ -697,7 +704,11 @@ class _JellyLive2DState extends State<JellyLive2D>
                                   movementInterrupt: playback.movementInterrupt,
                                   onMovementComplete: playback.onComplete,
                                   onAnimationFrame: playback.onAnimationFrame,
-                                  onPlaybackBusyChanged: playback.onBusyChanged,
+                                  onPlaybackBusyChanged: (busy, reasons) {
+                                    _videoManualBusy =
+                                        busy && reasons.contains('manual');
+                                    playback.onBusyChanged(busy, reasons);
+                                  },
                                   onDragStart: playback.onDragStart,
                                   onDragUpdate: playback.onDragUpdate,
                                   onDragEnd: playback.onDragEnd,

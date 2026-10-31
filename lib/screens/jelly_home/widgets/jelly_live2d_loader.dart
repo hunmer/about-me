@@ -34,6 +34,11 @@ extension _JellyLive2DLoader on _JellyLive2DState {
   /// 随机播放一个反应动作：视频档案随机点播动画，Live2D 随机非 Idle 动作。
   Future<void> _playRandomMotion() async {
     if (_isVideo) {
+      // 工具/外部点播的 manual 动画播放中时不打断，等其播完。
+      if (_videoManualBusy) {
+        debugPrint('[VideoPetRequest] 随机反应动画让位：manual 动画播放中');
+        return;
+      }
       final animations = _videoManifest?.animations ?? const [];
       if (animations.isNotEmpty) {
         _requestVideoAnimation(
