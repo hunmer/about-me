@@ -269,7 +269,7 @@ void main() {
                 movementAnimationId: 'idle',
                 animationRequest: manual,
                 onEditPointer: (type, x, y) => pointers.add(type),
-                onPlaybackBusyChanged: (value) {
+                onPlaybackBusyChanged: (value, reasons) {
                   busy.add(value);
                   setState(() => rebuilds++);
                 },
@@ -327,7 +327,7 @@ void main() {
           baseUri: '',
           animationRequest: manual,
           dragAnimationId: drag,
-          onPlaybackBusyChanged: busy.add,
+          onPlaybackBusyChanged: (value, reasons) => busy.add(value),
         ),
       ),
     );

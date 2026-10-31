@@ -170,11 +170,11 @@ void main() {
     );
     VideoPetPreferences.randomWalkEnabled.value = true;
     await tester.pump(const Duration(seconds: 9));
-    playback.onBusyChanged(true);
+    playback.onBusyChanged(true, ['manual']);
     await tester.pump(const Duration(seconds: 30));
     expect(playback.animationId, isNull);
     final before = tester.getTopLeft(find.byKey(const ValueKey('pet')));
-    playback.onBusyChanged(false);
+    playback.onBusyChanged(false, []);
     await tester.pump(const Duration(milliseconds: 9900));
     expect(playback.animationId, isNull);
     expect(tester.getTopLeft(find.byKey(const ValueKey('pet'))), before);
@@ -313,13 +313,13 @@ void main() {
         tester.getTopLeft(find.byKey(const ValueKey('pet'))).dx,
         closeTo(before.dx - 40, 0.01),
       );
-      playback.onBusyChanged(true);
+      playback.onBusyChanged(true, ['manual']);
       await tester.pump();
       expect(playback.animationId, isNull);
       final paused = tester.getTopLeft(find.byKey(const ValueKey('pet')));
       await tester.pump(const Duration(seconds: 10));
       expect(tester.getTopLeft(find.byKey(const ValueKey('pet'))), paused);
-      playback.onBusyChanged(false);
+      playback.onBusyChanged(false, []);
       await tester.pump(const Duration(milliseconds: 500));
       expect(playback.animationId, isNull);
       await tester.pumpWidget(const SizedBox());
@@ -462,9 +462,9 @@ void main() {
     VideoPetPreferences.randomWalkEnabled.value = true;
     await tester.pump(const Duration(seconds: 1));
     final staleComplete = playback.onComplete;
-    playback.onBusyChanged(true);
+    playback.onBusyChanged(true, ['manual']);
     await tester.pump();
-    playback.onBusyChanged(false);
+    playback.onBusyChanged(false, []);
     await tester.pump(const Duration(seconds: 1));
     expect(playback.animationId, 'turn');
     staleComplete();

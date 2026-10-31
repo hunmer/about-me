@@ -528,7 +528,9 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
     Tool<Map<String, dynamic>>(
       name: 'list_animations',
       description: '列出当前视频桌宠已有动画及其 ID、名称、分类和启用状态。',
-      inputSchema: Schema.fromMap({'type': 'object', 'properties': {}}),
+      // 用类型化工厂构造，避免裸字面量产生 Map<dynamic, dynamic> 导致
+      // dartantic Tool._hasParameters 的 Map<String, Object?> 强转崩溃
+      inputSchema: Schema.object(),
       onCall: (_) async {
         final animations =
             Live2DPlugin.instance.selected?.videoManifest?.animations;
@@ -550,13 +552,12 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
     Tool<Map<String, dynamic>>(
       name: 'play_animation',
       description: '按 list_animations 返回的动画 ID 播放当前视频桌宠动画。',
-      inputSchema: Schema.fromMap({
-        'type': 'object',
-        'properties': {
-          'id': {'type': 'string', 'description': '要播放的动画 ID'},
+      inputSchema: Schema.object(
+        properties: {
+          'id': Schema.string(description: '要播放的动画 ID'),
         },
-        'required': ['id'],
-      }),
+        required: ['id'],
+      ),
       onCall: (args) async {
         final id = args['id'];
         if (id is! String || id.isEmpty) return {'error': '动画 ID 不能为空'};

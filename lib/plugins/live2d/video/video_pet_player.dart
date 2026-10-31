@@ -83,7 +83,9 @@ class VideoPetPlayer extends StatefulWidget {
   final int movementInterrupt;
   final VoidCallback? onMovementComplete;
   final ValueChanged<VideoPetAnimationFrame>? onAnimationFrame;
-  final ValueChanged<bool>? onPlaybackBusyChanged;
+  /// busy 变化回调，附带 busyReasons（如 manual/click/hover/drag），
+  /// 供舞台区分「工具点播动画应暂停走动」与「走动打断旧动作的迟到通知」。
+  final void Function(bool busy, List<String> reasons)? onPlaybackBusyChanged;
   final GestureDragStartCallback? onDragStart;
   final GestureDragUpdateCallback? onDragUpdate;
   final GestureDragEndCallback? onDragEnd;
@@ -134,7 +136,7 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
       }
       if (busy == _reportedBusy) return;
       _reportedBusy = busy;
-      widget.onPlaybackBusyChanged?.call(busy);
+      widget.onPlaybackBusyChanged?.call(busy, List.of(_playback.busyReasons));
     });
     WidgetsBinding.instance.ensureVisualUpdate();
   }

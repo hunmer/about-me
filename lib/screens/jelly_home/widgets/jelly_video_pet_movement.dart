@@ -36,7 +36,9 @@ class JellyVideoPetPlayback {
   /// 一次性点播请求（撞墙动画），由舞台发出、播放器消费。
   final ValueListenable<VideoPetManualAnimation?> frameRequest;
   final VoidCallback onComplete;
-  final ValueChanged<bool> onBusyChanged;
+  /// busy 变化回调（附带 busy 原因列表，如 manual/click/hover/drag）：
+  /// manual = 工具/外部点播动画，应暂停走动而不是被走动打断。
+  final void Function(bool busy, List<String> reasons) onBusyChanged;
   final ValueChanged<VideoPetAnimationFrame> onAnimationFrame;
   final GestureDragStartCallback onDragStart;
   final GestureDragUpdateCallback onDragUpdate;
@@ -780,15 +782,19 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
                       }
                     },
                     onAnimationFrame: (frame) => _animationFrame(frame, phase),
-                    onBusyChanged: (busy) {
+                    onBusyChanged: (busy, reasons) {
                       if (!mounted) return;
                       _log(
-                        'busy callback busy=$busy current=$_busy turning=$_turning walking=$_walking phase=$_phase',
+                        'busy callback busy=$busy reasons=[${reasons.join(',')}] '
+                        'current=$_busy turning=$_turning walking=$_walking phase=$_phase',
                       );
                       if (_busy == busy) return;
                       // 显式走动已通过 movementInterrupt 打断旧动作，
                       // 迟到的 busy=true 不应再取消当前转身/走动。
-                      if (busy && (_turning || _walking)) {
+                      // 但 manual（工具/外部点播，如 play_animation）优先：
+                      // 走动必须让位并暂停，等点播动画播完再恢复调度。
+                      final manual = reasons.contains('manual');
+                      if (busy && (_turning || _walking) && !manual) {
                         _log(
                           'busy ignored busy=$busy turning=$_turning walking=$_walking phase=$_phase',
                         );

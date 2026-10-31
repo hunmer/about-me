@@ -1199,6 +1199,7 @@
         const slot = slots[di];
         if (!slot || !urls || urls.length === 0) return;
         slot.onerror = null;
+        slot.crossOrigin = 'anonymous'; // 参考 index.html：避免 html2canvas 导出时跨域丢图
         slot.src = urls[0];
         monthPhotoMap.set(slot, { date, urls, cur: 0 });
         filled++;
@@ -1310,7 +1311,7 @@
       const stage = document.getElementById('scrapbookStage');
       if (!stage) return;
       const avail = document.documentElement.clientWidth - 32; // body px-4 左右留白
-      const scale = Math.min(1, avail / 1360);
+      const scale = avail / 1360; // 不设上限：100% 适应宽度（宽屏放大、窄屏缩小）
       window._stageScale = scale;
       stage.style.transformOrigin = 'top center';
       stage.style.transform = scale < 1 ? `scale(${scale})` : '';
