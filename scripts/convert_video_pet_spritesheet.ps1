@@ -9,9 +9,19 @@
 # m4a from an earlier export of the same performance (json AudioNote records this).
 # Only animations with neither a source track nor an existing m4a end up without a
 # manifest audio reference, so the manifest never points at missing files.
+# An id absent from the manifest can be registered on the fly: pass -Category
+# (one value applied to every new id, or an array positionally matching -Action)
+# and the script inserts placeholder entries (kept sorted by code point) before
+# converting. Existing ids ignore -Category. -Action accepts an array so a whole
+# batch runs in ONE process: the manifest and checksums are rewritten once at
+# the end instead of per action. NOTE: `pwsh -File ... -Action a,b,c` binds the
+# comma list as ONE string — call this script from a pwsh session or a runner
+# script that passes a real array, e.g.
+#   & 'scripts/convert_video_pet_spritesheet.ps1' -Action @('逗狗','逗猫') -Category '玩耍' -MaxBytes 4000000
 [CmdletBinding()]
 param(
-  [string]$Action = '东张西望',
+  [string[]]$Action = @('东张西望'),
+  [string[]]$Category = @(),
   [switch]$All,
   [switch]$Resume,
   [ValidateRange(1, 8192)][int]$FrameWidth = 640,
@@ -113,8 +123,43 @@ if (-not $Ffprobe) { $Ffprobe = Join-Path (Split-Path -Parent $ffmpegPath) 'ffpr
 $ffprobePath = Resolve-Tool $Ffprobe
 $cwebpPath = Resolve-Tool $Cwebp
 $manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding utf8 | ConvertFrom-Json -AsHashtable
-$actions = @($manifest.animations | Where-Object { $All -or $_.id -ceq $Action })
-if ($actions.Count -eq 0) { throw "Action not found in manifest: $Action" }
+$actions = @($manifest.animations | Where-Object { $All -or $Action -ccontains $_.id })
+if (-not $All) {
+  $knownIds = @($manifest.animations | ForEach-Object { $_.id })
+  $missing = @($Action | Where-Object { $knownIds -cnotcontains $_ })
+  if ($missing.Count -gt 0) {
+    if ($Category.Count -eq 0) {
+      throw "Action not found in manifest: $($missing -join ', ') (pass -Category to register new animations)"
+    }
+    # Register brand-new animations: insert placeholder entries keeping
+    # animations sorted by code point (CompareOrdinal) and persist them now so
+    # the post-conversion re-read below still sees them.
+    $list = [System.Collections.Generic.List[object]]::new()
+    foreach ($existing in $manifest.animations) { $list.Add($existing) }
+    foreach ($id in $missing) {
+      $cat = $null
+      for ($i = 0; $i -lt $Action.Count; $i++) {
+        if ($Action[$i] -ceq $id) {
+          if ($Category.Count -eq 1) { $cat = $Category[0] }
+          elseif ($i -lt $Category.Count) { $cat = $Category[$i] }
+          break
+        }
+      }
+      if (-not $cat) { throw "No -Category provided for new animation: $id" }
+      $newEntry = [ordered]@{ id = $id; name = $id; category = $cat; sources = @{}; spritesheet = $null }
+      $insertAt = $list.Count
+      for ($j = 0; $j -lt $list.Count; $j++) {
+        if ([string]::CompareOrdinal($list[$j].id, $id) -gt 0) { $insertAt = $j; break }
+      }
+      $list.Insert($insertAt, $newEntry)
+      Write-Host "Registering new animation '$id' (category: $cat) at index $insertAt."
+    }
+    $manifest.animations = @($list)
+    Write-Json $manifest $manifestPath
+    $actions = @($manifest.animations | Where-Object { $Action -ccontains $_.id })
+  }
+}
+if ($actions.Count -eq 0) { throw "Action not found in manifest: $($Action -join ', ') (pass -Category to register new animations)" }
 foreach ($entry in $actions) {
   $source = Resolve-SourceVideo $entry.id
 }
