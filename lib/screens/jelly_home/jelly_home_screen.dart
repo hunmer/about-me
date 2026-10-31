@@ -500,7 +500,6 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
   ChatController? _controller;
   MessageService? _messageService;
   String? _lastReplyId;
-  String? _lastReplyContent;
   String? _pendingVideoAnimationId;
 
   @override
@@ -562,9 +561,7 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
       name: 'play_animation',
       description: '按 list_animations 返回的动画 ID 播放当前视频桌宠动画。',
       inputSchema: Schema.object(
-        properties: {
-          'id': Schema.string(description: '要播放的动画 ID'),
-        },
+        properties: {'id': Schema.string(description: '要播放的动画 ID')},
         required: ['id'],
       ),
       onCall: (args) async {
@@ -576,7 +573,12 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
         // 工具在回答生成阶段执行，不能绕过语音开始的动画闸门。
         _pendingVideoAnimationId = id;
         debugPrint('[VideoPetTool] play_animation 等待语音开始: $id');
-        return {'success': true, 'queued': true, 'id': id, 'name': animation.name};
+        return {
+          'success': true,
+          'queued': true,
+          'id': id,
+          'name': animation.name,
+        };
       },
     ),
   ];
@@ -615,6 +617,11 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
     await controller.initialize();
     _messageService = messageService;
     _controller = controller;
+    // 初始化只记录历史末条，避免输入框等控制器通知重新播报历史。
+    if (controller.messages.isNotEmpty) {
+      _lastReplyId = controller.messages.last.id;
+    }
+    controller.addListener(_onMessagesChanged);
     debugPrint(
       '[ChatClear] Live2D controller initialized #${identityHashCode(controller)} key=$_currentKey',
     );
@@ -653,53 +660,57 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
   }
 
   void _onMessagesChanged() {
+    final controller = _controller;
+    // 单条消息完成不代表工具调用/Agent 链结束，等整轮回复完成后再展示。
+    if (!mounted ||
+        controller == null ||
+        controller.isLoading ||
+        controller.isSending ||
+        controller.isThinking ||
+        controller.alivenessFlushActive) {
+      return;
+    }
     final messages = _messageService?.currentMessages ?? const [];
     final latestUserIndex = messages.lastIndexWhere(
       (message) => message.isUser,
     );
-    if (latestUserIndex < 0) return;
-    for (var index = messages.length - 1; index > latestUserIndex; index--) {
-      final message = messages[index];
-      if (message.isUser) continue;
-      final reply = Live2DPlugin.cleanReply(message.content);
-      if (message.isGenerating) {
-        final display = reply.isEmpty ? '...' : reply;
-        if (display != _lastReplyContent && mounted) {
-          _lastReplyContent = display;
-          widget.onReply(display, true);
-        }
-        break;
-      }
-      if (reply.isEmpty || message.id == _lastReplyId) continue;
-      _lastReplyId = message.id;
-      _lastReplyContent = reply;
-      if (mounted) widget.onReply(reply, false);
-      final animationId = _pendingVideoAnimationId;
-      _pendingVideoAnimationId = null;
-      final controller = _controller;
-      final archiveKey = _currentKey;
-      // 工具点播和随机反应统一等语音开始；无 TTS 时在回答完成后回退。
-      unawaited(
-        Live2DPlugin.instance.speakReply(
-          reply,
-          onSpeechStart: () {
-            if (!mounted ||
-                !identical(controller, _controller) ||
-                archiveKey != _currentKey) {
-              return;
-            }
-            if (animationId != null) {
-              widget.videoAnimationRequest.value = null;
-              widget.videoAnimationRequest.value = animationId;
-              debugPrint('[VideoPetTool] 语音开始，注入动画: $animationId');
-            } else {
-              widget.onSpeechReaction?.call();
-            }
-          },
-        ),
-      );
-      break;
+    if (latestUserIndex < 0 || latestUserIndex == messages.length - 1) return;
+    final message = messages.last;
+    // 不向前回溯，否则重复通知会把工具调用前的消息再次展示出来。
+    if (message.isUser ||
+        message.isSessionDivider ||
+        message.isGenerating ||
+        message.id == _lastReplyId) {
+      return;
     }
+    final reply = Live2DPlugin.cleanReply(message.content);
+    _lastReplyId = message.id;
+    if (reply.isEmpty) return;
+    debugPrint('[Live2DReply] 整轮完成，展示最终回复: ${message.id}');
+    widget.onReply(reply, false);
+    final animationId = _pendingVideoAnimationId;
+    _pendingVideoAnimationId = null;
+    final archiveKey = _currentKey;
+    // 工具点播和随机反应统一等语音开始；无 TTS 时在回答完成后回退。
+    unawaited(
+      Live2DPlugin.instance.speakReply(
+        reply,
+        onSpeechStart: () {
+          if (!mounted ||
+              !identical(controller, _controller) ||
+              archiveKey != _currentKey) {
+            return;
+          }
+          if (animationId != null) {
+            widget.videoAnimationRequest.value = null;
+            widget.videoAnimationRequest.value = animationId;
+            debugPrint('[VideoPetTool] 语音开始，注入动画: $animationId');
+          } else {
+            widget.onSpeechReaction?.call();
+          }
+        },
+      ),
+    );
   }
 
   @override
@@ -710,6 +721,7 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
       _onArchiveChanged,
     );
     _messageService?.removeListener(_onMessagesChanged);
+    _controller?.removeListener(_onMessagesChanged);
     _controller?.dispose();
     super.dispose();
   }
@@ -726,12 +738,12 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
     _controller = null;
     _messageService = null;
     _lastReplyId = null;
-    _lastReplyContent = null;
     _pendingVideoAnimationId = null;
     debugPrint(
       '[ChatClear] reset controller old=#${identityHashCode(controller)}',
     );
     messageService?.removeListener(_onMessagesChanged);
+    controller?.removeListener(_onMessagesChanged);
     // 帧末再释放旧 controller，避免仍在显示它的 MessageInput 先行移除监听
     if (controller != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) => controller.dispose());
