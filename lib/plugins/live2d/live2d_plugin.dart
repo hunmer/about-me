@@ -346,20 +346,35 @@ class Live2DPlugin extends BasePlugin {
     await updateSettings({'bubbleRegions': next});
   }
 
-  Future<void> speakReply(String reply) async {
-    if (reply.trim().isEmpty) return;
+  /// [onSpeechStart] TTS 真正开始朗读时触发（用于同步反应动画）；
+  /// 未启用/不可用 TTS、朗读文本为空或 TTS 失败时立即回退触发，保证动画不丢。
+  Future<void> speakReply(String reply, {VoidCallback? onSpeechStart}) async {
+    var speechStartFired = false;
+    void fireSpeechStart() {
+      if (onSpeechStart == null || speechStartFired) return;
+      speechStartFired = true;
+      onSpeechStart();
+    }
+
+    if (reply.trim().isEmpty) return fireSpeechStart();
     // 聊天请求失败（❌）或用户取消（🛑）的错误提示不朗读
-    if (reply.startsWith('❌') || reply.startsWith('🛑')) return;
+    if (reply.startsWith('❌') || reply.startsWith('🛑')) {
+      return fireSpeechStart();
+    }
 
     // 语音设置统一存档绑定的 Agent 上；服务未指定时走全局默认服务
     final agentId = selected?.agentId;
-    if (agentId == null) return;
+    if (agentId == null) return fireSpeechStart();
     try {
       final agent = await AgentController().getAgent(agentId);
-      if (agent == null || !agent.ttsEnabled) return;
+      if (agent == null || !agent.ttsEnabled) return fireSpeechStart();
       await TTSPlugin.instance.speak(
         reply,
         serviceId: agent.ttsServiceId,
+        onStart: () {
+          debugPrint('[Live2D][Voice] TTS 开始播报，触发反应动画');
+          fireSpeechStart();
+        },
         onAudioData: (bytes, format) {
           debugPrint(
             '[Live2D][Voice] TTS audio callback: format=$format, '
@@ -389,7 +404,11 @@ class Live2DPlugin extends BasePlugin {
           }
         },
         onComplete: resetVoiceAnalysis,
-        onError: (error) => debugPrint('[Live2DChat] TTS failed: $error'),
+        onError: (error) {
+          debugPrint('[Live2DChat] TTS failed: $error');
+          // TTS 失败时回退：动画与回复完成同步。
+          fireSpeechStart();
+        },
       );
       // 成就系统计数（A13 播报员）
       EventManager.instance.broadcast(
@@ -398,6 +417,7 @@ class Live2DPlugin extends BasePlugin {
       );
     } catch (error) {
       debugPrint('[Live2DChat] TTS unavailable: $error');
+      fireSpeechStart();
     }
   }
 

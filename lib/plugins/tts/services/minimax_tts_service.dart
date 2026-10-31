@@ -88,7 +88,6 @@ class MiniMaxTTSService extends TTSBaseService {
     TTSAudioDataCallback? onAudioData,
   }) async {
     try {
-      onStart?.call();
       _isPlaying = true;
       _isPaused = false;
 
@@ -99,8 +98,8 @@ class MiniMaxTTSService extends TTSBaseService {
       final audioBytes = await _synthesizeBytes(text);
       onAudioData?.call(audioBytes, config.audioFormat);
 
-      // 播放音频
-      await _playAudioFromBytes(audioBytes);
+      // 播放音频（onStart 在真正起播时才回调，见 _playAudioFromBytes）
+      await _playAudioFromBytes(audioBytes, onStart: onStart);
 
       onComplete?.call();
       _isPlaying = false;
@@ -210,7 +209,15 @@ class MiniMaxTTSService extends TTSBaseService {
   }
 
   /// 从字节数组播放音频
-  Future<void> _playAudioFromBytes(List<int> audioBytes) async {
+  ///
+  /// [onStart] 在音频真正出声时才回调：play() 的 Future 在平台通道
+  /// 应答时即完成，早于扬声器实际发声（Windows 首次打开音频设备时
+  /// 尤其明显），因此用首个位置更新事件（平台真实播放时钟）确认。
+  /// 800ms 超时兜底，避免平台不发事件时动画丢失。
+  Future<void> _playAudioFromBytes(
+    List<int> audioBytes, {
+    TTSCallback? onStart,
+  }) async {
     try {
       final pcm = isPcmAudioFormat(config.audioFormat);
       final playbackBytes = pcm ? pcm16ToWav(audioBytes) : audioBytes;
@@ -220,6 +227,7 @@ class MiniMaxTTSService extends TTSBaseService {
       if (kIsWeb) {
         // Web 无本地临时文件，直接从字节播放（audioplayers Web 走 blob）
         await _audioPlayer.play(BytesSource(Uint8List.fromList(playbackBytes)));
+        await _awaitPlaybackReallyStarted(onStart);
         await _audioPlayer.onPlayerComplete.first;
         return;
       }
@@ -233,8 +241,9 @@ class MiniMaxTTSService extends TTSBaseService {
       await tempFile.writeAsBytes(playbackBytes);
       _log.info('音频临时文件: ${tempFile.path}');
 
-      // 播放音频
+      // 播放音频（play 完成即已起播）
       await _audioPlayer.play(DeviceFileSource(tempFile.path));
+      await _awaitPlaybackReallyStarted(onStart);
 
       // 等待播放完成
       await _audioPlayer.onPlayerComplete.first;
@@ -249,6 +258,18 @@ class MiniMaxTTSService extends TTSBaseService {
       _log.severe('播放音频失败: $e');
       rethrow;
     }
+  }
+
+  /// 等待平台真实播放时钟（首个位置更新事件）确认已出声后回调 [onStart]。
+  Future<void> _awaitPlaybackReallyStarted(TTSCallback? onStart) async {
+    if (onStart == null) return;
+    try {
+      await _audioPlayer.onPositionChanged.first
+          .timeout(const Duration(milliseconds: 800));
+    } catch (_) {
+      // 平台未发位置事件（极端情况）：退化为立即触发，保证动画不丢
+    }
+    onStart();
   }
 
   @override

@@ -202,7 +202,6 @@ class _CottageTabState extends State<_CottageTab> {
   String? _live2dMessage;
   int _live2dReaction = 0;
   String? _pendingLive2dReply;
-  bool _pendingLive2dStreaming = false;
   bool _live2dReplyFrameScheduled = false;
   final ValueNotifier<String?> _videoAnimationRequest = ValueNotifier(null);
 
@@ -363,6 +362,10 @@ class _CottageTabState extends State<_CottageTab> {
                     maintainAnimation: true,
                     child: Live2DChatInput(
                       onReply: _scheduleLive2dReply,
+                      onSpeechReaction: () {
+                        // TTS 开始播报（或无 TTS 回退）时触发反应动画
+                        if (mounted) setState(() => _live2dReaction++);
+                      },
                       videoAnimationRequest: _videoAnimationRequest,
                     ),
                   ),
@@ -450,7 +453,6 @@ class _CottageTabState extends State<_CottageTab> {
 
   void _scheduleLive2dReply(String reply, bool streaming) {
     _pendingLive2dReply = reply;
-    _pendingLive2dStreaming = streaming;
     if (_live2dReplyFrameScheduled) return;
     _live2dReplyFrameScheduled = true;
     if (SchedulerBinding.instance.schedulerPhase != SchedulerPhase.idle) {
@@ -465,7 +467,9 @@ class _CottageTabState extends State<_CottageTab> {
       if (!mounted || pending == null) return;
       setState(() {
         _live2dMessage = pending;
-        if (!_pendingLive2dStreaming) _live2dReaction++;
+        // 反应动画不在回复完成时立即触发：
+        // 由 _onMessagesChanged 经 speakReply 的 onSpeechStart 驱动
+        //（未启用 TTS / TTS 不可用时在完成时刻回退触发）。
       });
     });
     SchedulerBinding.instance.ensureVisualUpdate();
@@ -477,10 +481,14 @@ class Live2DChatInput extends StatefulWidget {
     super.key,
     required this.onReply,
     required this.videoAnimationRequest,
+    this.onSpeechReaction,
   });
 
   final void Function(String reply, bool streaming) onReply;
   final ValueNotifier<String?> videoAnimationRequest;
+
+  /// TTS 开始播报（或无 TTS 回退）时触发，用于同步随机反应动画。
+  final VoidCallback? onSpeechReaction;
 
   @override
   State<Live2DChatInput> createState() => _Live2DChatInputState();
@@ -493,6 +501,7 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
   MessageService? _messageService;
   String? _lastReplyId;
   String? _lastReplyContent;
+  String? _pendingVideoAnimationId;
 
   @override
   void initState() {
@@ -564,10 +573,10 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
         final animation = Live2DPlugin.instance.selected?.videoManifest
             ?.animation(id);
         if (animation == null) return {'error': '找不到动画 ID: $id'};
-        widget.videoAnimationRequest.value = null;
-        widget.videoAnimationRequest.value = id;
-        debugPrint('[VideoPetTool] play_animation 注入动画: $id');
-        return {'success': true, 'id': id, 'name': animation.name};
+        // 工具在回答生成阶段执行，不能绕过语音开始的动画闸门。
+        _pendingVideoAnimationId = id;
+        debugPrint('[VideoPetTool] play_animation 等待语音开始: $id');
+        return {'success': true, 'queued': true, 'id': id, 'name': animation.name};
       },
     ),
   ];
@@ -665,7 +674,30 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
       _lastReplyId = message.id;
       _lastReplyContent = reply;
       if (mounted) widget.onReply(reply, false);
-      unawaited(Live2DPlugin.instance.speakReply(reply));
+      final animationId = _pendingVideoAnimationId;
+      _pendingVideoAnimationId = null;
+      final controller = _controller;
+      final archiveKey = _currentKey;
+      // 工具点播和随机反应统一等语音开始；无 TTS 时在回答完成后回退。
+      unawaited(
+        Live2DPlugin.instance.speakReply(
+          reply,
+          onSpeechStart: () {
+            if (!mounted ||
+                !identical(controller, _controller) ||
+                archiveKey != _currentKey) {
+              return;
+            }
+            if (animationId != null) {
+              widget.videoAnimationRequest.value = null;
+              widget.videoAnimationRequest.value = animationId;
+              debugPrint('[VideoPetTool] 语音开始，注入动画: $animationId');
+            } else {
+              widget.onSpeechReaction?.call();
+            }
+          },
+        ),
+      );
       break;
     }
   }
@@ -695,6 +727,7 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
     _messageService = null;
     _lastReplyId = null;
     _lastReplyContent = null;
+    _pendingVideoAnimationId = null;
     debugPrint(
       '[ChatClear] reset controller old=#${identityHashCode(controller)}',
     );
