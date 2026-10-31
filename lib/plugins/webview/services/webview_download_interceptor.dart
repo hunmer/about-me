@@ -31,7 +31,14 @@ class WebviewDownloadInterceptor {
         eventName: _eventName,
         callback: (data) => _onRequestPaused(controller, data, contextGetter),
       );
-      await controller.callDevToolsProtocolMethod(
+      // 诊断：监听 WebView2 原生下载开始事件（若 Fetch 拦截未生效会走到这里）
+      await controller.addDevToolsProtocolEventListener(
+        eventName: 'Page.downloadWillBegin',
+        callback: (data) => debugPrint(
+          '[WebviewDownloadInterceptor][诊断] downloadWillBegin: $data',
+        ),
+      );
+      final enableResult = await controller.callDevToolsProtocolMethod(
         methodName: 'Fetch.enable',
         parameters: {
           'patterns': [
@@ -39,7 +46,10 @@ class WebviewDownloadInterceptor {
           ],
         },
       );
-      debugPrint('[WebviewDownloadInterceptor] Fetch Response 阶段拦截已启用');
+      debugPrint(
+        '[WebviewDownloadInterceptor] Fetch Response 阶段拦截已启用, '
+        'enableResult=$enableResult',
+      );
     } catch (e) {
       debugPrint('[WebviewDownloadInterceptor] 启用失败: $e');
     }
@@ -56,7 +66,16 @@ class WebviewDownloadInterceptor {
       if (requestId is! String || requestId.isEmpty) return;
 
       // Request 阶段事件由插件自身（shouldOverrideUrlLoading）或原生流程处理
-      if ((data['responseStatusCode'] as num?) == null) return;
+      final isResponseStage = (data['responseStatusCode'] as num?) != null;
+      debugPrint(
+        '[WebviewDownloadInterceptor][诊断] requestPaused: '
+        'stage=${isResponseStage ? 'Response' : 'Request'}, '
+        'resourceType=${data['resourceType']}, url=${_requestUrl(data)}, '
+        'status=${data['responseStatusCode']}, '
+        'contentDisposition=${_headerValue(data, 'content-disposition')}, '
+        'contentType=${_headerValue(data, 'content-type')}',
+      );
+      if (!isResponseStage) return;
 
       final isDownload = _detectDownload(data);
       if (!isDownload) {

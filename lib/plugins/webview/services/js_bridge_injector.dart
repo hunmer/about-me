@@ -11,6 +11,7 @@ import 'package:aboutme/core/plugin_manager.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/webview/webview_plugin.dart';
+import 'download_flow.dart';
 
 /// JS Bridge Handlers 注册服务
 ///
@@ -479,6 +480,51 @@ class JSBridgeInjector {
           return jsonEncode({'success': true});
         } catch (e) {
           debugPrint('Storage delete error: $e');
+          return jsonEncode({'error': e.toString()});
+        }
+      },
+    );
+
+    // 文件下载 handler（网页内导出图片等 data: URL 场景，
+    // 走应用内下载流程，避免 WebView2 默认下载栏）
+    controller.addJavaScriptHandler(
+      handlerName: 'Aboutme_download',
+      callback: (args) async {
+        if (args.isEmpty) return jsonEncode({'error': 'Missing arguments'});
+
+        try {
+          final data = args[0];
+          final Map<String, dynamic> params;
+
+          if (data is Map<String, dynamic>) {
+            params = data;
+          } else if (data is String) {
+            params = jsonDecode(data) as Map<String, dynamic>;
+          } else {
+            return jsonEncode({'error': 'Invalid arguments type'});
+          }
+
+          final fileName = params['fileName'] as String?;
+          final dataUrl = params['dataUrl'] as String?;
+          final context = _context;
+          if (fileName == null ||
+              fileName.isEmpty ||
+              dataUrl == null ||
+              dataUrl.isEmpty) {
+            return jsonEncode({'error': 'Missing fileName or dataUrl'});
+          }
+          if (context == null || !context.mounted) {
+            return jsonEncode({'error': 'No valid context'});
+          }
+
+          await runBrowserDataDownloadFlow(
+            context,
+            fileName: fileName,
+            dataUrl: dataUrl,
+          );
+          return jsonEncode({'success': true});
+        } catch (e) {
+          debugPrint('[JSBridge] download error: $e');
           return jsonEncode({'error': e.toString()});
         }
       },

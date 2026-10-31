@@ -6,6 +6,7 @@
   <title>March 2022 — Paper to Paperless Digital Scrapbook</title>
   <!-- Tailwind CSS -->
   <script src="../_libs/tailwindcdn.js"></script>
+  <script src="../_libs/html2canvas.min.js"></script>
   <style>
     :root {
       --paper-bg: #e7dfd3;
@@ -319,6 +320,11 @@
       <!-- 从日历相册按月填充照片 -->
       <button id="btnPickMonth" onclick="pickMonthFromAlbum()" class="text-xs bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded-xl font-semibold shadow-md transition flex items-center gap-1">
         📅 从相册选月份
+      </button>
+
+      <!-- 导出 PNG -->
+      <button id="btnExportPng" onclick="exportPosterPng()" class="text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-xl font-semibold shadow-md transition flex items-center gap-1">
+        🖼️ 导出 PNG
       </button>
 
       <!-- 返回十月单月海报 -->
@@ -1054,8 +1060,8 @@
 
         el.addEventListener('pointermove', (e) => {
           if (!activeDraggable || activeDraggable !== el) return;
-          const dx = e.clientX - startX;
-          const dy = e.clientY - startY;
+          const dx = (e.clientX - startX) / (window._stageScale || 1);
+          const dy = (e.clientY - startY) / (window._stageScale || 1);
           const newTx = initialTx + dx;
           const newTy = initialTy + dy;
 
@@ -1299,8 +1305,71 @@
       document.body.appendChild(dlg);
     }
 
+    // 整体等比缩放：舞台按 1360px 设计宽度适配窗口宽度（与 index.html adjustStageScale 同思路）
+    function adjustStageScale() {
+      const stage = document.getElementById('scrapbookStage');
+      if (!stage) return;
+      const avail = document.documentElement.clientWidth - 32; // body px-4 左右留白
+      const scale = Math.min(1, avail / 1360);
+      window._stageScale = scale;
+      stage.style.transformOrigin = 'top center';
+      stage.style.transform = scale < 1 ? `scale(${scale})` : '';
+      stage.style.marginBottom = stage.offsetHeight * (scale - 1) + 'px'; // 补偿缩放后的空白
+    }
+    window.addEventListener('resize', adjustStageScale);
+    window.addEventListener('load', adjustStageScale);
+
+    // 导出整张手账为高清 PNG（应用内走 Aboutme.download，普通浏览器回退原生下载）
+    async function exportPosterPng() {
+      const stage = document.getElementById('scrapbookStage');
+      const btn = document.getElementById('btnExportPng');
+      if (!stage || !btn) return;
+
+      btn.disabled = true;
+      const prevText = btn.textContent;
+      btn.textContent = '生成 PNG 中...';
+
+      // 暂时还原缩放以便 html2canvas 截取原始 1360px 设计尺寸
+      const prevTransform = stage.style.transform;
+      const prevMargin = stage.style.marginBottom;
+      stage.style.transform = 'none';
+      stage.style.marginBottom = '';
+
+      try {
+        const canvas = await html2canvas(stage, {
+          useCORS: true,
+          allowTaint: false,
+          backgroundColor: '#e7dfd3',
+          scale: 2,
+          logging: false
+        });
+
+        const dataUrl = canvas.toDataURL('image/png');
+        const exportName = `Scrapbook-2022-3-${Date.now()}.png`;
+        if (window.Aboutme && typeof window.Aboutme.download === 'function') {
+          await window.Aboutme.download(exportName, dataUrl);
+        } else {
+          const link = document.createElement('a');
+          link.download = exportName;
+          link.href = dataUrl;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+      } catch (err) {
+        console.error('Export error:', err);
+        alert('导出失败: ' + err.message);
+      } finally {
+        stage.style.transform = prevTransform;
+        stage.style.marginBottom = prevMargin;
+        btn.disabled = false;
+        btn.textContent = prevText;
+      }
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
       initDraggableSVGs();
+      adjustStageScale();
     });
   </script>
 </body>

@@ -1017,6 +1017,27 @@ class _WebViewTabContentState extends State<_WebViewTabContent> {
 
       window.Aboutme.storage = storageApi;
 
+      // 文件下载（data: URL，如网页内导出图片），走应用内下载流程
+      window.Aboutme.download = function(fileName, dataUrl) {
+        return window.flutter_inappwebview.callHandler('Aboutme_download', {
+          fileName: fileName,
+          dataUrl: dataUrl
+        }).then(function(result) {
+          try {
+            var parsed = JSON.parse(result);
+            if (parsed && parsed.error) {
+              throw new Error(parsed.error);
+            }
+            return true;
+          } catch(e) {
+            if (e.message && !e.message.includes('JSON')) {
+              throw e;
+            }
+            return true;
+          }
+        });
+      };
+
       // 标记准备完成并触发回调
       window.Aboutme._ready = true;
       if (window.Aboutme._readyCallbacks) {

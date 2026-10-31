@@ -663,11 +663,13 @@ class _JellyLive2DState extends State<JellyLive2D>
                                 active: _routeVisible && !_videoControlsOpen,
                                 topInset: widget.topInset,
                                 bottomInset: modelBottomInset,
+                                // 直接使用逻辑尺寸（size 像素），保证
+                                // 面板按钮/滚轮/捏合改 _size 能实际生效；
+                                // 此前按 layoutWidth*size/360 换算会被舞台
+                                // 的 scale=min(1, 容器/petSize) 饱和吃掉。
                                 petSize: Size(
-                                  layoutWidth * size / _defaultSize,
-                                  layoutWidth *
-                                      size /
-                                      _defaultSize *
+                                  size,
+                                  size *
                                       _videoManifest!.canvasHeight /
                                       _videoManifest!.canvasWidth,
                                 ),

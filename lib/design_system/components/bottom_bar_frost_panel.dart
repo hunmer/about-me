@@ -28,15 +28,6 @@ class BottomBarFrostPanel extends StatelessWidget {
           // 过渡带每段不超过 2 逻辑像素，主体只用一个滤镜。
           final bands = (feather / 2).ceil();
           final backdropKey = BackdropKey();
-          assert(() {
-            debugPrint(
-              '[BottomBarFrost] sigma=$blurSigma '
-              'feather=${feather}px bands=$bands tintFade=$tintFade '
-              'size=${constraints.maxWidth}x$height',
-            );
-            return true;
-          }());
-
           Widget blurBand(double top, double bottom, double sigma) {
             return Positioned(
               top: top,

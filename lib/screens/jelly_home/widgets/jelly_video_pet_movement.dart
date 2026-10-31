@@ -753,7 +753,7 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
                         _dragging && movement.dragAnimationId.isNotEmpty
                         ? movement.dragAnimationId
                         : null,
-                    loop: !_turning,
+                    loop: !_turning && !_walking,
                     frameRequest: _frameRequest,
                     movementInterrupt: _interruptToken,
                     onComplete: () {
@@ -762,15 +762,21 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
                         _log(
                           'turn complete REJECTED stalePhase=$phase phase=$_phase turning=$_turning',
                         );
-                      } else if (!_turning) {
-                        _log('turn complete REJECTED notTurning phase=$phase');
                       } else if (!_canWalk) {
                         _log(
                           'turn complete REJECTED blocked=[${_blocked.join(',')}]',
                         );
-                      } else {
+                      } else if (_turning) {
                         _log('turn complete phase=$phase');
                         setState(_startWalking);
+                      } else if (_walking) {
+                        _log('walk animation complete phase=$phase');
+                        setState(_stop);
+                        _schedule();
+                      } else {
+                        _log(
+                          'movement complete REJECTED notMoving phase=$phase',
+                        );
                       }
                     },
                     onAnimationFrame: (frame) => _animationFrame(frame, phase),

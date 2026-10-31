@@ -78,12 +78,22 @@ void main() {
     await tester.pump();
 
     expect(playback.animationId, 'walk');
-    expect(playback.loop, true);
+    expect(playback.loop, false);
     await tester.pump(const Duration(seconds: 1));
     expect(
       tester.getRect(find.byKey(const ValueKey('pet'))).left,
       lessThan(before),
     );
+
+    playback.onComplete();
+    await tester.pump();
+    expect(playback.animationId, isNull);
+    final afterWalk = tester.getRect(find.byKey(const ValueKey('pet')));
+    await tester.pump(const Duration(milliseconds: 990));
+    expect(playback.animationId, isNull);
+    expect(tester.getRect(find.byKey(const ValueKey('pet'))), afterWalk);
+    await tester.pump(const Duration(milliseconds: 10));
+    expect(playback.animationId, 'turn');
     await tester.pumpWidget(const SizedBox());
   });
 

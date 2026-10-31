@@ -1085,12 +1085,19 @@
                 });
 
                 const dataUrl = canvas.toDataURL('image/png');
-                const link = document.createElement('a');
-                link.download = `Octubre-2025-Calendar-${Date.now()}.png`;
-                link.href = dataUrl;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+                const exportName = `Octubre-2025-Calendar-${Date.now()}.png`;
+                if (window.Aboutme && typeof window.Aboutme.download === 'function') {
+                    // 应用内 WebView：走 JS Bridge 下载流程（文件名对话框 + 选目录）
+                    await window.Aboutme.download(exportName, dataUrl);
+                } else {
+                    // 普通浏览器回退：触发原生下载
+                    const link = document.createElement('a');
+                    link.download = exportName;
+                    link.href = dataUrl;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
 
                 showToast('高清 PNG 海报已成功导出下载！');
             } catch (err) {

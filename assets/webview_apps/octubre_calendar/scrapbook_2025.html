@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>2025 Photo Scrapbook Calendar</title>
   <script src="../_libs/tailwindcdn.js"></script>
+  <script src="../_libs/html2canvas.min.js"></script>
   <style>
     :root {
       --poster-bg: #fcfcfa;
@@ -297,6 +298,9 @@
           <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
         </svg>
         重播入场动画
+      </button>
+      <button id="btnExportPng" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shadow-emerald-600/20 transition active:scale-95">
+        🖼️ 导出 PNG
       </button>
       <button onclick="location.href='index.html'" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition active:scale-95" title="切换到十月拍立得日历">
         📌 十月单月海报
@@ -1357,15 +1361,79 @@
       });
     }
 
+    // 整体等比缩放：画布按 960px 设计宽度适配窗口宽度（与 index.html adjustStageScale 同思路）
+    function adjustPosterScale() {
+      const poster = document.querySelector('.poster-canvas');
+      if (!poster) return;
+      const avail = document.documentElement.clientWidth - 48; // body px-6 左右留白
+      const scale = Math.min(1, avail / 960);
+      poster.style.transformOrigin = 'top center';
+      poster.style.transform = scale < 1 ? `scale(${scale})` : '';
+      poster.style.marginBottom = poster.offsetHeight * (scale - 1) + 'px'; // 补偿缩放后的空白
+    }
+    window.addEventListener('resize', adjustPosterScale);
+    window.addEventListener('load', adjustPosterScale);
+
+    // 导出整张海报为高清 PNG（应用内走 Aboutme.download，普通浏览器回退原生下载）
+    async function exportPosterPng() {
+      const poster = document.getElementById('poster');
+      const btn = document.getElementById('btnExportPng');
+      if (!poster || !btn) return;
+
+      btn.disabled = true;
+      const prevText = btn.textContent;
+      btn.textContent = '生成 PNG 中...';
+
+      // 暂时还原缩放以便 html2canvas 截取原始 960px 设计尺寸
+      const prevTransform = poster.style.transform;
+      const prevMargin = poster.style.marginBottom;
+      poster.style.transform = 'none';
+      poster.style.marginBottom = '';
+
+      try {
+        const canvas = await html2canvas(poster, {
+          useCORS: true,
+          allowTaint: false,
+          backgroundColor: '#fcfcfa',
+          scale: 2,
+          logging: false
+        });
+
+        const dataUrl = canvas.toDataURL('image/png');
+        const exportName = `Scrapbook-2025-${Date.now()}.png`;
+        if (window.Aboutme && typeof window.Aboutme.download === 'function') {
+          await window.Aboutme.download(exportName, dataUrl);
+        } else {
+          const link = document.createElement('a');
+          link.download = exportName;
+          link.href = dataUrl;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+        if (typeof monthToast === 'function') monthToast('海报 PNG 已导出');
+      } catch (err) {
+        console.error('Export error:', err);
+        if (typeof monthToast === 'function') monthToast('导出失败: ' + err.message);
+      } finally {
+        poster.style.transform = prevTransform;
+        poster.style.marginBottom = prevMargin;
+        btn.disabled = false;
+        btn.textContent = prevText;
+      }
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
       render2025Calendars();
       syncInitialRotations();
       initInteractivity();
       setupLightboxAndFallbacks();
       initMonthPickers();
+      adjustPosterScale();
 
       document.getElementById('btn-replay').addEventListener('click', () => replayAnimations('default'));
       document.getElementById('btn-wave').addEventListener('click', () => replayAnimations('wave'));
+      document.getElementById('btnExportPng').addEventListener('click', exportPosterPng);
     });
   </script>
 </body>

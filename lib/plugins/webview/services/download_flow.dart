@@ -1,3 +1,4 @@
+import 'dart:convert' show base64Decode;
 import 'dart:io' as io;
 
 import 'package:file_picker/file_picker.dart';
@@ -172,4 +173,60 @@ Future<void> runBrowserDownloadFlow(
   if (dialogRoute.isActive) {
     Navigator.of(context).removeRoute(dialogRoute);
   }
+}
+
+/// 内存数据（data: URL）下载流程：文件名对话框 → 选目录 → 直接落盘 → toast 结果。
+/// 供 JS Bridge（网页内导出图片等场景）调用，避免触发 WebView2 默认下载栏。
+Future<void> runBrowserDataDownloadFlow(
+  BuildContext context, {
+  required String fileName,
+  required String dataUrl,
+}) async {
+  // 仅支持 base64 编码的 data: URL
+  final commaIdx = dataUrl.indexOf(',');
+  final isBase64 = dataUrl.contains(';base64,');
+  if (!dataUrl.startsWith('data:') || commaIdx < 0 || !isBase64) {
+    ToastService.instance.showToast(
+      'webview_download_failed'.tr,
+      type: ToastType.error,
+    );
+    return;
+  }
+  List<int>? bytes;
+  try {
+    bytes = base64Decode(dataUrl.substring(commaIdx + 1));
+  } catch (_) {}
+  if (bytes == null || bytes.isEmpty) {
+    ToastService.instance.showToast(
+      'webview_download_failed'.tr,
+      type: ToastType.error,
+    );
+    return;
+  }
+
+  final name = await showDownloadNameDialog(context, fileName);
+  if (name == null || name.trim().isEmpty) return;
+
+  final directory = await FilePicker.platform.getDirectoryPath(
+    lockParentWindow: true,
+  );
+  if (directory == null) return;
+  if (!context.mounted) return;
+
+  final record = await WebViewPlugin.instance.browserDownloadManager
+      .startDataDownload(
+    url: dataUrl.length > 200 ? '${dataUrl.substring(0, 200)}...' : dataUrl,
+    fileName: name.trim(),
+    savePath: '$directory${io.Platform.pathSeparator}${name.trim()}',
+    bytes: bytes,
+  );
+
+  ToastService.instance.showToast(
+    record.status == BrowserDownloadStatus.completed
+        ? 'webview_download_success'.tr
+        : 'webview_download_failed'.tr,
+    type: record.status == BrowserDownloadStatus.completed
+        ? ToastType.success
+        : ToastType.error,
+  );
 }

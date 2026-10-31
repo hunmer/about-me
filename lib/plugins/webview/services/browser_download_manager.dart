@@ -139,6 +139,40 @@ class BrowserDownloadManager extends ChangeNotifier {
     return record;
   }
 
+  /// 将内存中的字节（如 JS Bridge 传来的 data: URL base64 图片）直接落盘，
+  /// 同步生成一条已完成/已失败的记录
+  Future<BrowserDownloadRecord> startDataDownload({
+    required String url,
+    required String fileName,
+    required String savePath,
+    required List<int> bytes,
+  }) async {
+    final record = BrowserDownloadRecord(
+      id: DateTime.now().microsecondsSinceEpoch.toString(),
+      url: url,
+      fileName: fileName,
+      savePath: savePath,
+      createdAt: DateTime.now(),
+      totalBytes: bytes.length,
+      receivedBytes: bytes.length,
+      progress: 1,
+    );
+    _records.insert(0, record);
+    notifyListeners();
+    try {
+      await io.File(savePath).writeAsBytes(bytes, flush: true);
+      record.status = BrowserDownloadStatus.completed;
+    } catch (e) {
+      debugPrint('[BrowserDownloadManager] 数据落盘失败: $e');
+      record.status = BrowserDownloadStatus.failed;
+      record.progress = 0;
+      record.receivedBytes = 0;
+    }
+    notifyListeners();
+    unawaited(_persist());
+    return record;
+  }
+
   Future<void> _runDownload(BrowserDownloadRecord record) async {
     final client = http.Client();
     _clients[record.id] = client;
