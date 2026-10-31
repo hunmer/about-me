@@ -54,7 +54,7 @@ extension _VideoPetEditorLayout on _VideoPetEditorScreenState {
             child: _buildPreview(),
           ),
         ),
-        SizedBox(height: 260, child: _buildAnimationPanel()),
+        SizedBox(height: 220, child: _buildAnimationPanel()),
       ],
     );
   }
@@ -397,9 +397,28 @@ extension _VideoPetEditorLayout on _VideoPetEditorScreenState {
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                 ),
+                // 一键下载全部未下载的服务端动作；批量进行中显示进度
+                if (_serverActionsEnabled && _hasPendingServerActions)
+                  if (_downloadingAll)
+                    const Padding(
+                      padding: EdgeInsets.only(right: 8),
+                      child: DSLoadingDots(size: 14),
+                    )
+                  else
+                    DSIconButton(
+                      key: const ValueKey('videoPetServerDownloadAllButton'),
+                      icon: DsIconKind.download,
+                      size: 30,
+                      tooltip: _text(
+                        'videoPet_serverActionsHint',
+                        '未下载的动作，点击下载并加入预览',
+                      ),
+                      onPressed: _downloadAllServerActions,
+                    ),
                 SizedBox(
                   width: 200,
                   child: DSInput.search(
+                    key: const ValueKey('videoPetAnimationSearchInput'),
                     controller: _searchController,
                     hint: _text('videoPet_searchAnimation', '搜索动画'),
                     onChanged: (_) => setState(() {}),
@@ -429,24 +448,72 @@ extension _VideoPetEditorLayout on _VideoPetEditorScreenState {
               ),
             ),
             const SizedBox(height: 4),
-            // 单行动画列表：点按选中播放，右侧 switch 控制是否参与 Jev 决策。
+            // 服务端动作目录状态（融合展示，无独立分区）：
+            // 拉取中 / 失败重试内联在分类与列表之间。
+            if (_serverActionsEnabled &&
+                (_serverLoading || _serverError != null))
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        _serverLoading
+                            ? _text('videoPet_serverLoading', '正在获取服务端动作…')
+                            : 'videoPet_serverLoadFailed'.trParams({
+                                'error': _serverError!,
+                              }),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: DSThemeBridge.resolve(context).textSub,
+                        ),
+                      ),
+                    ),
+                    if (_serverError != null)
+                      DSButton(
+                        key: const ValueKey('videoPetServerRetryButton'),
+                        label: _text('videoPet_serverRetry', '重试'),
+                        size: DSButtonSize.sm,
+                        variant: DSButtonVariant.ghost,
+                        onPressed: _loadServerActions,
+                      ),
+                  ],
+                ),
+              ),
+            // 单行动画列表：本地动作点按选中播放，右侧 switch 控制 Jev 参与；
+            // 未下载的服务端动作融合在同一列表/分类中，右侧为下载按钮
+            //（下载完成变为本地项并立即播放，未下载不进播放器/资源编辑）。
             Expanded(
               child: ListView.builder(
                 itemCount: _visibleAnimations.length,
                 itemBuilder: (context, index) {
-                  final animation = _visibleAnimations[index];
+                  final item = _visibleAnimations[index];
+                  final animation = item.animation;
                   final theme = DSThemeBridge.resolve(context);
-                  final selected = _selectedAnimationId == animation.id;
+                  final selected =
+                      !item.isRemote && _selectedAnimationId == animation.id;
+                  final downloading =
+                      item.isRemote && _downloadingIds.contains(animation.id);
+                  final failed =
+                      item.isRemote && _downloadFailedIds.contains(animation.id);
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 6),
                     child: Container(
+                      key: ValueKey('videoPetAnimationItem_${animation.id}'),
                       decoration: dsSketchDecoration(
                         theme: theme,
                         fillColor: selected ? theme.hatch : theme.surface,
                         radius: const BorderRadius.all(Radius.circular(10)),
                       ),
                       child: InkWell(
-                        onTap: () => _requestAnimation(animation.id),
+                        // 远程项未下载不可点播；下载中禁点（防重复），
+                        // 其余情况点击等同触发下载
+                        onTap: item.isRemote
+                            ? (downloading
+                                  ? null
+                                  : () => _downloadServerAction(animation))
+                            : () => _requestAnimation(animation.id),
                         borderRadius: BorderRadius.circular(10),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
@@ -456,9 +523,11 @@ extension _VideoPetEditorLayout on _VideoPetEditorScreenState {
                           child: Row(
                             children: [
                               DsIcon(
-                                selected
-                                    ? DsIconKind.play
-                                    : DsIconKind.animation,
+                                item.isRemote
+                                    ? DsIconKind.download
+                                    : (selected
+                                          ? DsIconKind.play
+                                          : DsIconKind.animation),
                                 size: 18,
                                 color: theme.text,
                               ),
@@ -484,12 +553,36 @@ extension _VideoPetEditorLayout on _VideoPetEditorScreenState {
                                     ).textTheme.labelSmall,
                                   ),
                                 ),
-                              DSSwitch(
-                                value: animation.enabled,
-                                onChanged: (value) => _updateAnimation(
-                                  animation.copyWith(enabled: value),
+                              if (item.isRemote)
+                                // 下载中显示进度并禁用重复点击；失败转为重试
+                                // 图标可再次点击；成功后此位置恢复为本地 switch
+                                if (downloading)
+                                  const DSLoadingDots(size: 14)
+                                else
+                                  DSIconButton(
+                                    key: ValueKey(
+                                      'videoPetServerAction_${animation.id}',
+                                    ),
+                                    icon: failed
+                                        ? DsIconKind.refresh
+                                        : DsIconKind.download,
+                                    size: 30,
+                                    tooltip: failed
+                                        ? _text('videoPet_serverRetry', '重试')
+                                        : _text(
+                                            'videoPet_serverActionsHint',
+                                            '未下载的动作，点击下载并加入预览',
+                                          ),
+                                    onPressed: () =>
+                                        _downloadServerAction(animation),
+                                  )
+                              else
+                                DSSwitch(
+                                  value: animation.enabled,
+                                  onChanged: (value) => _updateAnimation(
+                                    animation.copyWith(enabled: value),
+                                  ),
                                 ),
-                              ),
                             ],
                           ),
                         ),
@@ -499,101 +592,10 @@ extension _VideoPetEditorLayout on _VideoPetEditorScreenState {
                 },
               ),
             ),
-            // 服务端动作（动作商店）：展示未下载动作，点击下载加入草稿
-            if (_serverActionsEnabled) ..._buildServerActionsSection(),
           ],
         ),
       ),
     );
-  }
-
-  /// 服务端动作区块：标题 + 加载中 / 失败重试 / 可下载动作横向列表
-  List<Widget> _buildServerActionsSection() {
-    final theme = DSThemeBridge.resolve(context);
-    final textTheme = Theme.of(context).textTheme;
-    final actions = _visibleServerAnimations;
-    return [
-      const Divider(height: 1),
-      Padding(
-        padding: const EdgeInsets.only(top: 6),
-        child: Row(
-          children: [
-            DsIcon(DsIconKind.download, size: 14, color: theme.textSub),
-            const SizedBox(width: 6),
-            Expanded(
-              child: Text(
-                _text('videoPet_serverActions', '服务端动作'),
-                style: textTheme.titleSmall?.copyWith(fontSize: 13),
-              ),
-            ),
-            if (_serverError != null)
-              DSButton(
-                key: const ValueKey('videoPetServerRetryButton'),
-                label: _text('videoPet_serverRetry', '重试'),
-                size: DSButtonSize.sm,
-                variant: DSButtonVariant.ghost,
-                onPressed: _loadServerActions,
-              ),
-          ],
-        ),
-      ),
-      if (_serverLoading)
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Text(
-            _text('videoPet_serverLoading', '正在获取服务端动作…'),
-            style: textTheme.bodySmall?.copyWith(color: theme.textSub),
-          ),
-        )
-      else if (_serverError != null)
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Text(
-            'videoPet_serverLoadFailed'.trParams({'error': _serverError!}),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: textTheme.bodySmall?.copyWith(color: theme.textSub),
-          ),
-        )
-      else if (actions.isEmpty)
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Text(
-            _text('videoPet_serverActionsHint', '未下载的动作，点击下载并加入预览'),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: textTheme.bodySmall?.copyWith(color: theme.textSub),
-          ),
-        )
-      else
-        SizedBox(
-          height: 38,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: actions.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 6),
-            itemBuilder: (context, index) {
-              final action = actions[index];
-              final downloading = _downloadingIds.contains(action.id);
-              final label = action.name.isEmpty ? action.id : action.name;
-              return ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 160),
-                child: DSButton(
-                  key: ValueKey('videoPetServerAction_${action.id}'),
-                  label: label,
-                  size: DSButtonSize.sm,
-                  variant: DSButtonVariant.secondary,
-                  icon: downloading ? null : DsIconKind.download,
-                  loading: downloading,
-                  onPressed: downloading
-                      ? null
-                      : () => _downloadServerAction(action),
-                ),
-              );
-            },
-          ),
-        ),
-    ];
   }
 }
 

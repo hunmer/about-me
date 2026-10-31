@@ -19,6 +19,7 @@ class _FakePetStoreService extends PetStoreService {
     this.failPetsCount = 0,
     this.failInstallCount = 0,
     this.failActionsCount = 0,
+    this.failDownloadCount = 0,
   });
 
   final List<PetStoreEntry> pets;
@@ -26,6 +27,7 @@ class _FakePetStoreService extends PetStoreService {
   int failPetsCount;
   int failInstallCount;
   int failActionsCount;
+  int failDownloadCount;
   int fetchPetsCalls = 0;
   int installCalls = 0;
   int fetchActionsCalls = 0;
@@ -91,6 +93,10 @@ class _FakePetStoreService extends PetStoreService {
     required VideoPetAnimation animation,
   }) async {
     downloadCalls++;
+    if (failDownloadCount > 0) {
+      failDownloadCount--;
+      throw const FormatException('下载失败（测试）');
+    }
     final resolved = animation.copyWith(
       sources: {'webp': 'file:///pets/${animation.id}.webp'},
     );
@@ -403,7 +409,7 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    testWidgets('展示未下载动作，下载合入草稿并保存后重进仍在', (tester) async {
+    testWidgets('未下载动作融合本地列表与分类，下载后同行变 switch', (tester) async {
       final fake = _FakePetStoreService(actions: serverActions);
       var current = buildManifest();
       VideoPetManifest? firstSaveResult;
@@ -420,27 +426,104 @@ void main() {
         },
       );
 
-      // 服务端区块展示两个未下载动作
+      // 融合列表：本地 idle 与未下载 srv1/srv2 同一列表展示
+      expect(
+        find.byKey(const ValueKey('videoPetAnimationItem_idle')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('videoPetAnimationItem_srv1')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('videoPetAnimationItem_srv2')),
+        findsOneWidget,
+      );
+      expect(find.text('余额百万'), findsOneWidget);
+      expect(find.text('啃玉米'), findsOneWidget);
+
+      // switch 替换：远程项行内无 DSSwitch、行尾是下载按钮；本地项有 switch
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('videoPetAnimationItem_srv1')),
+          matching: find.byType(DSSwitch),
+        ),
+        findsNothing,
+      );
       expect(
         find.byKey(const ValueKey('videoPetServerAction_srv1')),
         findsOneWidget,
       );
       expect(
-        find.byKey(const ValueKey('videoPetServerAction_srv2')),
+        find.descendant(
+          of: find.byKey(const ValueKey('videoPetAnimationItem_idle')),
+          matching: find.byType(DSSwitch),
+        ),
         findsOneWidget,
       );
 
-      // 下载 srv1：芯片消失，动作进入本地动画列表
-      await tester.tap(
-        find.byKey(const ValueKey('videoPetServerAction_srv1')),
+      // 分类并集：远程分类「余额」进入分类筛选 chips
+      final balanceChip = find.descendant(
+        of: find.byType(DSChip),
+        matching: find.text('余额'),
       );
+      expect(balanceChip, findsOneWidget);
+
+      // 点「余额」分类：本地项与其它远程项被过滤，仅剩同分类的 srv1
+      await tester.tap(balanceChip);
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('videoPetAnimationItem_idle')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey('videoPetAnimationItem_srv2')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey('videoPetAnimationItem_srv1')),
+        findsOneWidget,
+      );
+
+      // 回「全部」后搜索「啃」：本地与 srv1 均被过滤，搜索对远程项同样生效
+      await tester.tap(find.text('全部'));
+      await tester.pumpAndSettle();
+      final searchField = find.descendant(
+        of: find.byKey(const ValueKey('videoPetAnimationSearchInput')),
+        matching: find.byType(EditableText),
+      );
+      await tester.enterText(searchField, '啃');
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('videoPetAnimationItem_idle')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey('videoPetAnimationItem_srv1')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey('videoPetAnimationItem_srv2')),
+        findsOneWidget,
+      );
+      await tester.enterText(searchField, '');
+      await tester.pumpAndSettle();
+
+      // 下载 srv1：下载按钮消失，同一行出现 DSSwitch（本地化 + 立即播放）
+      await tester.tap(find.byKey(const ValueKey('videoPetServerAction_srv1')));
       await tester.pumpAndSettle();
       expect(fake.downloadCalls, 1);
       expect(
         find.byKey(const ValueKey('videoPetServerAction_srv1')),
         findsNothing,
       );
-      expect(find.text('余额百万'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('videoPetAnimationItem_srv1')),
+          matching: find.byType(DSSwitch),
+        ),
+        findsOneWidget,
+      );
 
       // 保存：返回的 manifest 含新动作且源已解析为绝对地址
       await tester.tap(find.text('保存'));
@@ -452,19 +535,85 @@ void main() {
           .singleWhere((a) => a.id == 'srv1');
       expect(downloaded.sources['webp'], 'file:///pets/srv1.webp');
 
-      // 用保存结果重进编辑器：srv1 在本地列表，服务端区不再展示
+      // 用保存结果重进编辑器：srv1 是本地项（无下载按钮、有 switch），
+      // srv2 仍为远程项可下载（列表视口有限，先搜索过滤再断言）
       current = firstSaved;
       await tester.tap(find.text('打开编辑器'));
+      await tester.pumpAndSettle();
+      final searchField2 = find.descendant(
+        of: find.byKey(const ValueKey('videoPetAnimationSearchInput')),
+        matching: find.byType(EditableText),
+      );
+      await tester.enterText(searchField2, '啃');
       await tester.pumpAndSettle();
       expect(
         find.byKey(const ValueKey('videoPetServerAction_srv1')),
         findsNothing,
       );
       expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('videoPetAnimationItem_srv1')),
+          matching: find.byType(DSSwitch),
+        ),
+        findsNothing,
+      );
+      expect(
         find.byKey(const ValueKey('videoPetServerAction_srv2')),
         findsOneWidget,
       );
-      expect(find.text('余额百万'), findsOneWidget);
+    });
+
+    testWidgets('下载失败提示错误且按钮可重试，成功后变 switch', (tester) async {
+      final fake = _FakePetStoreService(
+        actions: serverActions,
+        failDownloadCount: 1,
+      );
+      await pumpEditor(
+        tester,
+        service: fake,
+        manifestOf: buildManifest,
+        onClosed: (_) {},
+      );
+
+      // 首次下载失败：错误提示 + 按钮恢复（可重试），未进入草稿
+      await tester.tap(find.byKey(const ValueKey('videoPetServerAction_srv1')));
+      await tester.pumpAndSettle();
+      expect(fake.downloadCalls, 1);
+      expect(
+        find.textContaining('videoPet_serverDownloadFailed'),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('videoPetServerAction_srv1')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('videoPetAnimationItem_srv1')),
+          matching: find.byType(DSSwitch),
+        ),
+        findsNothing,
+      );
+
+      // 等待错误 SnackBar 自动消失，避免遮挡下载按钮
+      await tester.pump(const Duration(seconds: 4));
+      await tester.pumpAndSettle();
+
+      // 重试成功：按钮消失，同一行恢复本地 switch
+      await tester.tap(find.byKey(const ValueKey('videoPetServerAction_srv1')));
+      await tester.pumpAndSettle();
+      expect(fake.downloadCalls, 2);
+      expect(
+        find.byKey(const ValueKey('videoPetServerAction_srv1')),
+        findsNothing,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('videoPetAnimationItem_srv1')),
+          matching: find.byType(DSSwitch),
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('取消编辑不把未保存的下载动作写回 manifest', (tester) async {
@@ -492,6 +641,45 @@ void main() {
       expect(
         original.animations.where((a) => a.id == 'srv1'),
         isEmpty,
+      );
+    });
+
+    testWidgets('一键下载全部服务端动作，全部变本地 switch', (tester) async {
+      final fake = _FakePetStoreService(actions: serverActions);
+      await pumpEditor(
+        tester,
+        service: fake,
+        manifestOf: buildManifest,
+        onClosed: (_) {},
+      );
+
+      // 批量下载入口出现在动画标题右侧
+      expect(
+        find.byKey(const ValueKey('videoPetServerDownloadAllButton')),
+        findsOneWidget,
+      );
+
+      // 一键下载：两个远程动作均合入草稿（行内恢复 switch，按钮消失）
+      await tester.tap(
+        find.byKey(const ValueKey('videoPetServerDownloadAllButton')),
+      );
+      await tester.pumpAndSettle();
+      expect(fake.downloadCalls, 2);
+      expect(
+        find.byKey(const ValueKey('videoPetServerAction_srv1')),
+        findsNothing,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('videoPetAnimationItem_srv1')),
+          matching: find.byType(DSSwitch),
+        ),
+        findsOneWidget,
+      );
+      // 全部下载完成后批量入口消失
+      expect(
+        find.byKey(const ValueKey('videoPetServerDownloadAllButton')),
+        findsNothing,
       );
     });
 

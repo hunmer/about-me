@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 
@@ -21,8 +22,8 @@ import 'video_pet_manifest.dart';
 class PetStoreService {
   /// 创建商店服务。
   ///
-  /// [baseUrl] 默认取 `PET_STORE_URL` dart-define（便于真机连局域网商店），
-  /// 回落到 `http://127.0.0.1:8765/`；[client] 可注入用于测试打桩，
+  /// Release 默认使用 GitHub Raw，调试默认使用本地商店；两者均可通过
+  /// `PET_STORE_URL` dart-define 覆盖。[client] 可注入用于测试打桩，
   /// 未注入时懒创建并由本实例持有（[close] 时释放）。
   PetStoreService({
     String? baseUrl,
@@ -33,7 +34,9 @@ class PetStoreService {
          baseUrl ??
              const String.fromEnvironment(
                'PET_STORE_URL',
-               defaultValue: kDefaultPetStoreBaseUrl,
+               defaultValue: kReleaseMode
+                   ? kProductionPetStoreBaseUrl
+                   : kDefaultPetStoreBaseUrl,
              ),
        ),
        _injectedClient = client;
@@ -50,8 +53,7 @@ class PetStoreService {
   final http.Client? _injectedClient;
   http.Client? _ownedClient;
 
-  http.Client get _http =>
-      _injectedClient ?? (_ownedClient ??= http.Client());
+  http.Client get _http => _injectedClient ?? (_ownedClient ??= http.Client());
 
   /// 释放自建的 HTTP 客户端；注入的客户端由调用方自行管理。
   void close() {
@@ -167,10 +169,7 @@ class PetStoreService {
           },
           audio: audioKeyById[animation.id] == null
               ? null
-              : resolveKey(
-                  audioKeyById[animation.id]!,
-                  animation.audio!,
-                ),
+              : resolveKey(audioKeyById[animation.id]!, animation.audio!),
         ),
     ];
     final liveManifest = manifest.copyWith(
@@ -187,7 +186,9 @@ class PetStoreService {
   /// 获取动作列表（actions.json），返回源已解析为绝对 URL 的动画元数据。
   ///
   /// 动画不会被下载；配合 [downloadAction] 按需落单个动作。
-  Future<List<VideoPetAnimation>> fetchActions(VideoPetManifest manifest) async {
+  Future<List<VideoPetAnimation>> fetchActions(
+    VideoPetManifest manifest,
+  ) async {
     final actionsUri = _requireStoreHttp(
       _effectiveActionsUri(manifest),
       '动作列表',
@@ -203,9 +204,7 @@ class PetStoreService {
     }
     final expected = _storePetIdOf(manifest);
     if (decoded['petId'] != expected) {
-      throw FormatException(
-        '动作列表与当前宠物不匹配：期望 $expected，实际 ${decoded['petId']}',
-      );
+      throw FormatException('动作列表与当前宠物不匹配：期望 $expected，实际 ${decoded['petId']}');
     }
     final animations = decoded['animations'];
     if (animations is! List) {
@@ -390,9 +389,7 @@ class PetStoreService {
       throw FormatException('无法访问宠物商店（$label）：$error');
     }
     if (response.statusCode != 200) {
-      throw FormatException(
-        '商店请求失败（HTTP ${response.statusCode}）：$uri',
-      );
+      throw FormatException('商店请求失败（HTTP ${response.statusCode}）：$uri');
     }
     return response;
   }
@@ -415,8 +412,11 @@ class PetStoreService {
         a.port == b.port;
     if (sameOrigin(raw, Uri.parse(kDefaultPetStoreBaseUrl)) &&
         !sameOrigin(raw, baseUrl)) {
-      return baseUrl.resolve(
-        '${raw.path}${raw.query.isEmpty ? '' : '?${raw.query}'}',
+      return baseUrl.resolveUri(
+        Uri(
+          pathSegments: raw.pathSegments,
+          query: raw.hasQuery ? raw.query : null,
+        ),
       );
     }
     return raw;

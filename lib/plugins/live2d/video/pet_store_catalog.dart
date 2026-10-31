@@ -15,6 +15,10 @@ library;
 /// 做重基（不放宽任意跨源 URL）。
 const String kDefaultPetStoreBaseUrl = 'http://127.0.0.1:8765/';
 
+/// Release 构建使用公开 GitHub 资源，调试构建保留本地商店。
+const String kProductionPetStoreBaseUrl =
+    'https://raw.githubusercontent.com/hunmer/aboutme-pets/main/';
+
 /// manifest.metadata 中记录商店宠物 id 的键。
 const String kPetStoreMetadataPetId = 'storePetId';
 
@@ -153,18 +157,28 @@ List<PetStoreEntry> parsePetStoreCatalog(Object? json, Uri catalogUri) {
     final description = requireString('description');
     // pets.json 所在目录（含尾斜杠），cover/manifest/actions 相对它解析。
     final root = catalogUri.resolve('.');
-    entries.add(PetStoreEntry(
-      id: id,
-      name: name,
-      description: description,
-      coverUrl: resolveStoreUrl(requireString('cover'), root, '封面图')
-          .toString(),
-      manifestUrl: resolveStoreUrl(requireString('manifest'), root, 'manifest')
-          .toString(),
-      actionsUrl: resolveStoreUrl(requireString('actions'), root, '动作列表')
-          .toString(),
-    ));
+    entries.add(
+      PetStoreEntry(
+        id: id,
+        name: name,
+        description: description,
+        coverUrl: resolveStoreUrl(
+          requireString('cover'),
+          root,
+          '封面图',
+        ).toString(),
+        manifestUrl: resolveStoreUrl(
+          requireString('manifest'),
+          root,
+          'manifest',
+        ).toString(),
+        actionsUrl: resolveStoreUrl(
+          requireString('actions'),
+          root,
+          '动作列表',
+        ).toString(),
+      ),
+    );
   }
   return entries;
 }
-

@@ -50,9 +50,18 @@ void main() {
       final pet = pets.single;
       expect(pet.id, 'dsh-pet');
       expect(pet.name, '蓝毛小女仆');
-      expect(pet.manifestUrl, store.root.resolve('pets/dsh/manifest.json').toString());
-      expect(pet.actionsUrl, store.root.resolve('pets/dsh/actions.json').toString());
-      expect(pet.coverUrl, store.root.resolve('pets/dsh/cover.webp').toString());
+      expect(
+        pet.manifestUrl,
+        store.root.resolve('pets/dsh/manifest.json').toString(),
+      );
+      expect(
+        pet.actionsUrl,
+        store.root.resolve('pets/dsh/actions.json').toString(),
+      );
+      expect(
+        pet.coverUrl,
+        store.root.resolve('pets/dsh/cover.webp').toString(),
+      );
     });
 
     test('子目录商店：pets.json 不在根路径时相对路径不丢前缀', () async {
@@ -110,7 +119,11 @@ void main() {
           await serviceFor(store.root).fetchPets();
           fail('应当抛出 FormatException: $evil');
         } on FormatException catch (error) {
-          expect(error.message, anyOf(contains('协议'), contains('以外')), reason: evil);
+          expect(
+            error.message,
+            anyOf(contains('协议'), contains('以外')),
+            reason: evil,
+          );
         }
       }
       store.files['/pets.json'] = _buildStoreFiles()['/pets.json']!;
@@ -173,10 +186,7 @@ void main() {
       expect(manifest.id, 'dsh-pet');
       expect(manifest.animations, hasLength(2));
       expect(manifest.metadata[kPetStoreMetadataPetId], 'dsh-pet');
-      expect(
-        manifest.metadata[kPetStoreMetadataActionsUrl],
-        pet.actionsUrl,
-      );
+      expect(manifest.metadata[kPetStoreMetadataActionsUrl], pet.actionsUrl);
       for (final animation in manifest.animations) {
         final source = animation.imageSource!;
         expect(source, startsWith('file://'));
@@ -211,13 +221,17 @@ void main() {
       final root = store.root;
       final manifestJson = _storeManifestJson(root);
       // 让两个动作共用同一张精灵图。
-      (manifestJson['animations'] as List)[1]['sources'] = {'webp': '螃蟹走路.webp'};
+      (manifestJson['animations'] as List)[1]['sources'] = {
+        'webp': '螃蟹走路.webp',
+      };
       store.files['/pets/dsh/manifest.json'] = _json(manifestJson);
       final service = serviceFor(root);
       final pet = (await service.fetchPets()).single;
       final hitsBefore = store.hits['/pets/dsh/螃蟹走路.webp'] ?? 0;
       final package = await service.installPet(pet);
-      final mediaDir = Directory.fromUri(Uri.parse(package.baseUri).resolve('media'));
+      final mediaDir = Directory.fromUri(
+        Uri.parse(package.baseUri).resolve('media'),
+      );
       expect(mediaDir.listSync(), hasLength(1));
       expect(store.hits['/pets/dsh/螃蟹走路.webp'], hitsBefore + 1);
       service.close();
@@ -384,8 +398,9 @@ void main() {
       final service = serviceFor(store.root);
       final pet = (await service.fetchPets()).single;
       var package = await service.installPet(pet);
-      final work = (await service.fetchActions(package.manifest))
-          .singleWhere((a) => a.id == '工作加班');
+      final work = (await service.fetchActions(
+        package.manifest,
+      )).singleWhere((a) => a.id == '工作加班');
 
       package = await service.downloadAction(package: package, animation: work);
       expect(package.manifest.animations, hasLength(3));
@@ -404,7 +419,8 @@ void main() {
 
       // 追加后的 manifest 保存/加载往返仍有效。
       final roundTrip = VideoPetManifest.fromJson(
-        jsonDecode(jsonEncode(package.manifest.toJson())) as Map<String, dynamic>,
+        jsonDecode(jsonEncode(package.manifest.toJson()))
+            as Map<String, dynamic>,
       );
       roundTrip.validate();
       expect(roundTrip.animations, hasLength(3));
@@ -415,8 +431,9 @@ void main() {
       final service = serviceFor(store.root);
       final pet = (await service.fetchPets()).single;
       var package = await service.installPet(pet);
-      final work = (await service.fetchActions(package.manifest))
-          .singleWhere((a) => a.id == '工作加班');
+      final work = (await service.fetchActions(
+        package.manifest,
+      )).singleWhere((a) => a.id == '工作加班');
       package = await service.downloadAction(package: package, animation: work);
       final hitsBefore = store.hits['/pets/dsh/工作加班.webp'];
 
@@ -438,8 +455,9 @@ void main() {
       );
       final pet = (await service.fetchPets()).single;
       var package = await service.installPet(pet);
-      final work = (await service.fetchActions(package.manifest))
-          .singleWhere((a) => a.id == '工作加班');
+      final work = (await service.fetchActions(
+        package.manifest,
+      )).singleWhere((a) => a.id == '工作加班');
       package = await service.downloadAction(package: package, animation: work);
       final added = package.manifest.animations.singleWhere(
         (a) => a.id == '工作加班',
@@ -474,10 +492,7 @@ void main() {
         _webp('东张西望'),
       );
       // 第二次下载后，第一个动作的文件字节保持不变（未被覆盖）。
-      expect(
-        File.fromUri(Uri.parse(workSource)).readAsBytesSync(),
-        workBytes,
-      );
+      expect(File.fromUri(Uri.parse(workSource)).readAsBytesSync(), workBytes);
       // 两次下载落在不同的 UUID 子目录。
       expect(
         Uri.parse(workSource).resolve('.').toString(),
@@ -500,9 +515,9 @@ void main() {
       final work = actions.singleWhere((a) => a.id == '工作加班');
       expect(
         work.imageSource,
-        Uri.parse('http://192.168.1.5:8765/')
-            .resolve('pets/dsh/工作加班.webp')
-            .toString(),
+        Uri.parse(
+          'http://192.168.1.5:8765/',
+        ).resolve('pets/dsh/工作加班.webp').toString(),
       );
       // 一般跨源 URL 仍然拒绝（重基机制不放宽任意跨源）。
       final evil = VideoPetManifest.fromJson(
@@ -515,6 +530,47 @@ void main() {
         expect(error.message, contains('以外'));
       }
       service.close();
+    });
+
+    test('GitHub Raw 重基保留仓库路径前缀', () async {
+      final root = Uri.parse(kProductionPetStoreBaseUrl);
+      final service = PetStoreService(
+        baseUrl: root.toString(),
+        client: MockClient((request) async {
+          expect(request.url, root.resolve('pets/dsh/actions.json'));
+          return http.Response.bytes(
+            _buildStoreFiles()['/pets/dsh/actions.json']!,
+            200,
+          );
+        }),
+        persistToDisk: false,
+      );
+      addTearDown(service.close);
+      final manifest = VideoPetManifest.fromJson(
+        _storeManifestJson(Uri.parse(kDefaultPetStoreBaseUrl)),
+      );
+      final actions = await service.fetchActions(manifest);
+      expect(
+        actions.singleWhere((a) => a.id == '工作加班').imageSource,
+        root.resolve('pets/dsh/工作加班.webp').toString(),
+      );
+    });
+
+    test('默认地址按构建模式选择且可显式覆盖', () {
+      final service = PetStoreService();
+      addTearDown(service.close);
+      expect(
+        service.baseUrl.toString(),
+        const String.fromEnvironment(
+          'PET_STORE_URL',
+          defaultValue: bool.fromEnvironment('dart.vm.product')
+              ? kProductionPetStoreBaseUrl
+              : kDefaultPetStoreBaseUrl,
+        ),
+      );
+      final override = PetStoreService(baseUrl: 'https://custom.example/pets/');
+      addTearDown(override.close);
+      expect(override.baseUrl.toString(), 'https://custom.example/pets/');
     });
 
     test('请求超时抛 FormatException 而非永久等待', () async {
@@ -550,17 +606,17 @@ class _FakeStore {
   final Uri root = Uri.parse('http://pet-store.test/');
 
   http.Client get client => MockClient((request) async {
-        final path = Uri.decodeComponent(request.url.path);
-        hits[path] = (hits[path] ?? 0) + 1;
-        if (failing.contains(path)) {
-          return http.Response('', 500);
-        }
-        final body = files[path];
-        if (body == null) {
-          return http.Response('', 404);
-        }
-        return http.Response.bytes(body, 200);
-      });
+    final path = Uri.decodeComponent(request.url.path);
+    hits[path] = (hits[path] ?? 0) + 1;
+    if (failing.contains(path)) {
+      return http.Response('', 500);
+    }
+    final body = files[path];
+    if (body == null) {
+      return http.Response('', 404);
+    }
+    return http.Response.bytes(body, 200);
+  });
 }
 
 final PathProviderPlatform _originalPaths = PathProviderPlatform.instance;
@@ -576,8 +632,7 @@ class _TemporaryPaths extends PathProviderPlatform {
 
 /// 注入假内置 defaults 的导入服务（persistToDisk=false，测降级逻辑）。
 class _DegradeImportService extends VideoPetImportService {
-  _DegradeImportService(this.defaults)
-    : super(persistToDisk: false);
+  _DegradeImportService(this.defaults) : super(persistToDisk: false);
 
   final VideoPetManifest defaults;
 
@@ -588,9 +643,11 @@ class _DegradeImportService extends VideoPetImportService {
   );
 }
 
-Uint8List _json(Object json) => Uint8List.fromList(utf8.encode(jsonEncode(json)));
+Uint8List _json(Object json) =>
+    Uint8List.fromList(utf8.encode(jsonEncode(json)));
 
-Uint8List _webp(String name) => Uint8List.fromList(utf8.encode('webp-of-$name'));
+Uint8List _webp(String name) =>
+    Uint8List.fromList(utf8.encode('webp-of-$name'));
 
 Map<String, Uint8List> _buildStoreFiles() => {
   '/pets.json': _json({
@@ -643,10 +700,7 @@ Map<String, dynamic> _storeManifestJson(Uri? root) => {
   'name': '蓝毛小女仆',
   'canvasWidth': 640,
   'canvasHeight': 360,
-  'animations': [
-    _animationJson('螃蟹走路', '移动'),
-    _animationJson('待机呼吸休闲', '待机'),
-  ],
+  'animations': [_animationJson('螃蟹走路', '移动'), _animationJson('待机呼吸休闲', '待机')],
   'idleAnimationId': '待机呼吸休闲',
   'hover': {'animationIds': [], 'strategy': 'random'},
   'click': {'animationIds': [], 'strategy': 'random'},
@@ -722,11 +776,8 @@ Map<String, dynamic> _legacyArchiveJson({
   bool onlyGhost = false,
 }) {
   final animations = <Map<String, dynamic>>[
-    if (!onlyGhost) _animationJson(
-      '螃蟹走路',
-      '移动',
-      source: 'spritesheet/螃蟹走路.webp',
-    ),
+    if (!onlyGhost)
+      _animationJson('螃蟹走路', '移动', source: 'spritesheet/螃蟹走路.webp'),
     _animationJson('东张西望', '转向', source: 'spritesheet/东张西望.webp'),
     if (!onlyGhost)
       _animationJson('旧扩展', '小动作', source: 'spritesheet/螃蟹走路.webp'),

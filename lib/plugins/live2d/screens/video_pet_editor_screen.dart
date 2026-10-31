@@ -90,6 +90,10 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen>
   String? _serverError;
   /// 正在下载的动作 id 集合
   final Set<String> _downloadingIds = {};
+  /// 下载失败待重试的动作 id 集合（按钮显示重试图标）
+  final Set<String> _downloadFailedIds = {};
+  /// 是否正在批量下载全部服务端动作
+  bool _downloadingAll = false;
   /// 编辑器自建的商店服务（dispose 时释放；注入的由宿主管理）
   PetStoreService? _ownStoreService;
 
@@ -195,7 +199,10 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen>
     if (_downloadingIds.contains(animation.id)) return;
     // 幂等：已在草稿中的动作不重复下载
     if (_draft.animations.any((owned) => owned.id == animation.id)) return;
-    setState(() => _downloadingIds.add(animation.id));
+    setState(() {
+      _downloadingIds.add(animation.id);
+      _downloadFailedIds.remove(animation.id);
+    });
     try {
       final package = await service.downloadAction(
         package: VideoPetPackage(
@@ -219,12 +226,17 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen>
             .where((item) => item.id != animation.id)
             .toList();
         _downloadingIds.remove(animation.id);
+        _downloadFailedIds.remove(animation.id);
       });
       // 立即点播，方便预览新动作
       _requestAnimation(resolved.id);
     } catch (error) {
       if (!mounted) return;
-      setState(() => _downloadingIds.remove(animation.id));
+      setState(() {
+        _downloadingIds.remove(animation.id);
+        // 标记失败态：按钮转为重试图标，可再次点击重试
+        _downloadFailedIds.add(animation.id);
+      });
       _showMessage(
         'videoPet_serverDownloadFailed'.trParams({'error': '$error'}),
       );
@@ -237,6 +249,29 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen>
       Navigator.of(context).pop(_draft);
     } catch (error) {
       _showMessage('$error');
+    }
+  }
+
+  /// 是否还有未下载的服务端动作（按当前草稿 id 过滤）
+  bool get _hasPendingServerActions => _serverAnimations.any(
+    (action) => !_draft.animations.any((owned) => owned.id == action.id),
+  );
+
+  /// 一键下载全部未下载的服务端动作（串行逐个下载；
+  /// 单项失败不中断其余，失败项保留重试态）。
+  Future<void> _downloadAllServerActions() async {
+    if (_downloadingAll) return;
+    final pending = _serverAnimations
+        .where((action) => !_draft.animations.any((o) => o.id == action.id))
+        .toList();
+    if (pending.isEmpty) return;
+    setState(() => _downloadingAll = true);
+    try {
+      for (final action in pending) {
+        await _downloadServerAction(action);
+      }
+    } finally {
+      if (mounted) setState(() => _downloadingAll = false);
     }
   }
 
@@ -286,9 +321,10 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen>
     if (active != null) setState(() {});
   }
 
-  List<VideoPetAnimation> get _visibleAnimations {
-    final query = _searchController.text.trim().toLowerCase();
-    return _draft.animations.where((animation) {
+  /// 动画列表条目：本地草稿动作与服务端未下载动作融合展示
+  List<_AnimationListItem> get _visibleAnimations {
+    bool matches(VideoPetAnimation animation) {
+      final query = _searchController.text.trim().toLowerCase();
       final matchesQuery =
           query.isEmpty ||
           animation.name.toLowerCase().contains(query) ||
@@ -296,29 +332,32 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen>
       final matchesCategory =
           _category == 'all' || animation.category == _category;
       return matchesQuery && matchesCategory;
-    }).toList();
+    }
+    return [
+      // 本地动作在前（保持草稿顺序），未下载的服务端动作随后
+      for (final animation in _draft.animations)
+        if (matches(animation))
+          _AnimationListItem(animation: animation, isRemote: false),
+      // 远程项在下载完成前不进入草稿/播放器，仅作列表占位；
+      // 按当前草稿 id 再过滤（导入 JSON 等修改后避免本地/远程同 id 重复）
+      if (_serverActionsEnabled)
+        for (final action in _serverAnimations)
+          if (matches(action) &&
+              !_draft.animations.any((owned) => owned.id == action.id))
+            _AnimationListItem(animation: action, isRemote: true),
+    ];
   }
 
+  /// 分类筛选并集：本地草稿 + 未下载服务端动作
   Set<String> get _categories => {
     'all',
     ..._draft.animations
         .map((animation) => animation.category)
         .where((category) => category.isNotEmpty),
+    ..._serverAnimations
+        .map((action) => action.category)
+        .where((category) => category.isNotEmpty),
   };
-
-  /// 服务端动作按动画搜索框联动过滤（不做分类过滤）
-  List<VideoPetAnimation> get _visibleServerAnimations {
-    final query = _searchController.text.trim().toLowerCase();
-    if (query.isEmpty) return _serverAnimations;
-    return _serverAnimations
-        .where(
-          (action) =>
-              action.name.toLowerCase().contains(query) ||
-              action.id.toLowerCase().contains(query) ||
-              action.category.toLowerCase().contains(query),
-        )
-        .toList();
-  }
 
   void _importJson() {
     final decoded = jsonDecode(_jsonController.text);
@@ -467,4 +506,13 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen>
     );
   }
 
+}
+
+/// 动画列表条目：[animation] 为动作数据，[isRemote] 标记是否为
+/// 服务端未下载动作（下载完成前不进入草稿，仅展示与下载入口）。
+class _AnimationListItem {
+  const _AnimationListItem({required this.animation, required this.isRemote});
+
+  final VideoPetAnimation animation;
+  final bool isRemote;
 }
