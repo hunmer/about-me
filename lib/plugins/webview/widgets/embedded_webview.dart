@@ -1,8 +1,10 @@
 import 'dart:collection';
+import 'dart:async' show unawaited;
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:aboutme/plugins/webview/webview_plugin.dart';
 import '../services/download_flow.dart';
+import '../services/webview_download_interceptor.dart';
 
 /// 可复用的嵌入式 WebView 组件
 ///
@@ -291,6 +293,8 @@ class _EmbeddedWebViewState extends State<EmbeddedWebView> {
       onWebViewCreated: (controller) {
         _controller = controller;
         debugPrint('[EmbeddedWebView] WebView created for: ${widget.url}');
+        // Windows：CDP 拦截下载响应，阻断 WebView2 默认下载 UI
+        unawaited(WebviewDownloadInterceptor.attach(controller, () => context));
       },
       onProgressChanged: (controller, progress) {
         debugPrint('[EmbeddedWebView] Progress: $progress for: ${widget.url}');

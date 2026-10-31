@@ -223,6 +223,57 @@ Future<String> _jsSelectImages(Map<String, dynamic> params) async {
   }
 }
 
+/// 弹出日历相册月份选择器（calendar_album.monthPhotos 数据选择器）
+/// @param params 无必需参数
+/// @return {cancelled, month: 'YYYY-MM', days: {'YYYY-MM-DD': [url, ...]}}
+///         每天包含全部照片（已转为本地 HTTP URL），页面默认取每天第一张
+Future<String> _jsSelectMonthPhotos(Map<String, dynamic> params) async {
+  try {
+    final context = Get.context;
+    if (context == null) {
+      return '{"error": "无可用 UI 上下文，无法打开选择器"}';
+    }
+
+    final result = await pluginDataSelectorService.showSelector(
+      context,
+      'calendar_album.monthPhotos',
+      config: const SelectorConfig(title: '选择月份'),
+    );
+
+    if (result == null || result.cancelled) {
+      return '{"cancelled": true, "days": {}}';
+    }
+
+    // 单步选择器：从 path 取选中月份的 rawData {month, days}
+    final data = result.getPathRawData<Map>('month') ??
+        (result.data is SelectableItem
+            ? (result.data as SelectableItem).rawData
+            : null);
+    if (data is! Map) return '{"cancelled": true, "days": {}}';
+
+    final month = data['month']?.toString() ?? '';
+    final rawDays = data['days'];
+    final days = <String, List<String>>{};
+    if (rawDays is Map) {
+      for (final e in rawDays.entries) {
+        final urls = <String>[];
+        if (e.value is List) {
+          for (final p in e.value as List) {
+            final url = await _pickerPathToHttpUrl(p?.toString());
+            if (url != null) urls.add(url);
+          }
+        }
+        if (urls.isNotEmpty) days[e.key.toString()] = urls;
+      }
+    }
+
+    return jsonEncode({'cancelled': false, 'month': month, 'days': days});
+  } catch (e) {
+    debugPrint('Error in selectMonthPhotos: $e');
+    return '{"error": "打开月份选择器失败: $e", "days": {}}';
+  }
+}
+
 /// 选择器返回的媒体路径 → 本地 HTTP 服务器 URL
 ///
 /// 与 chat 插件 _localPathToHttpUrl 同款逻辑：

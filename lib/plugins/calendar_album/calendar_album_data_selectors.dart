@@ -88,4 +88,70 @@ void _registerDataSelectors() {
       ],
     ),
   );
+
+  // 按月份选择相册照片：单步选择有记录的月份，
+  // rawData 返回该月每天的全部图片路径（供海报页面按日填充/换图）
+  pluginDataSelectorService.registerSelector(
+    SelectorDefinition(
+      id: 'calendar_album.monthPhotos',
+      pluginId: CalendarAlbumPlugin.instance.id,
+      name: '选择月份照片',
+      icon: CalendarAlbumPlugin.instance.icon,
+      color: CalendarAlbumPlugin.instance.color,
+      searchable: true,
+      selectionMode: SelectionMode.single,
+      steps: [
+        SelectorStep(
+          id: 'month',
+          title: '选择月份',
+          viewType: SelectorViewType.list,
+          isFinalStep: true,
+          dataLoader: (_) async {
+            final entries =
+                CalendarAlbumPlugin.instance.calendarController?.entries ??
+                    const <DateTime, List<CalendarEntry>>{};
+            if (entries.isEmpty) {
+              return [
+                SelectableItem(
+                  id: 'empty',
+                  title: '暂无相册记录',
+                  icon: Icons.info_outline,
+                  selectable: false,
+                ),
+              ];
+            }
+
+            // 按月聚合：month -> {date -> [imageUrls]}
+            final months = <String, Map<String, List<String>>>{};
+            final sortedDates = entries.keys.toList()..sort();
+            for (final date in sortedDates) {
+              final monthKey =
+                  '${date.year}-${date.month.toString().padLeft(2, '0')}';
+              final dateKey =
+                  '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+              final dayMap = months.putIfAbsent(monthKey, () => {});
+              final dayUrls = dayMap.putIfAbsent(dateKey, () => []);
+              for (final entry in entries[date]!) {
+                dayUrls.addAll(entry.imageUrls);
+              }
+            }
+
+            return months.entries.map((e) {
+              final dayCount = e.value.length;
+              final photoCount =
+                  e.value.values.fold<int>(0, (s, urls) => s + urls.length);
+              return SelectableItem(
+                id: e.key,
+                title: '${e.key.substring(0, 4)}年${int.parse(e.key.substring(5))}月',
+                subtitle: '$dayCount 天有记录 · $photoCount 张照片',
+                icon: Icons.calendar_month,
+                // rawData: {month, days: {date: [图片路径...]}}
+                rawData: {'month': e.key, 'days': e.value},
+              );
+            }).toList();
+          },
+        ),
+      ],
+    ),
+  );
 }

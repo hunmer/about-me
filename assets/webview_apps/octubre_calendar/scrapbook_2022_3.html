@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>March 2022 — Paper to Paperless Digital Scrapbook</title>
+  <!-- Tailwind CSS -->
+  <script src="../_libs/tailwindcdn.js"></script>
+  <style>
+    :root {
+      --paper-bg: #e7dfd3;
+      --grid-border: #231f20;
+      --ink-dark: #1c1917;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #18181b;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--ink-dark);
+      overflow-x: hidden;
+    }
+
+    .font-hand {
+      font-family: 'Nanum Pen Script', 'Caveat', cursive;
+      line-height: 1.08;
+    }
+
+    .font-caveat {
+      font-family: 'Caveat', cursive;
+      line-height: 1.1;
+    }
+
+    /* Main Scrapbook Board Ratio & Paper Texture */
+    .scrapbook-stage {
+      position: relative;
+      width: 1360px;
+      min-height: 980px;
+      background-color: var(--paper-bg);
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      box-shadow: 0 30px 70px -15px rgba(0, 0, 0, 0.65), 0 0 1px 1px rgba(255,255,255,0.15);
+      transition: background-image 0.4s ease, background-color 0.4s ease;
+      overflow: hidden;
+    }
+
+    /* Fine procedural paper grain overlay */
+    .paper-grain {
+      pointer-events: none;
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      opacity: 0.42;
+      mix-blend-mode: multiply;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 240 240' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.32'/%3E%3C/svg%3E");
+    }
+
+    /* Subtle vintage specks */
+    .paper-specks {
+      pointer-events: none;
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      background-image:
+        radial-gradient(rgba(80, 65, 50, 0.14) 1px, transparent 0),
+        radial-gradient(rgba(110, 90, 70, 0.1) 1.2px, transparent 0);
+      background-size: 48px 48px, 83px 83px;
+      background-position: 0 0, 24px 31px;
+    }
+
+    /* Calendar 7x5 Grid */
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      grid-template-rows: repeat(5, 160px);
+      border: 1.8px solid var(--grid-border);
+      background: rgba(255, 255, 255, 0.04);
+      position: relative;
+      z-index: 10;
+    }
+
+    .day-cell {
+      position: relative;
+      border-right: 1.4px solid var(--grid-border);
+      border-bottom: 1.4px solid var(--grid-border);
+      padding: 4px;
+      overflow: visible;
+    }
+
+    .day-cell:nth-child(7n) {
+      border-right: none;
+    }
+    .day-cell:nth-child(n+29) {
+      border-bottom: none;
+    }
+
+    .day-num {
+      position: absolute;
+      top: 4px;
+      left: 7px;
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 1;
+      z-index: 25;
+      pointer-events: none;
+    }
+
+    /* Draggable SVG & Sticker Styling */
+    .draggable-svg {
+      position: absolute;
+      z-index: 45;
+      cursor: grab;
+      touch-action: none;
+      filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.18));
+      transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.15s ease;
+    }
+
+    .draggable-svg:hover {
+      filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.3)) brightness(1.03);
+    }
+
+    .draggable-svg.dragging {
+      cursor: grabbing;
+      z-index: 999 !important;
+      filter: drop-shadow(0 16px 24px rgba(0, 0, 0, 0.38));
+      transition: none !important;
+    }
+
+    body.highlight-stickers .draggable-svg {
+      outline: 2px dashed #3b82f6;
+      outline-offset: 4px;
+      border-radius: 8px;
+    }
+
+    /* Entrance Animations */
+    @keyframes boardReveal {
+      0% { opacity: 0; transform: scale(0.96) translateY(20px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    @keyframes headerSlideDown {
+      0% { opacity: 0; transform: translateY(-28px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes sidebarSlideRight {
+      0% { opacity: 0; transform: translateX(-32px) rotate(-2deg); }
+      100% { opacity: 1; transform: translateX(0) rotate(0deg); }
+    }
+
+    @keyframes cellScrapbookPop {
+      0% { opacity: 0; transform: scale(0.78) translateY(14px); }
+      70% { opacity: 1; transform: scale(1.02) translateY(-2px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    @keyframes stickerBounceIn {
+      0% { opacity: 0; transform: translate(var(--tx, 0px), var(--ty, 0px)) scale(0) rotate(-18deg); }
+      65% { opacity: 1; transform: translate(var(--tx, 0px), var(--ty, 0px)) scale(1.12) rotate(4deg); }
+      100% { opacity: 1; transform: translate(var(--tx, 0px), var(--ty, 0px)) scale(1) rotate(var(--rot, 0deg)); }
+    }
+
+    .anim-board {
+      animation: boardReveal 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .anim-header {
+      opacity: 0;
+      animation: headerSlideDown 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .anim-sidebar {
+      opacity: 0;
+      animation: sidebarSlideRight 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .anim-cell {
+      opacity: 0;
+      animation: cellScrapbookPop 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    .anim-sticker {
+      opacity: 0;
+      animation: stickerBounceIn 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    /* Custom Clip Paths for Scrapbook Masks */
+    .clip-heart {
+      clip-path: url(#heart-mask);
+    }
+    .clip-heart-wide {
+      clip-path: url(#heart-wide-mask);
+    }
+    .clip-stamp {
+      clip-path: url(#wavy-stamp-mask);
+    }
+    .clip-peanut {
+      clip-path: url(#peanut-cloud-mask);
+    }
+    .clip-blob-19 {
+      clip-path: url(#blob-19-mask);
+    }
+    .clip-blob-30 {
+      clip-path: url(#blob-30-mask);
+    }
+
+    /* Ruled paper background for cell 24 */
+    .ruled-paper {
+      background-color: #f4f1ea;
+      background-image: linear-gradient(#d6d1c4 1px, transparent 1px);
+      background-size: 100% 10px;
+    }
+
+    /* Soft glow heart effect for dark cells */
+    .glow-heart-box {
+      filter: drop-shadow(0 0 8px rgba(255, 220, 180, 0.55));
+    }
+    .glow-blue-heart {
+      filter: drop-shadow(0 0 10px rgba(70, 130, 255, 0.8));
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-start py-6 px-4">
+
+  <!-- Hidden SVG ClipPath Definitions for Scrapbook Cutouts -->
+  <svg width="0" height="0" class="absolute pointer-events-none">
+    <defs>
+      <!-- Soft Plump Heart Mask -->
+      <clipPath id="heart-mask" clipPathUnits="objectBoundingBox">
+        <path d="M0.5,0.92 C0.5,0.92 0.06,0.65 0.06,0.34 C0.06,0.14 0.22,0.05 0.36,0.05 C0.45,0.05 0.5,0.12 0.5,0.18 C0.5,0.12 0.55,0.05 0.64,0.05 C0.78,0.05 0.94,0.14 0.94,0.34 C0.94,0.65 0.5,0.92 0.5,0.92 Z" />
+      </clipPath>
+
+      <!-- Wide 3D Glass Heart Mask (Day 15) -->
+      <clipPath id="heart-wide-mask" clipPathUnits="objectBoundingBox">
+        <path d="M0.5,0.95 C0.42,0.91 0.03,0.66 0.03,0.35 C0.03,0.13 0.2,0.04 0.35,0.04 C0.44,0.04 0.48,0.11 0.5,0.16 C0.52,0.11 0.56,0.04 0.65,0.04 C0.8,0.04 0.97,0.13 0.97,0.35 C0.97,0.66 0.58,0.91 0.5,0.95 Z" />
+      </clipPath>
+
+      <!-- Wavy Postage Stamp / Scallop Mask (Day 4 & Day 22) -->
+      <clipPath id="wavy-stamp-mask" clipPathUnits="objectBoundingBox">
+        <path d="M0.08,0.08 C0.13,0.02 0.18,0.14 0.25,0.08 C0.32,0.02 0.38,0.14 0.45,0.08 C0.52,0.02 0.58,0.14 0.65,0.08 C0.72,0.02 0.78,0.14 0.85,0.08 C0.92,0.02 0.96,0.08 0.94,0.16 C0.88,0.24 0.98,0.31 0.92,0.40 C0.86,0.49 0.98,0.56 0.92,0.65 C0.86,0.74 0.98,0.82 0.92,0.92 C0.84,0.98 0.78,0.86 0.70,0.92 C0.62,0.98 0.56,0.86 0.48,0.92 C0.40,0.98 0.34,0.86 0.26,0.92 C0.18,0.98 0.12,0.86 0.06,0.92 C0.02,0.84 0.12,0.75 0.06,0.66 C0.01,0.57 0.12,0.49 0.06,0.40 C0.01,0.31 0.12,0.22 0.08,0.08 Z" />
+      </clipPath>
+
+      <!-- Triple-Lobe Vertical Cloud Mask (Day 21) -->
+      <clipPath id="peanut-cloud-mask" clipPathUnits="objectBoundingBox">
+        <path d="M0.22,0.04 C0.42,0.0 0.58,0.0 0.78,0.04 C0.92,0.08 0.95,0.24 0.82,0.33 C0.96,0.42 0.96,0.58 0.82,0.67 C0.95,0.76 0.92,0.92 0.78,0.96 C0.58,1.0 0.42,1.0 0.22,0.96 C0.08,0.92 0.05,0.76 0.18,0.67 C0.04,0.58 0.04,0.42 0.18,0.33 C0.05,0.24 0.08,0.08 0.22,0.04 Z" />
+      </clipPath>
+
+      <!-- Soft Sunset Pebble Mask (Day 19) -->
+      <clipPath id="blob-19-mask" clipPathUnits="objectBoundingBox">
+        <path d="M0.18,0.12 C0.38,0.03 0.72,0.06 0.86,0.22 C0.98,0.36 0.96,0.68 0.84,0.84 C0.7,0.98 0.26,0.97 0.12,0.84 C0.01,0.7 0.02,0.24 0.18,0.12 Z" />
+      </clipPath>
+
+      <!-- Irregular Splat / Garden Blob Mask (Day 30) -->
+      <clipPath id="blob-30-mask" clipPathUnits="objectBoundingBox">
+        <path d="M0.38,0.03 C0.54,-0.02 0.65,0.12 0.76,0.22 C0.89,0.33 0.99,0.47 0.98,0.65 C0.97,0.83 0.81,0.97 0.63,0.99 C0.48,1.01 0.39,0.86 0.25,0.82 C0.12,0.78 0.02,0.68 0.01,0.52 C0.0,0.36 0.18,0.31 0.24,0.19 C0.29,0.09 0.28,0.06 0.38,0.03 Z" />
+      </clipPath>
+    </defs>
+  </svg>
+
+  <!-- Floating Interactive Control Bar -->
+  <div class="w-full max-w-[1360px] mb-4 bg-zinc-900/90 backdrop-blur-md border border-zinc-700/80 rounded-2xl px-4 py-3 text-zinc-100 shadow-2xl flex flex-wrap items-center justify-between gap-3 z-50">
+    <div class="flex items-center gap-3">
+      <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+        <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path d="M4 3a2 2 0 100 4h12a2 2 0 100-4H4z"/><path fill-rule="evenodd" d="M3 8h14v7a2 2 0 01-2 2H5a2 2 0 01-2-2V8zm5 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" clip-rule="evenodd"/></svg>
+        March 2022 拼贴手账
+      </span>
+      <span class="text-xs text-zinc-400 hidden sm:inline">提示：画布上所有 SVG 贴纸、云朵、胶带、圆点均可鼠标/触控自由拖拽移动！</span>
+    </div>
+
+    <!-- Controls: Background Image, Animation Replay, Sticker Tools -->
+    <div class="flex flex-wrap items-center gap-2">
+      <!-- Preset Background Selector -->
+      <div class="flex items-center bg-zinc-800 rounded-xl p-1 border border-zinc-700 text-xs">
+        <span class="px-2 text-zinc-400">背景材质:</span>
+        <button onclick="setPresetBg('kraft')" class="px-2.5 py-1 rounded-lg bg-amber-200/20 text-amber-200 hover:bg-amber-200/30 transition font-medium">原版牛皮纸</button>
+        <button onclick="setPresetBg('linen')" class="px-2.5 py-1 rounded-lg hover:bg-zinc-700 text-zinc-300 transition">米白亚麻</button>
+        <button onclick="setPresetBg('pink')" class="px-2.5 py-1 rounded-lg hover:bg-zinc-700 text-pink-200 transition">樱花粉纸</button>
+        <button onclick="setPresetBg('vintage')" class="px-2.5 py-1 rounded-lg hover:bg-zinc-700 text-amber-400 transition">复古旧画报</button>
+      </div>
+
+      <!-- Custom Background URL Input -->
+      <div class="flex items-center bg-zinc-800 rounded-xl px-2 py-1 border border-zinc-700">
+        <input id="bgUrlInput" type="text" placeholder="输入自定义背景图片URL..." class="bg-transparent text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none w-40 sm:w-48 px-1" />
+        <button onclick="applyCustomBgUrl()" class="text-xs bg-blue-600 hover:bg-blue-500 text-white px-2.5 py-1 rounded-lg font-medium transition">应用</button>
+      </div>
+
+      <!-- Local File Upload -->
+      <label class="cursor-pointer inline-flex items-center gap-1.5 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-3 py-1.5 rounded-xl border border-zinc-700 transition">
+        <svg class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+        上传本地背景
+        <input id="bgFileInput" type="file" accept="image/*" class="hidden" onchange="handleLocalBgUpload(event)" />
+      </label>
+
+      <!-- Highlight Draggable SVGs -->
+      <button id="toggleHighlightBtn" onclick="toggleStickerHighlight()" class="text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-3 py-1.5 rounded-xl border border-zinc-700 transition flex items-center gap-1">
+        <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5"/></svg>
+        显示可移动SVG边框
+      </button>
+
+      <!-- Reset SVG Positions -->
+      <button onclick="resetStickers()" class="text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-2.5 py-1.5 rounded-xl border border-zinc-700 transition">
+        复位贴纸
+      </button>
+
+      <!-- Replay Entrance Animation -->
+      <button onclick="replayEntranceAnimation()" class="text-xs bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white px-3 py-1.5 rounded-xl font-semibold shadow-md transition flex items-center gap-1">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        重播入场动画
+      </button>
+
+      <!-- 从日历相册按月填充照片 -->
+      <button id="btnPickMonth" onclick="pickMonthFromAlbum()" class="text-xs bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded-xl font-semibold shadow-md transition flex items-center gap-1">
+        📅 从相册选月份
+      </button>
+
+      <!-- 返回十月单月海报 -->
+      <button onclick="location.href='index.html'" class="text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-3 py-1.5 rounded-xl border border-zinc-700 transition" title="切换到十月拍立得日历">
+        📌 十月单月海报
+      </button>
+    </div>
+  </div>
+
+  <!-- Responsive Wrapper for the 1360x980 Scrapbook Canvas -->
+  <div id="scaleWrapper" class="w-full flex justify-center items-start overflow-x-auto pb-8">
+    <!-- MAIN SCRAPBOOK STAGE -->
+    <div id="scrapbookStage" class="scrapbook-stage rounded-sm anim-board select-none">
+      <!-- Paper Texture Overlays -->
+      <div class="paper-grain"></div>
+      <div class="paper-specks"></div>
+
+      <!-- =====================================================
+           DRAGGABLE SVG DECORATIONS LAYER (FREELY MOVABLE)
+           ===================================================== -->
+
+      <!-- 1. Royal Blue Oval Pin Sticker on Left Sidebar Photo -->
+      <div class="draggable-svg anim-sticker" style="top: 181px; left: 115px; --rot: -12deg;" data-init-x="0" data-init-y="0" title="按住可自由拖动 SVG 贴纸">
+        <svg width="64" height="58" viewBox="0 0 64 58">
+          <ellipse cx="32" cy="29" rx="29" ry="25" fill="#1756f6" transform="rotate(14 32 29)" />
+          <ellipse cx="24" cy="20" rx="10" ry="5" fill="rgba(255,255,255,0.22)" transform="rotate(-15 24 20)" />
+        </svg>
+      </div>
+
+      <!-- 2. Top-Right Overlapping Circular Collage Stickers (Above SAT / Day 5) -->
+      <div class="draggable-svg anim-sticker" style="top: 118px; left: 1235px; --rot: 6deg;" data-init-x="0" data-init-y="0" title="拖动SVG拼贴徽章">
+        <svg width="110" height="105" viewBox="0 0 110 105">
+          <defs>
+            <clipPath id="badgeClip1"><circle cx="38" cy="36" r="32"/></clipPath>
+            <clipPath id="badgeClip2"><circle cx="72" cy="64" r="31"/></clipPath>
+          </defs>
+          <circle cx="38" cy="36" r="34" fill="#fff" opacity="0.85"/>
+          <image href="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=240&q=80" x="6" y="4" width="64" height="64" preserveAspectRatio="xMidYMid slice" clip-path="url(#badgeClip1)"/>
+          <circle cx="72" cy="64" r="33" fill="#fce7f3"/>
+          <image href="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=240&q=80" x="41" y="33" width="62" height="62" preserveAspectRatio="xMidYMid slice" clip-path="url(#badgeClip2)"/>
+          <path d="M58 22 L63 14 M68 25 L76 20" stroke="#f43f5e" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+
+      <!-- 3. Espresso Cup Cutout Sticker between Day 1 & Day 8 -->
+      <div class="draggable-svg anim-sticker" style="top: 292px; left: 668px; --rot: -10deg;" data-init-x="0" data-init-y="0" title="拖动咖啡杯SVG贴纸">
+        <svg width="46" height="46" viewBox="0 0 54 54">
+          <rect x="6" y="8" width="42" height="38" rx="8" fill="#ffffff" stroke="#d6d3d1" stroke-width="1.5"/>
+          <ellipse cx="27" cy="24" rx="14" ry="9" fill="#44403c"/>
+          <ellipse cx="27" cy="24" rx="11" ry="6.5" fill="#78350f"/>
+          <path d="M13 24 L16 39 C17 42 37 42 38 39 L41 24 Z" fill="#a8a29e"/>
+          <path d="M40 27 C46 27 46 35 39 36" fill="none" stroke="#78716c" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+      </div>
+
+      <!-- 4. Cute Curry / Soup Bowl Sticker on Day 4 Bottom-Left -->
+      <div class="draggable-svg anim-sticker" style="top: 268px; left: 1012px; --rot: 5deg;" data-init-x="0" data-init-y="0" title="拖动美食SVG贴纸">
+        <svg width="48" height="48" viewBox="0 0 50 50">
+          <circle cx="25" cy="25" r="22" fill="#1c1917" stroke="#fef08a" stroke-width="2"/>
+          <circle cx="25" cy="25" r="17" fill="#f59e0b"/>
+          <circle cx="21" cy="22" r="4" fill="#fef3c7"/>
+          <circle cx="30" cy="27" r="3.5" fill="#dc2626"/>
+          <path d="M18 30 Q25 34 31 28" stroke="#fef08a" stroke-width="2" fill="none" stroke-linecap="round"/>
+        </svg>
+      </div>
+
+      <!-- 5. Day 6 Overlapping Portrait + Heart Mini Sticker -->
+      <div class="draggable-svg anim-sticker" style="top: 382px; left: 226px; --rot: -4deg;" data-init-x="0" data-init-y="0" title="拖动人物徽章SVG贴纸">
+        <svg width="88" height="94" viewBox="0 0 88 94">
+          <defs>
+            <clipPath id="day6Circle"><circle cx="36" cy="46" r="34"/></clipPath>
+          </defs>
+          <circle cx="36" cy="46" r="35" fill="#fff"/>
+          <image href="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=240&q=80" x="2" y="12" width="68" height="68" preserveAspectRatio="xMidYMid slice" clip-path="url(#day6Circle)"/>
+          <path d="M64 84 C64 84 44 70 44 56 C44 47 51 43 57 43 C61 43 64 46 64 49 C64 46 67 43 71 43 C77 43 84 47 84 56 C84 70 64 84 64 84 Z" fill="#e2e8f0" stroke="#fff" stroke-width="2"/>
+        </svg>
+      </div>
+
+      <!-- 6. Day 6 & 7 Border Oval Sticker -->
+      <div class="draggable-svg anim-sticker" style="top: 438px; left: 363px; --rot: 8deg;" data-init-x="0" data-init-y="0" title="拖动迷你贴纸">
+        <svg width="56" height="44" viewBox="0 0 56 44">
+          <ellipse cx="28" cy="22" rx="26" ry="19" fill="#18181b" stroke="#fff" stroke-width="1.5"/>
+          <rect x="12" y="10" width="32" height="24" rx="4" fill="#cbd5e1"/>
+          <circle cx="23" cy="20" r="4" fill="#3b82f6"/>
+          <circle cx="33" cy="20" r="4" fill="#f43f5e"/>
+        </svg>
+      </div>
+
+      <!-- 7. Day 13 Torn Receipt Paper Note SVG Sticker -->
+      <div class="draggable-svg anim-sticker" style="top: 560px; left: 342px; --rot: 10deg;" data-init-x="0" data-init-y="0" title="拖动收据便签SVG贴纸">
+        <svg width="64" height="72" viewBox="0 0 64 72">
+          <path d="M8 4 L56 8 L60 64 L48 68 L36 65 L22 69 L6 62 Z" fill="#d6d3d1" stroke="#a8a29e" stroke-width="1"/>
+          <line x1="14" y1="18" x2="50" y2="20" stroke="#57534e" stroke-width="1.5" stroke-dasharray="3 2"/>
+          <line x1="14" y1="28" x2="46" y2="30" stroke="#57534e" stroke-width="1.5"/>
+          <line x1="13" y1="38" x2="52" y2="40" stroke="#57534e" stroke-width="1.5"/>
+          <line x1="12" y1="48" x2="40" y2="50" stroke="#57534e" stroke-width="1.5"/>
+          <line x1="12" y1="56" x2="48" y2="58" stroke="#57534e" stroke-width="1.5" stroke-dasharray="2 2"/>
+        </svg>
+      </div>
+
+      <!-- 8. Day 18 Purple Crescent Moon Sticker -->
+      <div class="draggable-svg anim-sticker" style="top: 472px; left: 1118px; --rot: 15deg;" data-init-x="0" data-init-y="0" title="拖动紫色月牙SVG贴纸">
+        <svg width="46" height="44" viewBox="0 0 46 44">
+          <path d="M12 6 C28 4 40 16 38 34 C31 24 22 20 8 22 C10 15 10 10 12 6 Z" fill="#a855f7" opacity="0.82"/>
+        </svg>
+      </div>
+
+      <!-- 9. Day 23 Cute Kawaii Cloud Doodle SVG -->
+      <div class="draggable-svg anim-sticker" style="top: 706px; left: 736px; --rot: -3deg;" data-init-x="0" data-init-y="0" title="拖动可爱云朵SVG贴纸">
+        <svg width="86" height="58" viewBox="0 0 86 58">
+          <path d="M22 46 C11 46 6 38 9 29 C11 22 18 19 23 21 C27 11 39 7 49 12 C56 9 66 13 68 21 C76 22 81 30 78 38 C76 44 69 47 61 46 Z" fill="#cbd5e1" stroke="#94a3b8" stroke-width="1.5"/>
+          <!-- Cute eyes & pink cheeks -->
+          <circle cx="37" cy="29" r="2.3" fill="#1e293b"/>
+          <circle cx="51" cy="29" r="2.3" fill="#1e293b"/>
+          <ellipse cx="31" cy="32" rx="3.8" ry="2.2" fill="#f472b6" opacity="0.75"/>
+          <ellipse cx="57" cy="32" rx="3.8" ry="2.2" fill="#f472b6" opacity="0.75"/>
+          <path d="M42 32 Q44 34 46 32" stroke="#1e293b" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+        </svg>
+      </div>
+
+      <!-- 10. Day 26 Right Border Fluffy White Cloud Sticker -->
+      <div class="draggable-svg anim-sticker" style="top: 626px; left: 1286px; --rot: 2deg;" data-init-x="0" data-init-y="0" title="拖动白色云朵SVG贴纸">
+        <svg width="64" height="44" viewBox="0 0 64 44">
+          <path d="M16 36 C8 36 4 30 7 23 C9 18 14 16 18 17 C21 9 31 6 38 10 C44 8 51 11 53 17 C59 18 62 24 60 30 C58 35 53 36 47 36 Z" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>
+        </svg>
+      </div>
+
+      <!-- 11. Day 28 Yellow Sun Dot Sticker -->
+      <div class="draggable-svg anim-sticker" style="top: 800px; left: 459px; --rot: 0deg;" data-init-x="0" data-init-y="0" title="拖动黄色圆点SVG贴纸">
+        <svg width="26" height="26" viewBox="0 0 26 26">
+          <circle cx="13" cy="13" r="11" fill="#facc15" />
+        </svg>
+      </div>
+
+      <!-- 12. Day 31 Bottom Blue Dot Pin Sticker -->
+      <div class="draggable-svg anim-sticker" style="top: 862px; left: 920px; --rot: 0deg;" data-init-x="0" data-init-y="0" title="拖动蓝色圆点SVG贴纸">
+        <svg width="24" height="24" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" fill="#2563eb" />
+        </svg>
+      </div>
+
+      <!-- 13.Day 17 Yellow Washi Tape SVG Sticker -->
+      <div class="draggable-svg anim-sticker" style="top: 476px; left: 892px; --rot: -1deg;" data-init-x="0" data-init-y="0" title="拖动黄色和纸胶带SVG">
+        <svg width="106" height="22" viewBox="0 0 106 22">
+          <path d="M3 2 L103 1 L101 20 L2 19 L5 11 Z" fill="#fde047" opacity="0.88"/>
+          <circle cx="12" cy="10" r="4" fill="#ca8a04" opacity="0.35"/>
+          <text x="22" y="14" font-family="Caveat, cursive" font-size="12" fill="#713f12" font-weight="bold">17 Thu gallery walk</text>
+        </svg>
+      </div>
+
+      <!-- =====================================================
+           TOP HEADER BAR (03 / MARCH / 2022 1/4 / PAPER TO PAPERLESS)
+           ===================================================== -->
+      <header class="relative z-20 flex items-start justify-between px-10 pt-7 pb-2 anim-header" style="animation-delay: 0.08s;">
+        <!-- Huge "03" on top left -->
+        <div class="text-[112px] font-extrabold leading-[0.82] tracking-tighter text-[#1c1917] select-none ml-1">
+          03
+        </div>
+
+        <!-- Top right metadata -->
+        <div class="flex items-center gap-12 pt-1 pr-2 text-[#1c1917]">
+          <span class="text-[22px] font-bold tracking-tight">March</span>
+          <div class="flex items-center gap-3">
+            <span class="text-[22px] font-bold tracking-tight">2022 ¼</span>
+            <div class="text-[9px] font-bold leading-[1.15] tracking-tight uppercase border-l border-stone-700 pl-2.5">
+              <div>Paper to</div>
+              <div>Paperless</div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- =====================================================
+           MAIN BODY: LEFT SIDEBAR + RIGHT 7x5 CALENDAR GRID
+           ===================================================== -->
+      <div class="relative z-10 grid grid-cols-[246px_1fr] px-8 pb-8 gap-0">
+
+        <!-- LEFT SIDEBAR -->
+        <aside class="flex flex-col justify-between pr-6 pt-12 anim-sidebar" style="animation-delay: 0.18s;">
+          <!-- Left Collage Card: Dessert Plate + Two Idol Portrait Photocards -->
+          <div class="relative w-[176px] ml-1 bg-[#d8c8b8] p-1.5 rounded-sm shadow-md border border-stone-400/50">
+            <!-- Top Dessert Photo -->
+            <div class="w-full h-[142px] overflow-hidden rounded-xs relative bg-stone-200">
+              <img src="https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=500&q=80"
+                   onerror="this.src='https://placehold.co/300x240/e5d5c5/333?text=Dessert'"
+                   alt="Dessert Tart" class="w-full h-full object-cover" />
+              <div class="absolute bottom-2 left-2 bg-white/90 px-1.5 py-0.5 text-[9px] font-bold tracking-wider border border-stone-700 rounded-xs">
+                Cafe 03
+              </div>
+            </div>
+            <!-- Bottom Two Photocards -->
+            <div class="grid grid-cols-2 gap-1.5 mt-1.5">
+              <div class="h-[146px] rounded-md overflow-hidden shadow-sm bg-stone-800">
+                <img src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=300&q=80"
+                     onerror="this.src='https://placehold.co/150x220/222/fff?text=Card+1'"
+                     alt="Photocard 1" class="w-full h-full object-cover" />
+              </div>
+              <div class="h-[146px] rounded-md overflow-hidden shadow-sm bg-stone-900">
+                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80"
+                     onerror="this.src='https://placehold.co/150x220/222/fff?text=Card+2'"
+                     alt="Photocard 2" class="w-full h-full object-cover" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom-Left Mini 04 (April) Calendar -->
+          <div class="ml-3 mb-2 w-[170px] text-[#1c1917]">
+            <div class="text-[20px] font-extrabold tracking-tight mb-2">04</div>
+            <div class="grid grid-cols-7 text-center text-[13px] font-extrabold gap-y-1.5 tracking-tight">
+              <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+              <span></span><span></span><span></span><span></span><span></span><span class="font-bold">1</span><span class="font-bold">2</span>
+              <span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span>
+              <span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span>
+              <span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span>
+              <span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span>
+            </div>
+          </div>
+        </aside>
+
+        <!-- RIGHT MAIN CALENDAR SECTION -->
+        <main class="flex flex-col">
+          <!-- Days of Week Header Row -->
+          <div class="grid grid-cols-7 mb-1.5 text-[18px] font-extrabold tracking-tight text-[#1c1917] anim-header" style="animation-delay: 0.14s;">
+            <div class="pl-1.5">SUN</div>
+            <div class="pl-1.5">MON</div>
+            <div class="pl-1.5">TUE</div>
+            <div class="pl-1.5">WED</div>
+            <div class="pl-1.5">THU</div>
+            <div class="pl-1.5">FRI</div>
+            <div class="pl-1.5">SAT</div>
+          </div>
+
+          <!-- 7x5 Calendar Grid -->
+          <div id="calendarGrid" class="calendar-grid">
+
+            <!-- Row 1: Empty SUN -->
+            <div class="day-cell anim-cell" style="animation-delay: 0.15s;"></div>
+
+            <!-- Row 1: Empty MON -->
+            <div class="day-cell anim-cell" style="animation-delay: 0.17s;"></div>
+
+            <!-- Day 1 (TUE): Full-bleed warm cafe portrait -->
+            <div class="day-cell p-0 overflow-hidden anim-cell" style="animation-delay: 0.19s;">
+              <span class="day-num text-white drop-shadow">1</span>
+              <img src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=400&q=80"
+                   onerror="this.src='https://placehold.co/300x300/6b4423/fff?text=Mar+1'"
+                   alt="Day 1" class="w-full h-full object-cover" />
+            </div>
+
+            <!-- Day 2 (WED): Pink Photocard & Stickers Collage -->
+            <div class="day-cell bg-[#efd6df] overflow-hidden anim-cell" style="animation-delay: 0.21s;">
+              <span class="day-num text-white drop-shadow">2</span>
+              <!-- Top notification pill -->
+              <div class="mt-0.5 ml-6 bg-white/90 rounded-md px-2 py-0.5 shadow-xs border border-pink-200 flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-pink-500 inline-block"></span>
+                <span class="text-[8px] font-bold text-stone-700 truncate">NCT 127 Official Polaroid Set</span>
+              </div>
+              <!-- Tilted collage cards -->
+              <div class="relative w-full h-[126px] mt-1">
+                <img src="https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=300&q=80"
+                     class="w-24 h-24 object-cover rounded shadow-md absolute left-2 top-2 -rotate-12 border-2 border-white" alt="collage"/>
+                <img src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80"
+                     class="w-24 h-24 object-cover rounded shadow-md absolute right-2 top-3 rotate-6 border-2 border-pink-100" alt="collage"/>
+                <div class="absolute bottom-1 left-8 bg-pink-500/90 text-white text-[9px] font-hand px-2 py-0.5 rounded-full rotate-3 shadow">
+                  unboxing happy mail! ♡
+                </div>
+              </div>
+            </div>
+
+            <!-- Day 3 (THU): Handwritten Note + Oval Group Photo -->
+            <div class="day-cell anim-cell" style="animation-delay: 0.23s;">
+              <span class="day-num">3</span>
+              <div class="ml-5 text-[10.5px] font-hand text-stone-800 leading-[1.05]">
+                Nothing special today, just the usual Thursday.<br/>
+                So so bored, glad that my 127 SGs are the best pics.<br/>
+                I changed my icon &amp; phone wallpaper right when it came!
+              </div>
+              <div class="w-[136px] h-[94px] mx-auto mt-1 rounded-[50%] overflow-hidden border-2 border-amber-100 shadow-sm">
+                <img src="https://images.unsplash.com/photo-1543269865-cbf427effbad?auto=format&fit=crop&w=400&q=80"
+                     alt="Day 3 Group" class="w-full h-full object-cover" />
+              </div>
+            </div>
+
+            <!-- Day 4 (FRI): Wavy Black Stamp Frame + Heart Photo Inside -->
+            <div class="day-cell flex items-center justify-center anim-cell" style="animation-delay: 0.25s;">
+              <span class="day-num z-30">4</span>
+              <div class="w-[142px] h-[142px] bg-[#141413] clip-stamp flex items-center justify-center p-2">
+                <div class="w-[116px] h-[116px] clip-heart overflow-hidden bg-stone-700">
+                  <img src="https://images.unsplash.com/photo-1548036328-c9fa89d128fa?auto=format&fit=crop&w=400&q=80"
+                       alt="Crossbody Bag" class="w-full h-full object-cover" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Day 5 (SAT): Full-Bleed Cafe Brunch Scene -->
+            <div class="day-cell p-0 overflow-hidden anim-cell" style="animation-delay: 0.27s;">
+              <span class="day-num text-white drop-shadow">5</span>
+              <img src="https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=400&q=80"
+                   alt="Day 5 Cafe" class="w-full h-full object-cover" />
+            </div>
+
+            <!-- Day 6 (SUN): Black Cell with Glowing Soft Heart Photo -->
+            <div class="day-cell bg-[#0c0a09] flex items-center justify-center anim-cell" style="animation-delay: 0.29s;">
+              <span class="day-num text-stone-700">6</span>
+              <div class="w-[136px] h-[132px] glow-heart-box">
+                <div class="w-full h-full clip-heart overflow-hidden">
+                  <img src="https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=400&q=80"
+                       alt="Mirror Selfie" class="w-full h-full object-cover" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Day 7 (MON): Handwritten Diary + Tilted Architecture Photo -->
+            <div class="day-cell anim-cell" style="animation-delay: 0.31s;">
+              <span class="day-num">7</span>
+              <div class="ml-5 text-[10px] font-hand text-stone-800">
+                I think I wasted almost 2 hours again.<br/>
+                Tired of doing homework, I don't wanna<br/>
+                interact with it. Today evening is amazing!
+              </div>
+              <div class="w-[110px] h-[88px] mx-auto mt-1.5 -rotate-3 overflow-hidden rounded-xs shadow border border-stone-400">
+                <img src="https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=350&q=80"
+                     alt="Architecture" class="w-full h-full object-cover" />
+              </div>
+            </div>
+
+            <!-- Day 8 (TUE): Black Rounded Box with Heart Selfie + Bottom Note -->
+            <div class="day-cell flex flex-col items-center justify-between anim-cell" style="animation-delay: 0.33s;">
+              <span class="day-num">8</span>
+              <div class="w-[116px] h-[112px] bg-[#0c0a09] rounded-2xl flex items-center justify-center mt-1 shadow">
+                <div class="w-[96px] h-[94px] clip-heart overflow-hidden">
+                  <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80"
+                       alt="Blue Sweater" class="w-full h-full object-cover" />
+                </div>
+              </div>
+              <div class="text-[8.5px] font-hand text-stone-700 leading-none text-center px-1">
+                I got new sweater today! Blue is my happy color lately.
+              </div>
+            </div>
+
+            <!-- Day 9 (WED): Red/Brown Handwritten Diary + Social Post Card -->
+            <div class="day-cell anim-cell" style="animation-delay: 0.35s;">
+              <span class="day-num">9</span>
+              <div class="ml-4 text-[9.5px] font-hand text-amber-900 leading-[1.04]">
+                I had an unforgettable funny experience<br/>
+                in my class this morning. I felt like I forgot how<br/>
+                to use the zoom mic for an hour with my buddy!
+              </div>
+              <div class="mt-1 w-full h-[94px] rounded-xs overflow-hidden relative border border-stone-400 bg-stone-200 flex">
+                <div class="w-1/2 p-1.5 text-[8px] leading-tight text-stone-800 flex flex-col justify-center bg-stone-100/90">
+                  <div class="font-bold text-blue-700 mb-0.5">@archive_03</div>
+                  <div>We can stay here, staring at the river view all afternoon.</div>
+                </div>
+                <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=260&q=80"
+                     alt="Profile" class="w-1/2 h-full object-cover" />
+              </div>
+            </div>
+
+            <!-- Day 10 (THU): Handwritten Note + Dark Music Player Widget -->
+            <div class="day-cell flex items-start justify-between anim-cell" style="animation-delay: 0.37s;">
+              <span class="day-num">10</span>
+              <div class="w-[46%] pt-6 pl-1 text-[9.5px] font-hand text-stone-800 leading-[1.08]">
+                Nothing special.<br/>
+                I'm still full of stress<br/>
+                try to chill out by<br/>
+                listening to Doyoung's<br/>
+                ost cover all night.<br/>
+                It heals my soul.
+              </div>
+              <!-- Retro Music Player SVG Card -->
+              <div class="w-[52%] h-[136px] mt-2 bg-stone-700 rounded-md p-1.5 text-white flex flex-col justify-between shadow-md border border-stone-500">
+                <div class="text-[7px] text-stone-300 truncate text-center">NOW PLAYING • OST</div>
+                <div class="w-full h-[72px] rounded-xs overflow-hidden bg-stone-900">
+                  <img src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=240&q=80"
+                       alt="Album Art" class="w-full h-full object-cover" />
+                </div>
+                <div class="space-y-1">
+                  <div class="w-full h-0.5 bg-stone-500 rounded-full overflow-hidden">
+                    <div class="w-2/3 h-full bg-white"></div>
+                  </div>
+                  <div class="flex justify-around items-center text-[8px] pt-0.5">
+                    <span>⏮</span><span class="text-[10px]">⏸</span><span>⏭</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Day 11 (FRI): Full-Bleed Portrait in Red Cardigan -->
+            <div class="day-cell p-0 overflow-hidden bg-[#cbd5e1] anim-cell" style="animation-delay: 0.39s;">
+              <span class="day-num text-white drop-shadow">11</span>
+              <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80"
+                   alt="Red Outfit Portrait" class="w-full h-full object-cover" />
+            </div>
+
+            <!-- Day 12 (SAT): Black Cell + Blue Glowing Heart Laptop & Coffee -->
+            <div class="day-cell bg-[#090a0f] flex flex-col justify-between anim-cell" style="animation-delay: 0.41s;">
+              <span class="day-num text-white">12</span>
+              <div class="w-[138px] h-[126px] mx-auto mt-1 glow-blue-heart">
+                <div class="w-full h-full clip-heart overflow-hidden">
+                  <img src="https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=400&q=80"
+                       alt="Laptop Study" class="w-full h-full object-cover" />
+                </div>
+              </div>
+              <div class="text-[8px] font-hand text-blue-100 text-right pr-1 leading-none">
+                late night zoom &amp; iced latte
+              </div>
+            </div>
+
+            <!-- Day 13 (SUN): Neon Heart Cutout with Dark Outline -->
+            <div class="day-cell flex items-center justify-center anim-cell" style="animation-delay: 0.43s;">
+              <span class="day-num">13</span>
+              <div class="w-[144px] h-[138px] bg-stone-900 clip-heart p-1.5 -rotate-6 shadow-md">
+                <div class="w-full h-full clip-heart overflow-hidden">
+                  <img src="https://images.unsplash.com/photo-1508739773434-c26b3d09e071?auto=format&fit=crop&w=400&q=80"
+                       alt="Neon Heart" class="w-full h-full object-cover" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Day 14 (MON): Art Gallery Exhibition Photo -->
+            <div class="day-cell p-0 overflow-hidden bg-stone-800 anim-cell" style="animation-delay: 0.45s;">
+              <span class="day-num text-white drop-shadow">14</span>
+              <div class="absolute top-1 left-7 right-1 z-20 text-[8px] font-hand text-stone-100 leading-none bg-black/45 px-1 py-0.5 rounded">
+                Art museum afternoon walk with my best friend
+              </div>
+              <img src="https://images.unsplash.com/photo-1518998053901-5348d3961a04?auto=format&fit=crop&w=400&q=80"
+                   alt="Art Gallery" class="w-full h-full object-cover" />
+            </div>
+
+            <!-- Day 15 (TUE): Black Cell + 3D Glass Heart Pink Drink -->
+            <div class="day-cell bg-[#0a0a0a] flex items-center justify-center anim-cell" style="animation-delay: 0.47s;">
+              <span class="day-num text-stone-800">15</span>
+              <div class="w-[146px] h-[142px] relative clip-heart-wide overflow-hidden shadow-inner">
+                <img src="https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=400&q=80"
+                     alt="Pink Rosemary Drink" class="w-full h-full object-cover scale-110" />
+                <!-- Glossy 3D Heart Highlight Overlay -->
+                <div class="absolute inset-0 bg-gradient-to-tr from-black/30 via-transparent to-white/35 pointer-events-none"></div>
+              </div>
+            </div>
+
+            <!-- Day 16 (WED): Vertical Green Sticker Text + 2x2 Photo Grid -->
+            <div class="day-cell flex items-center justify-between anim-cell" style="animation-delay: 0.49s;">
+              <span class="day-num">16</span>
+              <div class="w-7 pt-5 flex flex-col items-center text-[11px] font-extrabold text-lime-700 leading-tight">
+                <span>N</span><span>C</span><span>T</span><span>N</span><span>E</span><span>W</span><span>S</span>
+              </div>
+              <div class="w-[116px] h-[144px] grid grid-cols-2 grid-rows-2 gap-1 bg-white p-1 shadow-xs border border-stone-300">
+                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80" class="w-full h-full object-cover" alt="grid1"/>
+                <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80" class="w-full h-full object-cover" alt="grid2"/>
+                <img src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=200&q=80" class="w-full h-full object-cover" alt="grid3"/>
+                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80" class="w-full h-full object-cover" alt="grid4"/>
+              </div>
+            </div>
+
+            <!-- Day 17 (THU): Gallery Photo + Handwritten Caption Below -->
+            <div class="day-cell flex flex-col justify-between anim-cell" style="animation-delay: 0.51s;">
+              <span class="day-num">17</span>
+              <div class="w-full h-[96px] mt-5 rounded-xs overflow-hidden border border-stone-400">
+                <img src="https://images.unsplash.com/photo-1544967082-d9d25d867d66?auto=format&fit=crop&w=400&q=80"
+                     alt="Gallery View" class="w-full h-full object-cover" />
+              </div>
+              <div class="text-[9px] font-hand text-stone-800 leading-[1.05]">
+                Visiting MOCA is relaxing and cool. Took a quiet walk back home<br/>
+                and saw two cats on street corner. Feeling blessed!
+              </div>
+            </div>
+
+            <!-- Day 18 (FRI): Oval Close-up Portrait with Glasses + Notes -->
+            <div class="day-cell flex flex-col items-center justify-between anim-cell" style="animation-delay: 0.53s;">
+              <span class="day-num">18</span>
+              <div class="w-[116px] h-[126px] rounded-[48%] overflow-hidden shadow border-2 border-amber-100 mt-0.5">
+                <img src="https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?auto=format&fit=crop&w=350&q=80"
+                     alt="Glasses Portrait" class="w-full h-full object-cover" />
+              </div>
+              <div class="text-[8.5px] font-hand text-stone-700 leading-none text-center">
+                TEN BBL update in yellow tee! So cute &amp; warm.
+              </div>
+            </div>
+
+            <!-- Day 19 (SAT): Pink Checklist Header + Sunset Cloud Blob -->
+            <div class="day-cell flex flex-col justify-between anim-cell" style="animation-delay: 0.55s;">
+              <span class="day-num">19</span>
+              <div class="ml-6 bg-pink-200/80 border border-pink-300 rounded px-1.5 py-0.5 text-[8px] font-hand text-pink-900">
+                ✓ Watch sunset view<br/>
+                ✓ Organize sticker book
+              </div>
+              <div class="relative w-[132px] h-[106px] clip-blob-19 overflow-hidden mx-auto">
+                <img src="https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=350&q=80"
+                     alt="Sunset Sky" class="w-full h-full object-cover" />
+                <div class="absolute inset-0 bg-stone-900/25 p-3 flex items-center justify-center text-center text-[8.5px] font-hand text-white leading-tight">
+                  The sunset clouds looked like cotton candy today. Everything feels peaceful.
+                </div>
+              </div>
+            </div>
+
+            <!-- Day 20 (SUN): Pink Checklist + Oval Beanie Selfie + Note -->
+            <div class="day-cell anim-cell" style="animation-delay: 0.57s;">
+              <span class="day-num">20</span>
+              <div class="ml-6 bg-pink-200/85 border border-pink-300 rounded px-1.5 py-0.5 text-[8px] font-hand text-pink-900">
+                ✓ Morning coffee run<br/>
+                ✓ Sketchbook practice
+              </div>
+              <div class="flex items-end justify-between mt-1">
+                <div class="w-[88px] h-[108px] rounded-[46%] overflow-hidden border border-stone-400 shadow-xs">
+                  <img src="https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=300&q=80"
+                       alt="Beanie Portrait" class="w-full h-full object-cover" />
+                </div>
+                <div class="w-[62px] text-[8.5px] font-hand text-stone-800 leading-[1.05] pb-1">
+                  Put on knitted beanie &amp; glasses today. Cozy Sunday mood all day long &lt;3
+                </div>
+              </div>
+            </div>
+
+            <!-- Day 21 (MON): Pink Header + Triple-Lobe Cloud Architectural Photo -->
+            <div class="day-cell flex flex-col items-center justify-between anim-cell" style="animation-delay: 0.59s;">
+              <span class="day-num">21</span>
+              <div class="ml-5 w-[118px] bg-pink-200/75 rounded-full px-2 py-0.5 text-[8px] font-hand text-pink-900 text-center">
+                ♡ Monday museum archive
+              </div>
+              <div class="w-[126px] h-[124px] clip-peanut overflow-hidden shadow">
+                <img src="https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=400&q=80"
+                     alt="Hallway" class="w-full h-full object-cover" />
+              </div>
+            </div>
+
+            <!-- Day 22 (TUE): Wavy Stamp Greenery Cafe + Phone Inset -->
+            <div class="day-cell flex items-center justify-center anim-cell" style="animation-delay: 0.61s;">
+              <span class="day-num font-caveat text-[22px]">22</span>
+              <div class="w-[142px] h-[142px] clip-stamp overflow-hidden relative shadow">
+                <img src="https://images.unsplash.com/photo-1466637574441-749b8f19452f?auto=format&fit=crop&w=400&q=80"
+                     alt="Greenery Cafe" class="w-full h-full object-cover" />
+                <!-- Phone frame inset on right -->
+                <div class="absolute right-3 top-5 w-11 h-20 rounded-lg border-2 border-stone-900 overflow-hidden shadow-md bg-black">
+                  <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80"
+                       alt="Selfie" class="w-full h-full object-cover" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Day 23 (WED): Pink Header + Faint Handwritten Notes (Cloud SVG floats here) -->
+            <div class="day-cell anim-cell" style="animation-delay: 0.63s;">
+              <span class="day-num">23</span>
+              <div class="ml-6 bg-pink-200/80 border border-pink-300 rounded px-1.5 py-0.5 text-[8px] font-hand text-pink-900">
+                ✓ Rainy day playlist<br/>
+                ✓ Early bedtime
+              </div>
+              <div class="mt-3 px-1 text-[10px] font-hand text-rose-400/80 leading-tight text-center">
+                Do not let little things bother your peace.<br/>
+                Soft clouds and warm tea cure everything.
+              </div>
+            </div>
+
+            <!-- Day 24 (THU): Ruled Notebook Paper + Dark Coat Cutout Portrait -->
+            <div class="day-cell ruled-paper overflow-hidden anim-cell" style="animation-delay: 0.65s;">
+              <span class="day-num">24</span>
+              <div class="w-[96px] h-[134px] mt-4 ml-1 rounded-t-full overflow-hidden border-2 border-white shadow-md bg-stone-900">
+                <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=300&q=80"
+                     alt="Black Coat Portrait" class="w-full h-full object-cover grayscale contrast-125" />
+              </div>
+              <div class="absolute bottom-1 right-2 text-[9.5px] font-hand font-bold text-red-600">
+                TEN BBL update
+              </div>
+            </div>
+
+            <!-- Day 25 (FRI): Purple Banner + Oval Tabletop Photo + Diary Text -->
+            <div class="day-cell flex flex-col justify-between anim-cell" style="animation-delay: 0.67s;">
+              <span class="day-num">25</span>
+              <div class="ml-6 bg-purple-200/85 border border-purple-300 rounded px-1.5 py-0.5 text-[8px] font-hand text-purple-900">
+                ✓ Cafe cake &amp; photocards
+              </div>
+              <div class="w-[126px] h-[74px] mx-auto rounded-[50%] overflow-hidden border border-stone-400 shadow-xs">
+                <img src="https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=350&q=80"
+                     alt="Tabletop Dessert" class="w-full h-full object-cover" />
+              </div>
+              <div class="text-[8.5px] font-hand text-stone-800 leading-[1.02] px-0.5">
+                Finished my design assignment early! Celebrated with strawberry shortcake &amp; coffee with friends.
+              </div>
+            </div>
+
+            <!-- Day 26 (SAT): Pink Banner + Green Handwritten Text + Group Photo -->
+            <div class="day-cell anim-cell" style="animation-delay: 0.69s;">
+              <span class="day-num">26</span>
+              <div class="ml-6 bg-pink-200/85 border border-pink-300 rounded px-1.5 py-0.5 text-[8px] font-hand text-pink-900">
+                ✓ Weekend live stage
+              </div>
+              <div class="grid grid-cols-2 gap-1 mt-1 items-end">
+                <div class="text-[8.5px] font-hand text-emerald-800 leading-[1.04]">
+                  I watched the online concert streaming today!<br/>
+                  1. Favorite song<br/>
+                  2. Encore stage<br/>
+                  So proud of the team always!
+                </div>
+                <div class="h-[106px] rounded-t-xl overflow-hidden border border-stone-300 shadow-xs">
+                  <img src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=300&q=80"
+                       alt="Group Stage" class="w-full h-full object-cover" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Day 27 (SUN): Pink Banner + Laptop Frame Collage -->
+            <div class="day-cell flex flex-col justify-between items-center anim-cell" style="animation-delay: 0.71s;">
+              <span class="day-num">27</span>
+              <div class="ml-5 w-[124px] bg-pink-200/80 border border-pink-300 rounded px-1.5 py-0.5 text-[8px] font-hand text-pink-900">
+                ✓ Digital scrapbook day
+              </div>
+              <!-- Laptop SVG Frame with Screen Image -->
+              <div class="w-[132px] mb-2">
+                <div class="w-[118px] h-[78px] mx-auto bg-stone-900 rounded-t-md p-1 border border-stone-400">
+                  <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=300&q=80"
+                       alt="Laptop Screen" class="w-full h-full object-cover rounded-xs" />
+                </div>
+                <div class="w-[132px] h-[6px] bg-stone-300 rounded-b-md border border-stone-400 mx-auto"></div>
+              </div>
+            </div>
+
+            <!-- Day 28 (MON): TEN IG Update Polaroid ("i love you <3") -->
+            <div class="day-cell anim-cell" style="animation-delay: 0.73s;">
+              <span class="day-num">28</span>
+              <div class="text-right pr-1 text-[10px] font-hand font-bold text-stone-800">
+                TEN IG update
+              </div>
+              <div class="flex items-center justify-between mt-1">
+                <div class="w-[48px] text-[8.5px] font-hand text-stone-700 leading-[1.06]">
+                  I woke up feeling super refreshed today. His smile makes my day!
+                </div>
+                <!-- White Polaroid Frame -->
+                <div class="w-[92px] bg-white p-1.5 pb-3 shadow-md border border-stone-200 rotate-2">
+                  <div class="w-full h-[76px] overflow-hidden bg-stone-800">
+                    <img src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=250&q=80"
+                         alt="Polaroid" class="w-full h-full object-cover" />
+                  </div>
+                  <div class="text-center font-hand text-[11px] font-bold text-stone-800 mt-1 leading-none">
+                    i love you &lt;3
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Day 29 (TUE): 4-Grid Selca + Cute Sticker Card -->
+            <div class="day-cell anim-cell" style="animation-delay: 0.75s;">
+              <span class="day-num">29</span>
+              <div class="ml-6 bg-amber-300/80 rounded px-1.5 py-0.5 text-[8px] font-hand text-amber-950 inline-block">
+                ★ Tuesday photo dump
+              </div>
+              <div class="grid grid-cols-2 gap-1 mt-1">
+                <div class="grid grid-cols-2 gap-0.5 h-[116px] bg-stone-900 p-0.5 rounded-xs">
+                  <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=160&q=80" class="w-full h-full object-cover" alt="s1"/>
+                  <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=160&q=80" class="w-full h-full object-cover" alt="s2"/>
+                  <img src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=160&q=80" class="w-full h-full object-cover" alt="s3"/>
+                  <img src="https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?auto=format&fit=crop&w=160&q=80" class="w-full h-full object-cover" alt="s4"/>
+                </div>
+                <div class="flex flex-col justify-between">
+                  <div class="text-[8px] font-hand text-rose-800 leading-[1.04]">
+                    Received the cutest polaroid set &amp;deco stickers in the mail!
+                  </div>
+                  <div class="h-[64px] rounded-md bg-gradient-to-br from-pink-100 to-indigo-100 border border-stone-300 p-1 flex items-center justify-center shadow-xs">
+                    <img src="https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?auto=format&fit=crop&w=200&q=80" class="w-full h-full object-cover rounded" alt="sticker card"/>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Day 30 (WED): Irregular Blob-Masked Iced Coffee & Cake (Overflowing) -->
+            <div class="day-cell flex items-center justify-center anim-cell" style="animation-delay: 0.77s;">
+              <span class="day-num z-30">30</span>
+              <div class="w-[162px] h-[168px] -mt-2 clip-blob-30 overflow-hidden shadow-lg relative z-20">
+                <img src="https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&w=400&q=80"
+                     alt="Iced Coffee and Cake" class="w-full h-full object-cover" />
+              </div>
+            </div>
+
+            <!-- Day 31 (THU): Yellow Header + Faint Note + Two Overflowing Photos at Bottom -->
+            <div class="day-cell anim-cell" style="animation-delay: 0.79s;">
+              <span class="day-num">31</span>
+              <div class="ml-6 bg-amber-200/90 border border-amber-300 rounded px-1.5 py-0.5 text-[8px] font-hand text-amber-900">
+                Last day of March 2022!
+              </div>
+              <div class="mt-1 text-[8.5px] font-hand text-stone-500 leading-[1.05]">
+                March flew by so fast. Grateful for every little memory, coffee date, and song that kept me company.
+              </div>
+              <!-- Two overlapping rectangular photos protruding below the bottom border -->
+              <div class="absolute -bottom-5 left-3 right-1 flex gap-1.5 z-20">
+                <img src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=220&q=80"
+                     alt="Concert" class="w-[58px] h-[72px] object-cover rounded-xs shadow-md border border-stone-700" />
+                <img src="https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=240&q=80"
+                     alt="Minimal Room" class="w-[82px] h-[64px] object-cover rounded-xs shadow-md border border-stone-300 self-end" />
+              </div>
+            </div>
+
+            <!-- Row 5: Empty FRI -->
+            <div class="day-cell anim-cell" style="animation-delay: 0.81s;"></div>
+
+            <!-- Row 5: Empty SAT -->
+            <div class="day-cell anim-cell" style="animation-delay: 0.83s;"></div>
+
+          </div>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interactive Script: Draggable SVGs, Background Customizer & Entrance Animations -->
+  <script>
+    const stage = document.getElementById('scrapbookStage');
+    const bgUrlInput = document.getElementById('bgUrlInput');
+    let activeDraggable = null;
+    let startX = 0;
+    let startY = 0;
+    let initialTx = 0;
+    let initialTy = 0;
+
+    // Initialize Draggable SVG Decorations (Mouse & Touch)
+    function initDraggableSVGs() {
+      const stickers = document.querySelectorAll('.draggable-svg');
+
+      stickers.forEach((el) => {
+        el.dataset.tx = el.dataset.initX || '0';
+        el.dataset.ty = el.dataset.initY || '0';
+
+        // Pointer Down (handles both Mouse & Touch seamlessly)
+        el.addEventListener('pointerdown', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          activeDraggable = el;
+          activeDraggable.classList.add('dragging');
+          activeDraggable.setPointerCapture(e.pointerId);
+
+          startX = e.clientX;
+          startY = e.clientY;
+          initialTx = parseFloat(activeDraggable.dataset.tx) || 0;
+          initialTy = parseFloat(activeDraggable.dataset.ty) || 0;
+        });
+
+        el.addEventListener('pointermove', (e) => {
+          if (!activeDraggable || activeDraggable !== el) return;
+          const dx = e.clientX - startX;
+          const dy = e.clientY - startY;
+          const newTx = initialTx + dx;
+          const newTy = initialTy + dy;
+
+          activeDraggable.dataset.tx = newTx;
+          activeDraggable.dataset.ty = newTy;
+          activeDraggable.style.setProperty('--tx', `${newTx}px`);
+          activeDraggable.style.setProperty('--ty', `${newTy}px`);
+          activeDraggable.style.transform = `translate(${newTx}px, ${newTy}px)`;
+        });
+
+        const endDrag = (e) => {
+          if (!activeDraggable || activeDraggable !== el) return;
+          activeDraggable.classList.remove('dragging');
+          try {
+            activeDraggable.releasePointerCapture(e.pointerId);
+          } catch (_) {}
+          activeDraggable = null;
+        };
+
+        el.addEventListener('pointerup', endDrag);
+        el.addEventListener('pointercancel', endDrag);
+      });
+    }
+
+    // Reset all SVG stickers to their original positions
+    function resetStickers() {
+      const stickers = document.querySelectorAll('.draggable-svg');
+      stickers.forEach((el) => {
+        el.dataset.tx = '0';
+        el.dataset.ty = '0';
+        el.style.setProperty('--tx', '0px');
+        el.style.setProperty('--ty', '0px');
+        el.style.transform = 'translate(0px, 0px)';
+      });
+    }
+
+    // Toggle dashed outline around draggable SVG stickers
+    function toggleStickerHighlight() {
+      document.body.classList.toggle('highlight-stickers');
+      const btn = document.getElementById('toggleHighlightBtn');
+      const isHighlighted = document.body.classList.contains('highlight-stickers');
+      btn.classList.toggle('border-blue-500', isHighlighted);
+      btn.classList.toggle('bg-blue-950/60', isHighlighted);
+    }
+
+    // Preset Backgrounds
+    function setPresetBg(type) {
+      stage.style.backgroundImage = 'none';
+      if (type === 'kraft') {
+        stage.style.backgroundColor = '#e7dfd3';
+      } else if (type === 'linen') {
+        stage.style.backgroundColor = '#f4f1ea';
+      } else if (type === 'pink') {
+        stage.style.backgroundColor = '#f5e1e6';
+      } else if (type === 'vintage') {
+        stage.style.backgroundImage = 'url("https://images.unsplash.com/photo-1586075010923-2dd4570fb338?auto=format&fit=crop&w=1600&q=80")';
+      }
+    }
+
+    // Apply Custom Background Image URL
+    function applyCustomBgUrl() {
+      const url = bgUrlInput.value.trim();
+      if (!url) return;
+      stage.style.backgroundImage = `url("${url}")`;
+    }
+
+    // Upload Local Image File as Background
+    function handleLocalBgUpload(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      const objectUrl = URL.createObjectURL(file);
+      stage.style.backgroundImage = `url("${objectUrl}")`;
+    }
+
+    // Replay Staggered Entrance Animation
+    function replayEntranceAnimation() {
+      const animatedNodes = document.querySelectorAll('.anim-board, .anim-header, .anim-sidebar, .anim-cell, .anim-sticker');
+      animatedNodes.forEach((node) => {
+        const classes = ['anim-board', 'anim-header', 'anim-sidebar', 'anim-cell', 'anim-sticker'];
+        const matched = classes.filter(c => node.classList.contains(c));
+        matched.forEach(c => node.classList.remove(c));
+        void node.offsetWidth; // trigger reflow
+        matched.forEach(c => node.classList.add(c));
+      });
+    }
+
+    // ===== 日历相册按月填充照片（Aboutme webview JSAPI）=====
+    // monthPhotoMap: img元素 -> {date, urls, cur}
+    const monthPhotoMap = new WeakMap();
+    let monthDays = {};
+
+    function scrapToast(msg) {
+      let t = document.getElementById('scrap-toast');
+      if (!t) {
+        t = document.createElement('div');
+        t.id = 'scrap-toast';
+        t.style.cssText = 'position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#111827;color:#fff;padding:8px 16px;border-radius:999px;font-size:13px;z-index:99999;opacity:0;transition:opacity .25s;pointer-events:none;';
+        document.body.appendChild(t);
+      }
+      t.textContent = msg;
+      t.style.opacity = '1';
+      clearTimeout(t._timer);
+      t._timer = setTimeout(() => { t.style.opacity = '0'; }, 2400);
+    }
+
+    async function pickMonthFromAlbum() {
+      const btn = document.getElementById('btnPickMonth');
+      if (!(window.Aboutme && Aboutme.plugins && Aboutme.plugins.webview)) {
+        scrapToast('当前不在 Aboutme WebView 环境中');
+        return;
+      }
+      btn.disabled = true;
+      try {
+        const res = await Aboutme.plugins.webview.selectMonthPhotos({});
+        if (res && res.error) { scrapToast('选择失败: ' + res.error); return; }
+        if (!res || res.cancelled || !res.days) return;
+        monthDays = res.days;
+        applyMonthPhotos(res.month, res.days);
+      } catch (e) {
+        console.error('pickMonthFromAlbum error:', e);
+        scrapToast('调用月份选择器失败');
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    // 将选中月份的照片按日期顺序填充到页面照片槽位：
+    // 每天默认取第一张；剩余槽位用后续日期照片补齐（天数多于槽位则忽略多余）
+    function applyMonthPhotos(month, days) {
+      const slots = Array.from(document.querySelectorAll('#scrapbookStage img'));
+      const sortedDates = Object.keys(days).sort();
+      let filled = 0;
+      sortedDates.forEach((date, di) => {
+        const urls = days[date];
+        const slot = slots[di];
+        if (!slot || !urls || urls.length === 0) return;
+        slot.onerror = null;
+        slot.src = urls[0];
+        monthPhotoMap.set(slot, { date, urls, cur: 0 });
+        filled++;
+      });
+      scrapToast(`已按 ${month} 填充 ${filled} 天照片（点击照片可换图）`);
+      initPhotoSwapDialog();
+    }
+
+    // 点击已填充的照片：当日有多张时弹出换图对话框
+    // （可选当日其他照片，或选择新照片）
+    let swapBound = false;
+    function initPhotoSwapDialog() {
+      if (swapBound) return;
+      swapBound = true;
+      document.querySelectorAll('#scrapbookStage img').forEach(img => {
+        img.addEventListener('click', (e) => {
+          const info = monthPhotoMap.get(img);
+          if (!info) return;
+          e.stopPropagation();
+          if (info.urls.length <= 1) {
+            scrapToast(`该日（${info.date}）只有 1 张照片`);
+            return;
+          }
+          showSwapDialog(img, info);
+        });
+      });
+    }
+
+    function showSwapDialog(img, info) {
+      document.getElementById('swap-dialog')?.remove();
+      const dlg = document.createElement('div');
+      dlg.id = 'swap-dialog';
+      dlg.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99998;display:flex;align-items:center;justify-content:center;';
+      const card = document.createElement('div');
+      card.style.cssText = 'background:#18181b;border:1px solid #3f3f46;border-radius:16px;padding:16px;max-width:90vw;max-height:80vh;overflow:auto;color:#e4e4e7;';
+      const title = document.createElement('div');
+      title.style.cssText = 'font-size:13px;font-weight:700;margin-bottom:10px;';
+      title.textContent = `📷 ${info.date} 的照片（点击替换）`;
+      card.appendChild(title);
+      const grid = document.createElement('div');
+      grid.style.cssText = 'display:grid;grid-template-columns:repeat(4,1fr);gap:8px;';
+      info.urls.forEach((u, i) => {
+        const cell = document.createElement('div');
+        cell.style.cssText = 'cursor:pointer;border-radius:8px;overflow:hidden;border:2px solid ' + (i === info.cur ? '#ef4444' : 'transparent') + ';';
+        const im = document.createElement('img');
+        im.src = u;
+        im.style.cssText = 'width:100%;height:72px;object-fit:cover;display:block;';
+        cell.appendChild(im);
+        cell.addEventListener('click', () => {
+          img.src = u;
+          monthPhotoMap.set(img, { date: info.date, urls: info.urls, cur: i });
+          dlg.remove();
+          scrapToast('已替换为当日第 ' + (i + 1) + ' 张照片');
+        });
+        grid.appendChild(cell);
+      });
+      card.appendChild(grid);
+
+      // 选择新照片（Aboutme 相册选择器 / 浏览器本地文件）
+      const newBtn = document.createElement('button');
+      newBtn.textContent = '＋ 选择新照片';
+      newBtn.style.cssText = 'margin-top:12px;width:100%;padding:8px;border-radius:10px;border:1px dashed #71717a;background:transparent;color:#e4e4e7;font-size:12px;cursor:pointer;';
+      newBtn.addEventListener('click', async () => {
+        try {
+          if (window.Aboutme && Aboutme.plugins && Aboutme.plugins.webview) {
+            const res = await Aboutme.plugins.webview.selectImages({ multiple: false });
+            if (res && res.error) { scrapToast('选择失败: ' + res.error); return; }
+            if (!res || res.cancelled || !res.images || !res.images.length) return;
+            img.src = res.images[0].url;
+            monthPhotoMap.set(img, { date: info.date, urls: [res.images[0].url], cur: 0 });
+          } else {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.addEventListener('change', () => {
+              const f = input.files && input.files[0];
+              if (!f) return;
+              const r = new FileReader();
+              r.onload = () => {
+                img.src = r.result;
+                monthPhotoMap.set(img, { date: info.date, urls: [r.result], cur: 0 });
+              };
+              r.readAsDataURL(f);
+            });
+            input.click();
+          }
+          dlg.remove();
+          scrapToast('已替换为新照片');
+        } catch (e) {
+          console.error('selectNewPhoto error:', e);
+          scrapToast('选择新照片失败');
+        }
+      });
+      card.appendChild(newBtn);
+
+      const closeBtn = document.createElement('button');
+      closeBtn.textContent = '取消';
+      closeBtn.style.cssText = 'margin-top:8px;width:100%;padding:8px;border-radius:10px;background:#27272a;color:#a1a1aa;font-size:12px;cursor:pointer;';
+      closeBtn.addEventListener('click', () => dlg.remove());
+      card.appendChild(closeBtn);
+
+      dlg.appendChild(card);
+      dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.remove(); });
+      document.body.appendChild(dlg);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initDraggableSVGs();
+    });
+  </script>
+</body>
+</html>

@@ -229,11 +229,13 @@ class BrowserDownloadManager extends ChangeNotifier {
     cancel(id);
     _records.removeWhere((r) => r.id == id);
     notifyListeners();
+    unawaited(_persist());
   }
 
   /// 清空已结束的记录（完成/失败/取消）
   void clearFinished() {
     _records.removeWhere((r) => !r.isActive);
     notifyListeners();
+    unawaited(_persist());
   }
 }

@@ -17,6 +17,7 @@ import '../models/webview_card.dart';
 import '../services/tab_manager.dart';
 import '../services/js_bridge_injector.dart';
 import '../services/download_flow.dart';
+import '../services/webview_download_interceptor.dart';
 import '../widgets/download_records_list.dart';
 import 'tab_manager_screen.dart';
 
@@ -1157,6 +1158,9 @@ class _WebViewTabContentState extends State<_WebViewTabContent> {
       onWebViewCreated: (controller) {
         _controller = controller;
         plugin.tabManager.setController(widget.tab.id, controller);
+
+        // Windows：CDP 拦截下载响应，阻断 WebView2 默认下载 UI
+        unawaited(WebviewDownloadInterceptor.attach(controller, () => context));
 
         // 初始化 JS Bridge
         if (webviewSettings.enableJSBridge) {

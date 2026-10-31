@@ -46,12 +46,6 @@
       padding: 42px 38px 56px 38px;
     }
 
-    @media (max-width: 768px) {
-      .poster-canvas {
-        padding: 24px 14px 40px 14px;
-      }
-    }
-
     /* 底层日历数字网格 */
     .cal-grid {
       display: grid;
@@ -64,13 +58,6 @@
       text-align: center;
       pointer-events: none;
       padding-top: 4px;
-    }
-
-    @media (max-width: 640px) {
-      .cal-grid {
-        font-size: 10px;
-        line-height: 1.35;
-      }
     }
 
     /* 拍立得相框通用样式 */
@@ -290,14 +277,14 @@
     }
   </style>
 </head>
-<body class="py-4 px-2 sm:px-6">
+<body class="py-4 px-6">
 
   <!-- 顶部悬浮交互控制栏 -->
   <div class="max-w-[960px] mx-auto mb-3 flex flex-wrap items-center justify-between gap-2 bg-white/85 backdrop-blur-md px-4 py-2.5 rounded-2xl shadow-sm border border-slate-200/80 sticky top-2 z-50">
     <div class="flex items-center gap-2.5">
       <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-red-500 text-white font-black text-xs shadow-sm">25</span>
       <div>
-        <h2 class="text-xs sm:text-sm font-bold text-slate-800 leading-tight">2025 拍立得手账日历拼贴</h2>
+        <h2 class="text-sm font-bold text-slate-800 leading-tight">2025 拍立得手账日历拼贴</h2>
         <p class="text-[11px] text-slate-500">悬停放大照片 · 可自由拖拽任意贴纸或照片 · 点击照片预览大图</p>
       </div>
     </div>
@@ -321,19 +308,19 @@
   <main id="poster" class="poster-canvas rounded-3xl">
 
     <!-- 顶部 2025 大标题 -->
-    <header class="mb-5 sm:mb-7 pl-2 anim-header">
-      <h1 class="text-[54px] sm:text-[74px] font-extrabold tracking-tight leading-none" style="color: var(--red-accent);">
+    <header class="mb-7 pl-2 anim-header">
+      <h1 class="text-[74px] font-extrabold tracking-tight leading-none" style="color: var(--red-accent);">
         2025
       </h1>
     </header>
 
     <!-- 12个月份 3x4 网格 -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-10 sm:gap-y-12 relative">
+    <div class="grid grid-cols-3 gap-x-6 gap-y-12 relative">
 
       <!-- ==================== 1. JAN ==================== -->
-      <section class="relative h-[265px] sm:h-[280px] select-none" data-month="0">
+      <section class="relative h-[280px] select-none" data-month="0">
         <div class="flex items-center gap-2 mb-1 pl-1 anim-month" style="--delay: 0.05s">
-          <h2 class="text-3xl sm:text-[34px] font-bold tracking-tight text-neutral-900">Jan</h2>
+          <h2 class="text-[34px] font-bold tracking-tight text-neutral-900">Jan</h2>
         </div>
         <!-- 2025年1月真实日历底纹 -->
         <div class="cal-grid anim-month" style="--delay: 0.1s" data-cal="1"></div>
@@ -427,9 +414,9 @@
       </section>
 
       <!-- ==================== 2. FEB ==================== -->
-      <section class="relative h-[265px] sm:h-[280px] select-none" data-month="1">
+      <section class="relative h-[280px] select-none" data-month="1">
         <div class="flex items-center gap-2 mb-1 pl-1 anim-month" style="--delay: 0.1s">
-          <h2 class="text-3xl sm:text-[34px] font-bold tracking-tight text-neutral-900">Feb</h2>
+          <h2 class="text-[34px] font-bold tracking-tight text-neutral-900">Feb</h2>
         </div>
         <div class="cal-grid anim-month" style="--delay: 0.15s" data-cal="2"></div>
 
@@ -497,9 +484,9 @@
       </section>
 
       <!-- ==================== 3. MAR ==================== -->
-      <section class="relative h-[265px] sm:h-[280px] select-none" data-month="2">
+      <section class="relative h-[280px] select-none" data-month="2">
         <div class="flex items-center gap-2 mb-1 pl-1 anim-month" style="--delay: 0.15s">
-          <h2 class="text-3xl sm:text-[34px] font-bold tracking-tight text-neutral-900">Mar</h2>
+          <h2 class="text-[34px] font-bold tracking-tight text-neutral-900">Mar</h2>
         </div>
         <div class="cal-grid anim-month" style="--delay: 0.2s" data-cal="3"></div>
 
@@ -559,9 +546,9 @@
       </section>
 
       <!-- ==================== 4. APR ==================== -->
-      <section class="relative h-[265px] sm:h-[280px] select-none" data-month="3">
+      <section class="relative h-[280px] select-none" data-month="3">
         <div class="flex items-center gap-2 mb-1 pl-1 anim-month" style="--delay: 0.2s">
-          <h2 class="text-3xl sm:text-[34px] font-bold tracking-tight text-neutral-900">Apr</h2>
+          <h2 class="text-[34px] font-bold tracking-tight text-neutral-900">Apr</h2>
         </div>
         <div class="cal-grid anim-month" style="--delay: 0.25s" data-cal="4"></div>
 
@@ -635,9 +622,9 @@
       </section>
 
       <!-- ==================== 5. MAY ==================== -->
-      <section class="relative h-[265px] sm:h-[280px] select-none" data-month="4">
+      <section class="relative h-[280px] select-none" data-month="4">
         <div class="flex items-center gap-2 mb-1 pl-1 anim-month" style="--delay: 0.25s">
-          <h2 class="text-3xl sm:text-[34px] font-bold tracking-tight text-neutral-900">May</h2>
+          <h2 class="text-[34px] font-bold tracking-tight text-neutral-900">May</h2>
         </div>
         <div class="cal-grid anim-month" style="--delay: 0.3s" data-cal="5"></div>
 
@@ -695,9 +682,9 @@
       </section>
 
       <!-- ==================== 6. JUN ==================== -->
-      <section class="relative h-[265px] sm:h-[280px] select-none" data-month="5">
+      <section class="relative h-[280px] select-none" data-month="5">
         <div class="flex items-center gap-2 mb-1 pl-1 anim-month" style="--delay: 0.3s">
-          <h2 class="text-3xl sm:text-[34px] font-bold tracking-tight text-neutral-900">Jun</h2>
+          <h2 class="text-[34px] font-bold tracking-tight text-neutral-900">Jun</h2>
         </div>
         <div class="cal-grid anim-month" style="--delay: 0.35s" data-cal="6"></div>
 
@@ -757,9 +744,9 @@
       </section>
 
       <!-- ==================== 7. JUL ==================== -->
-      <section class="relative h-[265px] sm:h-[280px] select-none" data-month="6">
+      <section class="relative h-[280px] select-none" data-month="6">
         <div class="flex items-center gap-2 mb-1 pl-1 anim-month" style="--delay: 0.35s">
-          <h2 class="text-3xl sm:text-[34px] font-bold tracking-tight text-neutral-900">Jul</h2>
+          <h2 class="text-[34px] font-bold tracking-tight text-neutral-900">Jul</h2>
         </div>
         <div class="cal-grid anim-month" style="--delay: 0.4s" data-cal="7"></div>
 
@@ -805,9 +792,9 @@
       </section>
 
       <!-- ==================== 8. AUG ==================== -->
-      <section class="relative h-[265px] sm:h-[280px] select-none" data-month="7">
+      <section class="relative h-[280px] select-none" data-month="7">
         <div class="flex items-center gap-2 mb-1 pl-1 anim-month" style="--delay: 0.4s">
-          <h2 class="text-3xl sm:text-[34px] font-bold tracking-tight text-neutral-900">Aug</h2>
+          <h2 class="text-[34px] font-bold tracking-tight text-neutral-900">Aug</h2>
         </div>
         <div class="cal-grid anim-month" style="--delay: 0.45s" data-cal="8"></div>
 
@@ -874,9 +861,9 @@
       </section>
 
       <!-- ==================== 9. SEP ==================== -->
-      <section class="relative h-[265px] sm:h-[280px] select-none" data-month="8">
+      <section class="relative h-[280px] select-none" data-month="8">
         <div class="flex items-center gap-2 mb-1 pl-1 anim-month" style="--delay: 0.45s">
-          <h2 class="text-3xl sm:text-[34px] font-bold tracking-tight text-neutral-900">Sep</h2>
+          <h2 class="text-[34px] font-bold tracking-tight text-neutral-900">Sep</h2>
         </div>
         <div class="cal-grid anim-month" style="--delay: 0.5s" data-cal="9"></div>
 
@@ -914,9 +901,9 @@
       </section>
 
       <!-- ==================== 10. OCT ==================== -->
-      <section class="relative h-[265px] sm:h-[280px] select-none" data-month="9">
+      <section class="relative h-[280px] select-none" data-month="9">
         <div class="flex items-center gap-2 mb-1 pl-1 anim-month" style="--delay: 0.5s">
-          <h2 class="text-3xl sm:text-[34px] font-bold tracking-tight text-neutral-900">Oct</h2>
+          <h2 class="text-[34px] font-bold tracking-tight text-neutral-900">Oct</h2>
         </div>
         <div class="cal-grid anim-month" style="--delay: 0.55s" data-cal="10"></div>
 
@@ -975,9 +962,9 @@
       </section>
 
       <!-- ==================== 11. NOV ==================== -->
-      <section class="relative h-[265px] sm:h-[280px] select-none" data-month="10">
+      <section class="relative h-[280px] select-none" data-month="10">
         <div class="flex items-center gap-2 mb-1 pl-1 anim-month" style="--delay: 0.55s">
-          <h2 class="text-3xl sm:text-[34px] font-bold tracking-tight text-neutral-900">Nov</h2>
+          <h2 class="text-[34px] font-bold tracking-tight text-neutral-900">Nov</h2>
         </div>
         <div class="cal-grid anim-month" style="--delay: 0.6s" data-cal="11"></div>
 
@@ -1020,10 +1007,10 @@
       </section>
 
       <!-- ==================== 12. DEC ==================== -->
-      <section class="relative h-[265px] sm:h-[280px] select-none" data-month="11">
+      <section class="relative h-[280px] select-none" data-month="11">
         <div class="flex items-center gap-2 mb-1 pl-1 anim-month" style="--delay: 0.6s">
           <!-- 原图中 Dec 标题为醒目红色 -->
-          <h2 class="text-3xl sm:text-[34px] font-bold tracking-tight" style="color: var(--red-accent);">Dec</h2>
+          <h2 class="text-[34px] font-bold tracking-tight" style="color: var(--red-accent);">Dec</h2>
         </div>
         <div class="cal-grid anim-month" style="--delay: 0.65s" data-cal="12"></div>
 
@@ -1314,19 +1301,24 @@
       if (inAboutme) {
         (async () => {
           try {
+            monthToast('正在打开图片选择器…');
+            console.log('[pickMonthPhotos] 调用 selectImages, 类型:', typeof Aboutme.plugins.webview.selectImages);
             const res = await Aboutme.plugins.webview.selectImages({ multiple: true });
+            console.log('[pickMonthPhotos] selectImages 结果:', JSON.stringify(res));
             if (res && res.error) { monthToast('选择失败: ' + res.error); return; }
-            if (!res || res.cancelled || !Array.isArray(res.images) || res.images.length === 0) return;
+            if (!res || res.cancelled) { monthToast('已取消选择'); return; }
+            if (!Array.isArray(res.images) || res.images.length === 0) { monthToast('未选择任何照片'); return; }
             const n = applyImagesToMonth(section, res.images.map(im => im.url));
             monthToast(`已为${title}填充 ${n} 张照片`);
           } catch (e) {
             console.error('pickMonthPhotos error:', e);
-            monthToast('调用相册选择器失败');
+            monthToast('调用相册选择器失败: ' + (e && e.message ? e.message : e));
           }
         })();
         cleanup();
         return;
       }
+      monthToast('当前不在 App 环境，使用浏览器文件选择');
 
       // 浏览器降级：本地文件多选
       input.addEventListener('change', () => {

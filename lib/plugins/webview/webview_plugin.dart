@@ -1,3 +1,4 @@
+import 'dart:async' show unawaited;
 import 'dart:convert';
 import 'dart:io' show File, Directory, FileSystemEntity, FileSystemEntityType;
 import 'package:universal_platform/universal_platform.dart';
@@ -53,7 +54,7 @@ class WebViewPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
     {
       'project': 'octubre_calendar',
       'title': '拍立得日历海报',
-      'description': '拍立得日历拼贴海报合集：十月单月海报 + 2025 全年剪贴簿，从相册多选照片填充',
+      'description': '拍立得日历拼贴海报合集：十月单月海报 + 2025 全年剪贴簿 + 2022 手账拼贴，从相册多选照片填充',
     },
   ];
 
@@ -108,6 +109,7 @@ class WebViewPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
 
       // 图片选择
       'selectImages': _jsSelectImages,
+      'selectMonthPhotos': _jsSelectMonthPhotos,
     };
   }
 
@@ -145,8 +147,9 @@ class WebViewPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
       httpServer: localHttpServer,
     );
 
-    // 初始化浏览器下载管理器（WebView 下载事件记录）
+    // 初始化浏览器下载管理器（WebView 下载事件记录）并恢复历史记录
     browserDownloadManager = BrowserDownloadManager();
+    unawaited(browserDownloadManager.load());
 
     // 检查 proxy 支持
     await proxyController.checkSupport();
