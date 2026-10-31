@@ -15,6 +15,10 @@
     "bytes": 282771,
     "sha256": "537dde496e0f776e775dec1bb7bfe3fbc5eebf89112469a1a910ad0433ccde66"
   },
+  "webm/蹦迪-戴墨镜.mov": {
+    "bytes": 644742852,
+    "sha256": "90386336aa6a9420cc8af328870dbb26082aa3299e128ad6ce36b203e61df1bd"
+  },
   "webm/变鸽子.webm": {
     "bytes": 509462,
     "sha256": "796eba8ebe705e9339035e533e4f913fb8b9810432dcd6e7ae4fc1602e9ce3cf"
@@ -26,6 +30,10 @@
   "webm/拆礼物.webm": {
     "bytes": 517803,
     "sha256": "6f781e7eac2b295417c80ff9468902280fdcf3ae5921d59977daa8dab537940c"
+  },
+  "webm/唱歌-清唱.mov": {
+    "bytes": 383233110,
+    "sha256": "8dca0befbf4f771b7f47523d99c20815db9046da62c0c6125ae9424d0425ae33"
   },
   "webm/超大伸懒腰.webm": {
     "bytes": 396987,
@@ -119,6 +127,10 @@
     "bytes": 751040,
     "sha256": "3258f91b2000d949ba38f34c1f161b0d5fa148ecffb5a95eb8a3e10b5df7fc87"
   },
+  "webm/打滚-原地.mov": {
+    "bytes": 306886395,
+    "sha256": "3ba2d47eebdf4c705e0a5401fb1915eaebb6e6e74cb7d016f31c3395e30493a5"
+  },
   "webm/打瞌睡被惊醒.webm": {
     "bytes": 454028,
     "sha256": "7e10c87cfcbd63b20b5a3787be71b0500381d54ea04a5ac0e9d99f59ed49a6d7"
@@ -163,6 +175,18 @@
     "bytes": 981435,
     "sha256": "814d41e7d619f9a61f38e5494a0cfd703f8bcfd829a14fa921e1c59acf3ce872"
   },
+  "webm/逗狗.mov": {
+    "bytes": 406572087,
+    "sha256": "f4e903b0a100c756fe3196c5799bd95eec17d2cd2cfcea7b6095c5932cb6e549"
+  },
+  "webm/逗蝴蝶.mov": {
+    "bytes": 365917982,
+    "sha256": "4c64ac684ae35b2019a3d33e72d698ab2e928ca090aa1be46dc94e09ca50631f"
+  },
+  "webm/逗猫.mov": {
+    "bytes": 409734618,
+    "sha256": "526e081fbe78351832700b6ffbb951bd819fcb43c8e3e0f2cff0129eb2f9e1bb"
+  },
   "webm/堆雪人.webm": {
     "bytes": 519196,
     "sha256": "478bdc31cc60e55e3efa139b81c7d8680a8cf83aca2304495e6da50a20a09cf5"
@@ -182,6 +206,10 @@
   "webm/放烟花.webm": {
     "bytes": 1330462,
     "sha256": "539ac09ae29ed0a11bd828df096f3e72f606529b3c59e29a5fcf3b051779a4d0"
+  },
+  "webm/风扇前啊啊叫.mov": {
+    "bytes": 401545044,
+    "sha256": "50d4138dec3d060737e95b75f47da92d6f5600e10fb1f3bb2fb686a763e81395"
   },
   "webm/工作加班.mov": {
     "bytes": 694701013,
@@ -218,6 +246,10 @@
   "webm/蝴蝶蜜蜂环绕头顶开花.webm": {
     "bytes": 852828,
     "sha256": "fd286c78001fe57fc093c06a4b79ef077ade2dacd2a77e011d3f393f587707ec"
+  },
+  "webm/换装侦探服思考.mov": {
+    "bytes": 349472457,
+    "sha256": "87298cf6478edb431ad9a41550dc1f9b2ca1bd82020e5ae2f7c2d1d41be3bc6d"
   },
   "webm/鲸鱼吐泡泡特效.webm": {
     "bytes": 452096,
@@ -271,6 +303,10 @@
     "bytes": 549316,
     "sha256": "a64c08a4b7e5c3549616faf9dcd418e17f156b4b72d906646e4d57067df70d23"
   },
+  "webm/沙发打瞌睡.mov": {
+    "bytes": 418083920,
+    "sha256": "504b16fa00b093daed40f7829df44ede5538487f85eb9d0cbd01032fe175d3cb"
+  },
   "webm/深度思考碎碎念.webm": {
     "bytes": 433031,
     "sha256": "db66867cd1f5bf68b0638fe1f966d0fdf95d1573523e60c77aa8913706118e82"
@@ -282,6 +318,10 @@
   "webm/收红包.webm": {
     "bytes": 472277,
     "sha256": "a0e7a9a5997aff1357c76eeaaad7a01503c320f7017766dd5a42e643daa505c1"
+  },
+  "webm/刷牙.mov": {
+    "bytes": 401238837,
+    "sha256": "0ca6320a207835b49debe1a695c8f931415081e662cad4c8244f5cc6915a0b1b"
   },
   "webm/涮火锅.webm": {
     "bytes": 466547,
@@ -306,6 +346,10 @@
   "webm/踢毽子.webm": {
     "bytes": 531015,
     "sha256": "68937b619a44e9ca7ccdfe77e5657f7a9bfa238beb33768378b6f254a16f3dbd"
+  },
+  "webm/跳绳-减肥.mov": {
+    "bytes": 810670499,
+    "sha256": "3557062fd07722e80007a8bdb1d09c178a4232376175d8b2a15c6079f5ab2409"
   },
   "webm/偷吃零食被抓住.webm": {
     "bytes": 432201,
@@ -415,6 +459,10 @@
     "bytes": 614526,
     "sha256": "79882aedd7b77caaacce1a34dece68e2f001a3dbfa5f9d049c1ce2fc04518d52"
   },
+  "webm/摘花送镜头.mov": {
+    "bytes": 430919364,
+    "sha256": "a3d42ee5dcf5485076e90f556d8b4dc2620f8c262a1e50fad868ed2482088c09"
+  },
   "webm/照镜子.webm": {
     "bytes": 504127,
     "sha256": "13dc61c003e500d906b6526765072b7a78c0709491a397d4e70a88ec7ea63310"
@@ -423,9 +471,17 @@
     "bytes": 524724,
     "sha256": "e8e599b12da7f3437c98425f6b192dd0c81a6b63bbba5e7927f53c22f757b094"
   },
+  "webm/中国功夫.mov": {
+    "bytes": 371928228,
+    "sha256": "9740ac70b7afbf8c6bacbf2cab60bf2e4867bc989517901a2405d48b436cfd24"
+  },
   "webm/中秋赏月吃月饼.webm": {
     "bytes": 512341,
     "sha256": "3f64003262d3f129470721495695ecd231795d859693a748914c02c6e3883a3a"
+  },
+  "webm/转呼啦圈.mov": {
+    "bytes": 389848185,
+    "sha256": "ac6344d268c5bf682b81ff4a663fccc578f19779994daccbc457bd9206da94d9"
   },
   "webm/装点圣诞树.webm": {
     "bytes": 818456,
@@ -463,6 +519,14 @@
     "bytes": 995612,
     "sha256": "d682ff17f774b18b8a0b015bcc5a72f2c1fa2f7a93c81a8a06737f06a8890e15"
   },
+  "spritesheet/蹦迪-戴墨镜.json": {
+    "bytes": 658,
+    "sha256": "2232b75f47fd2c1db7bd23a284cae9f9cea03ff7f987b39695daaf3ce65e3bf4"
+  },
+  "spritesheet/蹦迪-戴墨镜.webp": {
+    "bytes": 3979448,
+    "sha256": "54a08ca81b59695a0b056e18b5fc96d84d3776a4b3724d90fa92bdf94e718cfc"
+  },
   "spritesheet/变鸽子.json": {
     "bytes": 592,
     "sha256": "bee4a805d73c9a4311525cb38f8a76422f0ff4b8a55bdcfaaa41c921b1aeeab0"
@@ -486,6 +550,14 @@
   "spritesheet/拆礼物.webp": {
     "bytes": 988426,
     "sha256": "05f3207b69707c1e2901e1cf60fd8365e004d319004f392a2a456bf99aa41087"
+  },
+  "spritesheet/唱歌-清唱.json": {
+    "bytes": 654,
+    "sha256": "8f98d29ee9846f6919af0433fff515d945532a2d0da795da62188f13a8b1f7a5"
+  },
+  "spritesheet/唱歌-清唱.webp": {
+    "bytes": 3917342,
+    "sha256": "0e1569688e168eafeda673f6cc668acbb10a4153f10ebd4c12dab6728564cfb3"
   },
   "spritesheet/超大伸懒腰.json": {
     "bytes": 598,
@@ -671,6 +743,14 @@
     "bytes": 990874,
     "sha256": "7a09cad534bfa907d0eeeee55a995d6ac53957cb22eb8a97c1a1680093506fe7"
   },
+  "spritesheet/打滚-原地.json": {
+    "bytes": 654,
+    "sha256": "f7f15461657eb1870634518e02fe49dd98b6c5aa23657dad75a8268a78746e38"
+  },
+  "spritesheet/打滚-原地.webp": {
+    "bytes": 3881226,
+    "sha256": "1305f5b7088184b027627f9ec71dc3c125c6acdef033cdb00040a9ce99fc101e"
+  },
   "spritesheet/打瞌睡被惊醒.json": {
     "bytes": 601,
     "sha256": "cdeeec9ede3a17e5ea3a0deebd5533beb22cfab1c82e0306339f59053e15970e"
@@ -759,6 +839,30 @@
     "bytes": 991682,
     "sha256": "b1c8176cf9c685935c9a60ffb45768c50cbd5704133082d93d3b3fb829551125"
   },
+  "spritesheet/逗狗.json": {
+    "bytes": 647,
+    "sha256": "1bff27ab1f84d5076d578dadf51e2bb658e82dd1e6690aea8a8369ee85cde192"
+  },
+  "spritesheet/逗狗.webp": {
+    "bytes": 3985858,
+    "sha256": "450030fda7d4b6ff6b0e38cd7df256c3f7c142fde38e6e2133a0cf3a61f0dbea"
+  },
+  "spritesheet/逗蝴蝶.json": {
+    "bytes": 650,
+    "sha256": "72d5e3b3ba35e83a2e645b7dabf75fb011453e3f07063f0df82af528f9947705"
+  },
+  "spritesheet/逗蝴蝶.webp": {
+    "bytes": 3970934,
+    "sha256": "9c507d8ccb37438a3422434d7ff69cbf04f8fd523f61af9b2e7a4055408a5147"
+  },
+  "spritesheet/逗猫.json": {
+    "bytes": 647,
+    "sha256": "b767fc1efa84502b63c7d47db4bc428f51c819a853492324ddd0aad334604dfb"
+  },
+  "spritesheet/逗猫.webp": {
+    "bytes": 3974336,
+    "sha256": "b1f2ea8d515758c67c6da478cd81c0aa7b9d93e2d9c75dfb4ae854fc4a2ce510"
+  },
   "spritesheet/堆雪人.json": {
     "bytes": 592,
     "sha256": "74689ba9940fe01c7c25d622a3fe6ac5209a82ca417dd06754c4a054383644d8"
@@ -798,6 +902,14 @@
   "spritesheet/放烟花.webp": {
     "bytes": 987230,
     "sha256": "e2e58f16a86d426a4dbdf055d2a2bd7e494acd1f86997c59afa4d541a47189a6"
+  },
+  "spritesheet/风扇前啊啊叫.json": {
+    "bytes": 659,
+    "sha256": "29292c5f46dc4284b442f9ab31abe16cbe962ca6bf4f783245ce3ea0fea3099c"
+  },
+  "spritesheet/风扇前啊啊叫.webp": {
+    "bytes": 3998486,
+    "sha256": "2ad4097cfb75bebafa9ce9c528a73019184d45e23abb3e623eefc63dc7cfe194"
   },
   "spritesheet/工作加班.json": {
     "bytes": 853,
@@ -870,6 +982,14 @@
   "spritesheet/蝴蝶蜜蜂环绕头顶开花.webp": {
     "bytes": 989522,
     "sha256": "b3300d7793c439f11cd10e1012f84b40b895ecc9a5b1c541312192c7e412ed94"
+  },
+  "spritesheet/换装侦探服思考.json": {
+    "bytes": 662,
+    "sha256": "e25a7ec332f867ea3617184066dc6981579490b4820a379ec343cb24db478eba"
+  },
+  "spritesheet/换装侦探服思考.webp": {
+    "bytes": 3975876,
+    "sha256": "63f80ea76cb985c4d25ca1b39ce250ee327ce19a1af42edae3c5dfcf1d9b795a"
   },
   "spritesheet/鲸鱼吐泡泡特效.json": {
     "bytes": 604,
@@ -975,6 +1095,14 @@
     "bytes": 998826,
     "sha256": "18a2926aaae97ddea717b759db2cedbeb1b1e7558910365fdd6a3aad8cefbef2"
   },
+  "spritesheet/沙发打瞌睡.json": {
+    "bytes": 656,
+    "sha256": "34b9773c58f9554d235fdfb7684879c9ba1f0fea6659d0c555dec9a6509f6131"
+  },
+  "spritesheet/沙发打瞌睡.webp": {
+    "bytes": 3940988,
+    "sha256": "c9d364ee32e4d19dbd1d46171f079b8d27205f82ab7581ef17cdfb2ec8edbf25"
+  },
   "spritesheet/深度思考碎碎念.json": {
     "bytes": 603,
     "sha256": "6cac7d249e97c392f06f13e3506fbe2700c20fa6cc5564b14e8e2b84eda5ee7d"
@@ -998,6 +1126,14 @@
   "spritesheet/收红包.webp": {
     "bytes": 987202,
     "sha256": "a85a3d4631e4b68b64b6959312c67ab7b04b5c72dbf4fdd7ec6ff5dff31b0d15"
+  },
+  "spritesheet/刷牙.json": {
+    "bytes": 647,
+    "sha256": "5f505c4c4c9fc30507ed45ab4fe331a8c74968af21f09d0a05b211e536718a26"
+  },
+  "spritesheet/刷牙.webp": {
+    "bytes": 3968326,
+    "sha256": "8871ed04d00c8dcacdce3c507bed8c0857180ef248177ab0431c92e25d81ab11"
   },
   "spritesheet/涮火锅.json": {
     "bytes": 592,
@@ -1046,6 +1182,14 @@
   "spritesheet/踢毽子.webp": {
     "bytes": 995594,
     "sha256": "13e41a212e08fca61e82e52ec58dd7d359af420c82e23a3028a5ba2fb82943de"
+  },
+  "spritesheet/跳绳-减肥.json": {
+    "bytes": 654,
+    "sha256": "769506530a38732eeb2d585778eb4133f0543ea0d59700c525271cb201036347"
+  },
+  "spritesheet/跳绳-减肥.webp": {
+    "bytes": 3925968,
+    "sha256": "d961cf46b3a80a58ad1327b924c544d556e6245846c20ea25fe93b3d0a0a5534"
   },
   "spritesheet/偷吃零食被抓住.json": {
     "bytes": 604,
@@ -1263,6 +1407,14 @@
     "bytes": 994944,
     "sha256": "22809a6be9b201203f01750ad67413290ccb5bb3d43269f15037e9fb76cea91e"
   },
+  "spritesheet/摘花送镜头.json": {
+    "bytes": 656,
+    "sha256": "d34fa9cc10091a4aaf422ede2775905d12821a31ddafd4de06825765266b87ac"
+  },
+  "spritesheet/摘花送镜头.webp": {
+    "bytes": 3982060,
+    "sha256": "b087e8ee23bcaa31fbc2a88d729916c7b433ff44aceb303d6f9727d80fc11c5d"
+  },
   "spritesheet/照镜子.json": {
     "bytes": 592,
     "sha256": "f5a3ba94bd7fdbd5f173dc168340d5288e95f7d51592dc09e55b71be32cf19d2"
@@ -1279,6 +1431,14 @@
     "bytes": 994228,
     "sha256": "1b5442d151dc9c0900b572c6faf363c1022779bb8d686c7ecff585430984ac21"
   },
+  "spritesheet/中国功夫.json": {
+    "bytes": 653,
+    "sha256": "aaea6afc9994f43a2065be879ff0d32ac60e9e3846e8c669474b98595071c27a"
+  },
+  "spritesheet/中国功夫.webp": {
+    "bytes": 3931194,
+    "sha256": "9a2baaef5adc2f5fbdba6722ba289391493a8af38849ea634c3c0c781de70ab2"
+  },
   "spritesheet/中秋赏月吃月饼.json": {
     "bytes": 604,
     "sha256": "d39a0e7d440a2b0504b19e3c7737067968eed6efee0d62e39893b39af82d5518"
@@ -1286,6 +1446,14 @@
   "spritesheet/中秋赏月吃月饼.webp": {
     "bytes": 990702,
     "sha256": "4c01e06f96fe1ea37b970f99dcb10ead641e93fcc03d76545c737c0fb65f87f3"
+  },
+  "spritesheet/转呼啦圈.json": {
+    "bytes": 653,
+    "sha256": "09c27fe7f8e6d5cf5708e5b22177dbe56e203d4471aae1a27ea9ff7cc48e90de"
+  },
+  "spritesheet/转呼啦圈.webp": {
+    "bytes": 3941862,
+    "sha256": "8a4575e077269f9948e3adabe202ddeb0809cbdba809946f8311a6e598bc67ed"
   },
   "spritesheet/装点圣诞树.json": {
     "bytes": 597,
