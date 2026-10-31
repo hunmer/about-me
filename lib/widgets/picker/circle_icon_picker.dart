@@ -138,7 +138,7 @@ class CircleIconPicker extends StatelessWidget {
                     _pickBackgroundColor(context);
                   },
                 ),
-              if (supportedTypes.contains(CircleIconPickerType.icon))
+              if (supportedTypes.contains(CircleIconPickerType.icon)) ...[
                 _PickerMenuAction(
                   icon: DsIconKind.mood,
                   label: 'app_selectIcon'.tr,
@@ -148,6 +148,19 @@ class CircleIconPicker extends StatelessWidget {
                     _pickIcon(context);
                   },
                 ),
+                // 快捷清空：已设置图标时菜单内也提供「清除设置」
+                if (showClearOption && onClear != null && hasIcon)
+                  _PickerMenuAction(
+                    icon: DsIconKind.close,
+                    label: 'app_clearSetting'.tr,
+                    theme: popoverTheme,
+                    danger: true,
+                    onTap: () {
+                      close();
+                      onClear!();
+                    },
+                  ),
+              ],
               if (supportedTypes.contains(CircleIconPickerType.image)) ...[
                 _PickerMenuAction(
                   icon: DsIconKind.photoLibrary,
@@ -174,39 +187,42 @@ class CircleIconPicker extends StatelessWidget {
           );
         },
         child: SizedBox(
-          width: size,
-          height: size,
+          // 外扩 8px：清空角标悬浮于圆钮右上边界外，需完整落在命中区域内才可点击
+          width: size + 8,
+          height: size + 8,
           child: Stack(
             clipBehavior: Clip.none,
             children: [
-              Container(
-                width: size,
-                height: size,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: hasImage ? null : backgroundColor,
-                  border: Border.all(
-                    color: theme.primary.withValues(alpha: 0.5),
-                    width: 2,
+              Center(
+                child: Container(
+                  width: size,
+                  height: size,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: hasImage ? null : backgroundColor,
+                    border: Border.all(
+                      color: theme.primary.withValues(alpha: 0.5),
+                      width: 2,
+                    ),
                   ),
+                  child:
+                      hasImage
+                          ? AdaptiveImage(
+                            imagePath: avatarUrl,
+                            width: size,
+                            height: size,
+                            fit: BoxFit.cover,
+                            shape: BoxShape.circle,
+                          )
+                          : Icon(
+                            currentIcon,
+                            size: size / 2,
+                            color: Colors.white,
+                          ),
                 ),
-                child:
-                    hasImage
-                        ? AdaptiveImage(
-                          imagePath: avatarUrl,
-                          width: size,
-                          height: size,
-                          fit: BoxFit.cover,
-                          shape: BoxShape.circle,
-                        )
-                        : Icon(
-                          currentIcon,
-                          size: size / 2,
-                          color: Colors.white,
-                        ),
               ),
               if (showClearBadge)
-                Positioned(top: -4, right: -4, child: _buildClearBadge(theme)),
+                Positioned(top: 0, right: 0, child: _buildClearBadge(theme)),
             ],
           ),
         ),
@@ -217,6 +233,7 @@ class CircleIconPicker extends StatelessWidget {
   /// 右上角快捷清空角标（x 图标小圆钮）
   Widget _buildClearBadge(AppThemeData theme) {
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: onClear,
       child: Container(
         width: 18,

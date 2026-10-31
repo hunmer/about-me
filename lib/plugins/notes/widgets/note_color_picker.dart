@@ -100,7 +100,11 @@ class NoteIconPickerRow extends StatelessWidget {
       onClear: () => onChanged(null),
       onValueChanged: (value) {
             final icon = value['icon'] as IconData?;
-            if (icon == null) return;
+            // icon == null 是清空事件（右上角 x 角标 / 菜单「清除设置」）
+            if (icon == null) {
+              onChanged(null);
+              return;
+            }
             // 反查 AppIcons 键名持久化（与悬浮球/相册标签的既有模式一致）
             for (final entry in AppIcons.predefinedIcons.entries) {
               if (entry.value == icon) {

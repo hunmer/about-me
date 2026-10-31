@@ -250,6 +250,7 @@ const Map<String, String> appTranslationsEn = {
   // Media selection
   'app_selectImage': 'Select image',
   'app_removeImage': 'Remove image',
+  'app_clearSetting': 'Clear setting',
   'app_loadingVideo': 'Loading video...',
   'app_videoLoadFailed': 'Video load failed: @error',
   'app_audioLoadFailed': 'Audio load failed',

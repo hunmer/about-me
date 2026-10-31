@@ -237,6 +237,7 @@ const Map<String, String> appTranslationsZh = {
   // Media selection
   'app_selectImage': '选择图片',
   'app_removeImage': '移除图片',
+  'app_clearSetting': '清除设置',
   'app_loadingVideo': '正在加载视频...',
   'app_videoLoadFailed': '视频加载失败: @error',
   'app_audioLoadFailed': '音频加载失败',
