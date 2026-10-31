@@ -124,15 +124,34 @@ extension _JellyLive2DBubble on _JellyLive2DState {
   /// 连续点击时直接换台词重新打字
   void _showBubble(String message, {bool streaming = false}) {
     _bubbleTimer?.cancel();
+    _bubbleResumeTimer?.cancel();
+    _bubbleTypingComplete = false;
     setState(() {
       _bubbleMessage = message;
       _bubbleStreaming = streaming;
     });
   }
 
-  /// 台词逐字浮现完毕：从现在起再展示 [_bubbleDuration] 后收起
+  bool get _bubbleWaitingForSpeech =>
+      _bubbleMessage != null &&
+      _bubbleMessage == widget.message &&
+      Live2DPlugin.instance.speakingReply.value == _bubbleMessage;
+
+  void _handleBubbleSpeechChanged() {
+    if (!mounted || _bubbleMessage == null) return;
+    if (_bubbleWaitingForSpeech) {
+      _bubbleTimer?.cancel();
+    } else if (_bubbleTypingComplete) {
+      _onBubbleTyped();
+    }
+  }
+
+  /// 打字和对应语音均结束后，再按原有阅读时长收起。
   void _onBubbleTyped() {
     _bubbleTimer?.cancel();
+    if (_bubbleStreaming || _bubbleMessage == null) return;
+    _bubbleTypingComplete = true;
+    if (_bubbleWaitingForSpeech) return;
     final length = _bubbleMessage?.runes.length ?? 0;
     final seconds = (6 + (length ~/ 80) * 4).clamp(
       _minimumBubbleDuration.inSeconds,
@@ -179,10 +198,9 @@ extension _JellyLive2DBubble on _JellyLive2DState {
         topInset;
     // 最小宽度可能超出可用宽度，上限兜底避免 clamp 区间倒置
     final left = (((width - bubbleWidth) / 2 + width * _bubbleOffsetX).clamp(
-          margin,
-          math.max(margin, width - margin - bubbleWidth),
-        ))
-        .toDouble();
+      margin,
+      math.max(margin, width - margin - bubbleWidth),
+    )).toDouble();
 
     return Positioned(
       left: left,

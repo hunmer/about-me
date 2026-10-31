@@ -43,6 +43,11 @@ class Live2DPlugin extends BasePlugin {
   /// 当前语音分析帧；JellyLive2D 订阅此值并更新 ParamMouthOpenY。
   final ValueNotifier<Live2DVoiceFrame?> voiceFrame =
       ValueNotifier<Live2DVoiceFrame?>(null);
+
+  /// 正在准备或播报的回复；气泡等待对应语音结束后再隐藏。
+  final ValueNotifier<String?> speakingReply = ValueNotifier<String?>(null);
+  int _replySpeechGeneration = 0;
+
   final Live2DVoiceAnalyzer voiceAnalyzer = Live2DVoiceAnalyzer();
   Timer? _voiceAnalysisTimer;
   int _voiceAnalysisGeneration = 0;
@@ -365,8 +370,16 @@ class Live2DPlugin extends BasePlugin {
     // 语音设置统一存档绑定的 Agent 上；服务未指定时走全局默认服务
     final agentId = selected?.agentId;
     if (agentId == null) return fireSpeechStart();
+    final generation = ++_replySpeechGeneration;
+    speakingReply.value = reply;
+    void finishSpeech() {
+      if (generation != _replySpeechGeneration) return;
+      speakingReply.value = null;
+    }
+
     try {
       final agent = await AgentController().getAgent(agentId);
+      if (generation != _replySpeechGeneration) return;
       if (agent == null || !agent.ttsEnabled) return fireSpeechStart();
       await TTSPlugin.instance.speak(
         reply,
@@ -403,8 +416,13 @@ class Live2DPlugin extends BasePlugin {
             debugPrint('[Live2D][Voice] unsupported TTS audio format: $format');
           }
         },
-        onComplete: resetVoiceAnalysis,
+        onComplete: () {
+          if (generation != _replySpeechGeneration) return;
+          resetVoiceAnalysis();
+          finishSpeech();
+        },
         onError: (error) {
+          finishSpeech();
           debugPrint('[Live2DChat] TTS failed: $error');
           // TTS 失败时回退：动画与回复完成同步。
           fireSpeechStart();
@@ -418,6 +436,8 @@ class Live2DPlugin extends BasePlugin {
     } catch (error) {
       debugPrint('[Live2DChat] TTS unavailable: $error');
       fireSpeechStart();
+    } finally {
+      finishSpeech();
     }
   }
 
@@ -491,7 +511,8 @@ class Live2DPlugin extends BasePlugin {
     final data = res['success'] == true ? res['data'] : null;
     final rawArchives = data is Map ? data['archives'] : null;
     // 迁移：旧全局“随机走动”设置 → 档案级字段（旧档案无该键时按旧全局值填充）
-    final legacyWalkEnabled = settings['videoRandomWalkEnabled'] as bool? ?? false;
+    final legacyWalkEnabled =
+        settings['videoRandomWalkEnabled'] as bool? ?? false;
     archives
       ..clear()
       ..addAll(
@@ -648,7 +669,8 @@ class Live2DPlugin extends BasePlugin {
     expressions: videoAnimations == null
         ? model.expressions.map((item) => item.label).toList()
         : const <String>[],
-    motions: videoAnimations ??
+    motions:
+        videoAnimations ??
         model.motions
             .where((item) => item.group.toLowerCase() != 'idle')
             .map((item) => item.label)

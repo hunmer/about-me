@@ -230,6 +230,7 @@ class _JellyLive2DState extends State<JellyLive2D>
   String? _bubbleMessage;
   bool _bubblePositionPreview = false;
   bool _bubbleStreaming = false;
+  bool _bubbleTypingComplete = false;
   Timer? _bubbleTimer;
   Timer? _bubbleResumeTimer;
   Timer? _jevReplyTimer;
@@ -240,7 +241,9 @@ class _JellyLive2DState extends State<JellyLive2D>
   @override
   void didUpdateWidget(covariant JellyLive2D oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.message != null && widget.message != oldWidget.message) {
+    if (widget.message != null &&
+        (widget.message != oldWidget.message ||
+            widget.streaming != oldWidget.streaming)) {
       _showBubble(widget.message!, streaming: widget.streaming);
       _scheduleJevReply(widget.message!, widget.streaming);
     }
@@ -279,6 +282,7 @@ class _JellyLive2DState extends State<JellyLive2D>
     _controller.onTap = _handleTap;
     _controller.addListener(_onViewStateChanged);
     _voiceFrame.addListener(_handleVoiceFrame);
+    Live2DPlugin.instance.speakingReply.addListener(_handleBubbleSpeechChanged);
     widget.motionRequest?.addListener(_handleMotionRequest);
     widget.videoAnimationRequest?.addListener(_handleExternalVideoRequest);
     widget.expressionRequest?.addListener(_handleExpressionRequest);
@@ -383,6 +387,9 @@ class _JellyLive2DState extends State<JellyLive2D>
     widget.expressionRequest?.removeListener(_handleExpressionRequest);
     _controller.removeListener(_onViewStateChanged);
     _voiceFrame.removeListener(_handleVoiceFrame);
+    Live2DPlugin.instance.speakingReply.removeListener(
+      _handleBubbleSpeechChanged,
+    );
     _bubbleTimer?.cancel();
     _bubbleResumeTimer?.cancel();
     _jevReplyTimer?.cancel();
