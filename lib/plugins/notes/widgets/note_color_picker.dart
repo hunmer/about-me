@@ -73,8 +73,9 @@ class NoteColorSwatchRow extends StatelessWidget {
   }
 }
 
-/// 手绘风格水印图标选择行（无标题）：「无」项手绘圆钮（close 图标），
-/// 其余接入 CircleIconPickerField 全量图标库；新选择存 AppIcons 键名，
+/// 手绘风格水印图标选择行（无标题）：
+/// 接入 CircleIconPickerField 全量图标库；已设置图标时右上角展示 x 角标，
+/// 点击快捷清空（置 null）；新选择存 AppIcons 键名，
 /// 旧 DsIconKind 枚举名继续兼容回显
 class NoteIconPickerRow extends StatelessWidget {
   const NoteIconPickerRow({
@@ -91,37 +92,13 @@ class NoteIconPickerRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
-    final isNone = selectedIcon == null;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        GestureDetector(
-          onTap: () => onChanged(null),
-          child: Container(
-            width: 36,
-            height: 36,
-            decoration: dsSketchDecoration(
-              theme: theme,
-              fillColor: isNone ? theme.primary : null,
-              circle: true,
-              strokeWidth: isNone ? 2.4 : 1.5,
-              seed: 200,
-            ),
-            child: Center(
-              child: DsIcon(
-                DsIconKind.close,
-                size: 18,
-                color: isNone ? theme.onPrimary : theme.textSub,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        CircleIconPickerField(
-          currentIcon: _resolveIconData(),
-          currentBackgroundColor: theme.primary,
-          supportedTypes: const {CircleIconPickerType.icon},
-          onValueChanged: (value) {
+    return CircleIconPickerField(
+      currentIcon: _resolveIconData(),
+      currentBackgroundColor: theme.primary,
+      supportedTypes: const {CircleIconPickerType.icon},
+      hasIcon: selectedIcon != null,
+      onClear: () => onChanged(null),
+      onValueChanged: (value) {
             final icon = value['icon'] as IconData?;
             if (icon == null) return;
             // 反查 AppIcons 键名持久化（与悬浮球/相册标签的既有模式一致）
@@ -132,8 +109,6 @@ class NoteIconPickerRow extends StatelessWidget {
               }
             }
           },
-        ),
-      ],
     );
   }
 

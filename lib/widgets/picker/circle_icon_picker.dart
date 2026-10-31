@@ -34,6 +34,15 @@ class CircleIconPicker extends StatelessWidget {
   /// 图片保存目录（仅支持图片选择时使用）
   final String imageSaveDirectory;
 
+  /// 快捷清空选项（默认开启）：已设置图标时右上角展示 x 角标
+  final bool showClearOption;
+
+  /// 是否已设置图标（用于判断是否展示快捷清空角标）
+  final bool hasIcon;
+
+  /// 快捷清空回调：点击右上角 x 角标触发；为 null 时不展示角标
+  final VoidCallback? onClear;
+
   final Function(IconData) onIconSelected;
   final Function(Color) onColorSelected;
 
@@ -53,6 +62,9 @@ class CircleIconPicker extends StatelessWidget {
       CircleIconPickerType.color,
     },
     this.imageSaveDirectory = 'openai/agent_avatars',
+    this.showClearOption = true,
+    this.hasIcon = true,
+    this.onClear,
     this.onImageSelected,
   });
 
@@ -103,6 +115,9 @@ class CircleIconPicker extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
     final hasImage = avatarUrl != null && avatarUrl!.isNotEmpty;
+    // 快捷清空角标：已设置图标且提供清空回调时展示
+    final showClearBadge =
+        showClearOption && onClear != null && hasIcon && !hasImage;
 
     return Center(
       child: DSPopover(
@@ -158,28 +173,60 @@ class CircleIconPicker extends StatelessWidget {
             ],
           );
         },
-        child: Container(
+        child: SizedBox(
           width: size,
           height: size,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: hasImage ? null : backgroundColor,
-            border: Border.all(
-              color: theme.primary.withValues(alpha: 0.5),
-              width: 2,
-            ),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: size,
+                height: size,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: hasImage ? null : backgroundColor,
+                  border: Border.all(
+                    color: theme.primary.withValues(alpha: 0.5),
+                    width: 2,
+                  ),
+                ),
+                child:
+                    hasImage
+                        ? AdaptiveImage(
+                          imagePath: avatarUrl,
+                          width: size,
+                          height: size,
+                          fit: BoxFit.cover,
+                          shape: BoxShape.circle,
+                        )
+                        : Icon(
+                          currentIcon,
+                          size: size / 2,
+                          color: Colors.white,
+                        ),
+              ),
+              if (showClearBadge)
+                Positioned(top: -4, right: -4, child: _buildClearBadge(theme)),
+            ],
           ),
-          child:
-              hasImage
-                  ? AdaptiveImage(
-                    imagePath: avatarUrl,
-                    width: size,
-                    height: size,
-                    fit: BoxFit.cover,
-                    shape: BoxShape.circle,
-                  )
-                  : Icon(currentIcon, size: size / 2, color: Colors.white),
         ),
+      ),
+    );
+  }
+
+  /// 右上角快捷清空角标（x 图标小圆钮）
+  Widget _buildClearBadge(AppThemeData theme) {
+    return GestureDetector(
+      onTap: onClear,
+      child: Container(
+        width: 18,
+        height: 18,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: theme.surface,
+          border: Border.all(color: theme.danger, width: 1.5),
+        ),
+        child: Icon(Icons.close, size: 12, color: theme.danger),
       ),
     );
   }

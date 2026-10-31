@@ -25,6 +25,12 @@ class CircleIconPickerField extends StatelessWidget {
   /// 支持的选择类型（透传 CircleIconPicker），默认图标 + 颜色
   final Set<CircleIconPickerType> supportedTypes;
 
+  /// 是否已设置图标（透传 CircleIconPicker，控制右上角快捷清空角标）
+  final bool hasIcon;
+
+  /// 快捷清空回调：点击右上角 x 角标触发，返回 {'icon': null, 'color': 当前色}
+  final VoidCallback? onClear;
+
   /// 值变化回调（返回 Map {'icon': IconData, 'color': Color}）
   final ValueChanged<Map<String, dynamic>> onValueChanged;
 
@@ -40,6 +46,8 @@ class CircleIconPickerField extends StatelessWidget {
       CircleIconPickerType.icon,
       CircleIconPickerType.color,
     },
+    this.hasIcon = true,
+    this.onClear,
   });
 
   @override
@@ -53,6 +61,16 @@ class CircleIconPickerField extends StatelessWidget {
             currentIcon: currentIcon,
             backgroundColor: currentBackgroundColor,
             supportedTypes: supportedTypes,
+            hasIcon: hasIcon,
+            onClear:
+                (enabled && onClear != null)
+                    ? () {
+                      onValueChanged({
+                        'icon': null,
+                        'color': currentBackgroundColor,
+                      });
+                    }
+                    : null,
             onIconSelected:
                 enabled
                     ? (icon) {
