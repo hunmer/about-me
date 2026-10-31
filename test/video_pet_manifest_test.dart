@@ -190,8 +190,8 @@ void main() {
     expect(legacy.movement.speed, 40);
     final defaults = VideoPetMovement.fromJson({});
     expect(defaults.speed, 40);
-    expect(defaults.minIdleSeconds, 10);
-    expect(defaults.maxIdleSeconds, 10);
+    expect(defaults.minIdleSeconds, 15);
+    expect(defaults.maxIdleSeconds, 60);
     expect(const VideoPetMovement().minIdleSeconds, 10);
     expect(const VideoPetMovement().maxIdleSeconds, 10);
     expect(defaults.enabled, isFalse);
@@ -814,6 +814,7 @@ void main() {
           animation.copyWith(
             sources: {'webm': 'webm/${animation.id}.webm'},
             spritesheet: null,
+            moving: null,
           ),
       ],
     );
@@ -827,7 +828,7 @@ void main() {
     );
     expect(prepared.baseUri, defaults.baseUri);
     expect(prepared.resolvedSources, isEmpty);
-    expect(prepared.manifest.animations, hasLength(106));
+    expect(prepared.manifest.animations, hasLength(108));
     expect(
       prepared.manifest.animations.every((a) => a.sources.keys.length == 1),
       isTrue,
@@ -894,11 +895,11 @@ void main() {
     },
   );
 
-  test('default asset manifest contains 106 WebP spritesheets', () async {
+  test('default asset manifest contains 108 WebP spritesheets', () async {
     const service = VideoPetImportService();
     final package = await service.loadDefault();
     expect(package.baseUri, 'assets/live2d/video/dsh_pet/');
-    expect(package.manifest.animations.length, 106);
+    expect(package.manifest.animations.length, 108);
     expect(package.manifest.canvasWidth, 640);
     expect(package.manifest.canvasHeight, 360);
     expect(package.manifest.idleAnimationId, '待机呼吸休闲');
@@ -910,12 +911,15 @@ void main() {
       expect(sheet.frameHeight, 360);
       expect(sheet.fps, 12);
       expect(sheet.columns, 8);
-      expect(sheet.frameCount, anyOf(59, 120));
-      if (sheet.frameCount == 120) expect(sheet.rows, 15);
+      expect(sheet.frameCount, anyOf(59, 120, 360));
+      expect(sheet.rows, (sheet.frameCount / sheet.columns).ceil());
       final source = animation.imageSource!;
       final file = File.fromUri(Uri.parse(package.resolveSource(source)));
       expect(file.existsSync(), isTrue, reason: source);
-      expect(file.lengthSync(), inExclusiveRange(0, 1000000));
+      final maxBytes = const {'工作加班', '熬夜刷手机'}.contains(animation.id)
+          ? 4000000
+          : 1000000;
+      expect(file.lengthSync(), inExclusiveRange(0, maxBytes));
     }
     expect(
       package.manifest.metadata['commit'],

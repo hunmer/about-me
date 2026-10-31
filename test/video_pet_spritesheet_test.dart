@@ -13,12 +13,12 @@ void main() {
   final animations = (manifest['animations'] as List)
       .cast<Map<String, dynamic>>();
 
-  test('default manifest contains all 106 distinct WebP animations', () {
+  test('default manifest contains all 108 distinct WebP animations', () {
     VideoPetManifest.fromJson(manifest).validate();
-    expect(animations, hasLength(106));
+    expect(animations, hasLength(108));
     expect(
       animations.map((animation) => animation['id']).toSet(),
-      hasLength(106),
+      hasLength(108),
     );
     final sources = <String>{};
     for (final animation in animations) {
@@ -29,7 +29,7 @@ void main() {
       expect(source, endsWith('.webp'));
       sources.add(source);
     }
-    expect(sources, hasLength(106));
+    expect(sources, hasLength(108));
   });
 
   test('Flutter decodes a full-size bundled WebP', () async {
@@ -51,6 +51,30 @@ void main() {
       codec.dispose();
     }
   });
+
+  for (final animation in animations.where(
+    (animation) => animation['audio'] != null,
+  )) {
+    test('Flutter decodes ${animation['id']} full-size WebP', () async {
+      final source =
+          (animation['sources'] as Map<String, dynamic>)['webp'] as String;
+      final bytes = File.fromUri(
+        manifestFile.uri.resolve(source),
+      ).readAsBytesSync();
+      final codec = await ui.instantiateImageCodec(bytes);
+      try {
+        final frame = await codec.getNextFrame();
+        try {
+          expect(frame.image.width, 5120);
+          expect(frame.image.height, 16200);
+        } finally {
+          frame.image.dispose();
+        }
+      } finally {
+        codec.dispose();
+      }
+    });
+  }
 
   for (final animation in animations) {
     test(
@@ -100,9 +124,19 @@ void main() {
         expect(frameWidth, manifest['canvasWidth']);
         expect(frameHeight, manifest['canvasHeight']);
         expect(fps, 12);
-        expect(frameCount, animation['id'] == '工作状态-垂头叹气冒汗' ? 59 : 120);
+        final isLongAnimation = const {
+          '工作加班',
+          '熬夜刷手机',
+        }.contains(animation['id']);
+        expect(
+          frameCount,
+          isLongAnimation ? 360 : (animation['id'] == '工作状态-垂头叹气冒汗' ? 59 : 120),
+        );
         expect(frameWidth * columns, lessThanOrEqualTo(8192));
-        expect(frameHeight * rows, lessThanOrEqualTo(8192));
+        expect(
+          frameHeight * rows,
+          lessThanOrEqualTo(isLongAnimation ? 16384 : 8192),
+        );
         final sourceDuration = metadata['SourceDurationSeconds'] as num;
         expect(
           (frameCount / fps - sourceDuration).abs(),
@@ -114,11 +148,12 @@ void main() {
 
         final bytes = imageFile.readAsBytesSync();
         expect(bytes, isNotEmpty);
-        expect(bytes.length, lessThan(1000000));
+        final maxBytes = isLongAnimation ? 4000000 : 1000000;
+        expect(bytes.length, lessThan(maxBytes));
         expect(metadata['ImageFormat'], 'webp');
         expect(metadata['Lossless'], isFalse);
         expect(metadata['EncodedBytes'], bytes.length);
-        expect(metadata['MaxImageBytes'], 1000000);
+        expect(metadata['MaxImageBytes'], maxBytes);
         expect(metadata['EncodingQuality'], inInclusiveRange(0, 100));
         expect(metadata['AlphaQuality'], inInclusiveRange(1, 100));
         final image = img.decodeWebP(bytes);
@@ -126,6 +161,13 @@ void main() {
         expect(image!.width, frameWidth * columns);
         expect(image.height, frameHeight * rows);
         expect(image.numChannels, 4);
+        if (isLongAnimation) {
+          expect(metadata['SourcePixFmt'], 'yuva444p12le');
+          expect(metadata['Alpha'], 'RGBA');
+          expect(metadata['HasAudio'], isTrue);
+          expect(metadata['AudioBytes'], greaterThan(0));
+          expect(metadata['AudioNote'], contains('Source video has no audio'));
+        }
 
         var hasTransparentPixel = false;
         var hasVisiblePixel = false;

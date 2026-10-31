@@ -217,12 +217,11 @@ class VideoPetMovement {
     'turnLeftAnimationId': turnLeftAnimationId,
     'turnRightAnimationId': turnRightAnimationId,
     'dragAnimationId': dragAnimationId,
-    if (wallBumpAnimationId.isNotEmpty) 'wallBumpAnimationId': wallBumpAnimationId,
-    if (wallBumpAnimationId.isNotEmpty &&
-        wallBumpStartFrame != null)
+    if (wallBumpAnimationId.isNotEmpty)
+      'wallBumpAnimationId': wallBumpAnimationId,
+    if (wallBumpAnimationId.isNotEmpty && wallBumpStartFrame != null)
       'wallBumpStartFrame': wallBumpStartFrame,
-    if (wallBumpAnimationId.isNotEmpty &&
-        wallBumpEndFrame != null)
+    if (wallBumpAnimationId.isNotEmpty && wallBumpEndFrame != null)
       'wallBumpEndFrame': wallBumpEndFrame,
     'speed': speed,
     'minIdleSeconds': minIdleSeconds,
@@ -304,6 +303,7 @@ class VideoPetAnimation {
     this.spritesheet,
     this.moving,
     this.enabled = true,
+    this.audio,
   });
 
   final String id;
@@ -318,6 +318,10 @@ class VideoPetAnimation {
 
   /// 是否参与 Jev 决策（false 的动作不会出现在候选列表中）。
   final bool enabled;
+
+  /// 可选音频：相对路径（相对 manifest baseUri，如 `audio/工作加班.m4a`），
+  /// 与精灵帧时间轴对齐同步播放。null / 空白 = 该动画无音频；不是 sources 项。
+  final String? audio;
 
   /// Validated spritesheets have exactly one image source.
   String? get imageFormat => sources.containsKey('webp')
@@ -373,6 +377,7 @@ class VideoPetAnimation {
       sources: Map.unmodifiable(sources.cast<String, String>()),
       moving: moving == null ? null : List.unmodifiable(moving),
       enabled: json['enabled'] as bool? ?? true,
+      audio: _audioPath(json['audio']),
       spritesheet: spritesheetJson == null
           ? null
           : VideoPetSpritesheet.fromJson(
@@ -388,6 +393,7 @@ class VideoPetAnimation {
     if (facing.isNotEmpty) 'facing': facing,
     'sources': Map<String, String>.of(sources),
     if (!enabled) 'enabled': false,
+    if (audio != null) 'audio': audio,
     if (spritesheet != null) 'spritesheet': spritesheet!.toJson(),
     if (moving != null)
       'moving': moving!.map((item) => item.toJsonList()).toList(),
@@ -402,6 +408,7 @@ class VideoPetAnimation {
     bool? enabled,
     Object? spritesheet = _unset,
     Object? moving = _unset,
+    Object? audio = _unset,
   }) => VideoPetAnimation(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -409,6 +416,7 @@ class VideoPetAnimation {
     facing: facing ?? this.facing,
     sources: Map.unmodifiable(sources ?? this.sources),
     enabled: enabled ?? this.enabled,
+    audio: identical(audio, _unset) ? this.audio : audio as String?,
     spritesheet: identical(spritesheet, _unset)
         ? this.spritesheet
         : spritesheet as VideoPetSpritesheet?,
@@ -418,14 +426,24 @@ class VideoPetAnimation {
         ? null
         : // 参数声明为 Object?，字面量空列表会被推断成 List<dynamic>，
           // 这里逐项 cast 而不是整体强转，避免 copyWith(moving: const []) 崩溃。
-        List.unmodifiable(
-            (moving as List).cast<VideoPetLocomotion>(),
-          ),
+          List.unmodifiable((moving as List).cast<VideoPetLocomotion>()),
   );
 
   Uri? resolveSource(String format, Uri baseUri) {
     final source = sources[format];
     return source == null ? null : baseUri.resolve(source);
+  }
+
+  /// 解析音频绝对引用：先按 [baseUri] 相对解析，再套用 [resolvedSources]
+  /// 的持久化映射（与 VideoPetPackage.resolveSource 同构）；无音频返回 null。
+  String? resolveAudio(
+    String baseUri, [
+    Map<String, String> resolvedSources = const {},
+  ]) {
+    final path = audio;
+    if (path == null || path.isEmpty) return null;
+    final resolved = Uri.parse(baseUri).resolve(path).toString();
+    return resolvedSources[resolved] ?? resolved;
   }
 
   void validate() {
@@ -481,6 +499,21 @@ class VideoPetAnimation {
           '${entry.key.toUpperCase()} source for $id must use image/${entry.key} data or end with .${entry.key}',
         );
       }
+    }
+    if (audio != null) {
+      final audioUri = Uri.tryParse(audio!);
+      // 与 sources 同规：允许相对路径与 http/https/file/data/blob 引用；
+      // 相对路径的越界风险由 ZIP 导入 containment 校验，manifest 不拒绝。
+      _require(
+        audio!.trim().isNotEmpty &&
+            audio!.codeUnits.every((unit) => unit >= 0x20) &&
+            audioUri != null &&
+            (!audioUri.hasScheme ||
+                const ['http', 'https', 'file', 'data', 'blob'].contains(
+                  audioUri.scheme,
+                )),
+        'Invalid audio for $id',
+      );
     }
   }
 }
@@ -745,6 +778,15 @@ class VideoPetRegion {
 
 void _require(bool condition, String message) {
   if (!condition) throw FormatException(message);
+}
+
+/// 解析动画顶层可选 `audio`：null → null；非字符串抛 FormatException；
+/// 空白字符串归一化为 null（与「无音频」等价）。
+String? _audioPath(Object? value) {
+  if (value == null) return null;
+  _require(value is String, 'audio must be a string');
+  final path = (value as String).trim();
+  return path.isEmpty ? null : path;
 }
 
 String _string(Map<String, dynamic> json, String key, [String fallback = '']) {

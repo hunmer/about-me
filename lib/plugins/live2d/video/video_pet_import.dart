@@ -86,11 +86,29 @@ class VideoPetImportService {
           animation.copyWith(
             sources: replacement.sources,
             spritesheet: replacement.spritesheet,
+            audio: replacement.audio,
             facing: animation.facing.isEmpty
                 ? replacement.facing
                 : animation.facing,
           ),
         );
+      }
+      // 仅追加明确发布的新动作；已同步过的存档不会恢复用户删除的动作。
+      final additions = defaults.manifest.metadata['bundledAdditions'];
+      final knownAdditions = manifest.metadata['bundledAdditions'];
+      final migratedAdditions = <String>{
+        if (knownAdditions is List) ...knownAdditions.whereType<String>(),
+      };
+      if (additions is List) {
+        for (final id in additions.whereType<String>()) {
+          final addition = defaultById[id];
+          if (!migratedAdditions.contains(id) &&
+              addition != null &&
+              !migrated.any((animation) => animation.id == id)) {
+            migrated.add(addition);
+          }
+          migratedAdditions.add(id);
+        }
       }
       var movement = _shouldFillDefaultMovement(manifest.movement)
           ? _defaultMovement(
@@ -111,6 +129,11 @@ class VideoPetImportService {
       final migratedManifest = manifest.copyWith(
         animations: migrated,
         movement: movement,
+        metadata: {
+          ...manifest.metadata,
+          if (migratedAdditions.isNotEmpty)
+            'bundledAdditions': migratedAdditions.toList(),
+        },
       );
       migratedManifest.validate();
       return VideoPetPackage(
@@ -195,20 +218,25 @@ class VideoPetImportService {
         if (source == null) {
           throw const FormatException('导入包必须提供 PNG/WebP 精灵图，请先转换视频资源');
         }
-        final uri = base.resolve(source);
-        if (!uri.hasScheme && sourceUri == null) {
-          throw const FormatException(
-            '浏览器无法读取 JSON 旁的相对图片文件，请导入包含图片的 ZIP，或使用完整 HTTP(S) URL',
-          );
-        }
-        if (uri.scheme == 'file' && !copied.containsKey(uri.toString())) {
-          final data = await platform.readFile(uri);
-          if (data == null || data.isEmpty) {
-            throw FormatException('缺少精灵图资源: $uri');
+        for (final resource in [source, ?animation.audio]) {
+          final uri = base.resolve(resource);
+          if (!uri.hasScheme && sourceUri == null) {
+            throw const FormatException(
+              '浏览器无法读取 JSON 旁的相对资源，请导入包含资源的 ZIP，或使用完整 HTTP(S) URL',
+            );
           }
-          final relative = 'media/${copied.length}.${animation.imageFormat}';
-          copied[uri.toString()] = relative;
-          files[relative] = data;
+          if (uri.scheme == 'file' && !copied.containsKey(uri.toString())) {
+            final data = await platform.readFile(uri);
+            if (data == null || data.isEmpty) {
+              throw FormatException('缺少动作资源: $uri');
+            }
+            final extension = resource == source
+                ? animation.imageFormat!
+                : _audioExtension(resource);
+            final relative = 'media/${copied.length}.$extension';
+            copied[uri.toString()] = relative;
+            files[relative] = data;
+          }
         }
       }
       if (copied.isNotEmpty) {
@@ -221,6 +249,10 @@ class VideoPetImportService {
                       copied[base.resolve(animation.imageSource!).toString()] ??
                       base.resolve(animation.imageSource!).toString(),
                 },
+                audio: animation.audio == null
+                    ? null
+                    : copied[base.resolve(animation.audio!).toString()] ??
+                          base.resolve(animation.audio!).toString(),
               ),
           ],
         );
@@ -234,9 +266,7 @@ class VideoPetImportService {
           mapping[entry.key] = savedBase == null
               ? Uri.dataFromBytes(
                   files[entry.value]!,
-                  mimeType: entry.value.endsWith('.webp')
-                      ? 'image/webp'
-                      : 'image/png',
+                  mimeType: _mediaMimeType(entry.value),
                 ).toString()
               : Uri.parse(savedBase).resolve(entry.value).toString();
         }
@@ -287,24 +317,27 @@ class VideoPetImportService {
       if (source == null) {
         throw FormatException('动作 ${animation.name} 缺少 PNG/WebP 精灵图，请先转换资源包');
       }
-      final uri = base.resolve(source);
-      if (uri.scheme == 'http' || uri.scheme == 'https') {
-        if (uri.origin != root.origin) continue;
-      } else {
-        continue;
+      for (final resource in [source, ?animation.audio]) {
+        final uri = base.resolve(resource);
+        if (uri.scheme == 'http' || uri.scheme == 'https') {
+          if (uri.origin != root.origin) continue;
+        } else {
+          continue;
+        }
+        final label = resource == source ? '精灵图' : '音频';
+        if (!uri.path.startsWith(root.path)) {
+          throw FormatException('$label资源路径越界: $resource');
+        }
+        final relative = Uri.decodeComponent(
+          uri.path.substring(root.path.length),
+        );
+        final content = files[relative];
+        if (content == null || content.isEmpty) {
+          throw FormatException('ZIP 缺少$label资源: $resource');
+        }
+        resources[uri.toString()] = content;
+        resourceFormats[uri.toString()] = _mediaMimeType(resource);
       }
-      if (!uri.path.startsWith(root.path)) {
-        throw FormatException('精灵图资源路径越界: $source');
-      }
-      final relative = Uri.decodeComponent(
-        uri.path.substring(root.path.length),
-      );
-      final content = files[relative];
-      if (content == null || content.isEmpty) {
-        throw FormatException('ZIP 缺少精灵图资源: $source');
-      }
-      resources[uri.toString()] = content;
-      resourceFormats[uri.toString()] = animation.imageFormat!;
     }
     final packageFiles = <String, Uint8List>{
       manifestPath: files[manifestPath]!,
@@ -325,7 +358,7 @@ class VideoPetImportService {
         for (final entry in resources.entries)
           entry.key: Uri.dataFromBytes(
             entry.value,
-            mimeType: 'image/${resourceFormats[entry.key]}',
+            mimeType: resourceFormats[entry.key]!,
           ).toString(),
       }),
     );
@@ -339,6 +372,37 @@ VideoPetManifest _decode(String text) {
   }
   return VideoPetManifest.fromJson(decoded);
 }
+
+String _audioExtension(String source) {
+  final extension = Uri.parse(source).path.split('.').last.toLowerCase();
+  return const {
+        'm4a',
+        'mp4',
+        'aac',
+        'mp3',
+        'wav',
+        'ogg',
+        'opus',
+        'flac',
+        'webm',
+      }.contains(extension)
+      ? extension
+      : 'm4a';
+}
+
+String _mediaMimeType(String source) =>
+    switch (Uri.parse(source).path.split('.').last.toLowerCase()) {
+      'png' => 'image/png',
+      'webp' => 'image/webp',
+      'm4a' || 'mp4' => 'audio/mp4',
+      'aac' => 'audio/aac',
+      'mp3' => 'audio/mpeg',
+      'wav' => 'audio/wav',
+      'ogg' || 'opus' => 'audio/ogg',
+      'flac' => 'audio/flac',
+      'webm' => 'audio/webm',
+      _ => 'application/octet-stream',
+    };
 
 String _pathUri(String path) => Uri(pathSegments: path.split('/')).toString();
 

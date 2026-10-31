@@ -1,4 +1,8 @@
 {
+  "webm/熬夜刷手机.mov": {
+    "bytes": 678997551,
+    "sha256": "38886f909ff6ed68223d5981e4c00b3539f320c31336b06513a96331fec7c13c"
+  },
   "webm/被落叶淹没.webm": {
     "bytes": 766832,
     "sha256": "91fc8e3dbfcd24546bc30366beb120fb5de7823ed67986dd8032c9c1b29ff079"
@@ -178,6 +182,10 @@
   "webm/放烟花.webm": {
     "bytes": 1330462,
     "sha256": "539ac09ae29ed0a11bd828df096f3e72f606529b3c59e29a5fcf3b051779a4d0"
+  },
+  "webm/工作加班.mov": {
+    "bytes": 694701013,
+    "sha256": "6da3a49d37e8247c0f4f6e3f113612efe41aab6f457a453a8633fffe11c76c1c"
   },
   "webm/工作状态-垂头叹气冒汗.webm": {
     "bytes": 198937,
@@ -422,6 +430,14 @@
   "webm/装点圣诞树.webm": {
     "bytes": 818456,
     "sha256": "25da448acdbba49c2d4b209d24053b6dd1b79e656273d1f3e659385dc2bc3759"
+  },
+  "spritesheet/熬夜刷手机.json": {
+    "bytes": 856,
+    "sha256": "1ef2af15e31ff38bffedb1ba2c2fd05fe7cec680792d883331d8b33b3104ceda"
+  },
+  "spritesheet/熬夜刷手机.webp": {
+    "bytes": 3988408,
+    "sha256": "42cd82e021376b46b8c429c0ddf69884bb04890bc105afc98cbfecf86eabda11"
   },
   "spritesheet/被落叶淹没.json": {
     "bytes": 597,
@@ -782,6 +798,14 @@
   "spritesheet/放烟花.webp": {
     "bytes": 987230,
     "sha256": "e2e58f16a86d426a4dbdf055d2a2bd7e494acd1f86997c59afa4d541a47189a6"
+  },
+  "spritesheet/工作加班.json": {
+    "bytes": 853,
+    "sha256": "61b2e6e72fc009dfafd300d31c58c79d318cdd6d9ecaf3ddca5451821ad58033"
+  },
+  "spritesheet/工作加班.webp": {
+    "bytes": 3975622,
+    "sha256": "4a7b4eecf22c635119068b7811721dc2665e9aa3ee0097755826ff17d16420c5"
   },
   "spritesheet/工作状态-垂头叹气冒汗.json": {
     "bytes": 611,
@@ -1270,5 +1294,13 @@
   "spritesheet/装点圣诞树.webp": {
     "bytes": 993914,
     "sha256": "91cfbf66b5ce866f63ffcd0a0f6ad9df94febec0b975c21edd2109d84de1d589"
+  },
+  "audio/熬夜刷手机.m4a": {
+    "bytes": 740127,
+    "sha256": "a246bab87b6d42b8f0228948343db25d8f1e140fff05d524616793234c52d7d4"
+  },
+  "audio/工作加班.m4a": {
+    "bytes": 741333,
+    "sha256": "5cc707ce90af43fa90ac25074e09b6db7763e2b800b7747c5e0527cf34e53d35"
   }
 }

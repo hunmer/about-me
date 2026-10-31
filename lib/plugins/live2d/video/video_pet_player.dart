@@ -11,6 +11,7 @@ import 'video_pet_import_stub.dart'
     if (dart.library.io) 'video_pet_import_io.dart'
     as platform;
 import 'video_pet_manifest.dart';
+import 'video_pet_audio.dart';
 import 'video_pet_player_state.dart';
 
 export 'video_pet_player_state.dart';
@@ -83,6 +84,7 @@ class VideoPetPlayer extends StatefulWidget {
   final int movementInterrupt;
   final VoidCallback? onMovementComplete;
   final ValueChanged<VideoPetAnimationFrame>? onAnimationFrame;
+
   /// busy 变化回调，附带 busyReasons（如 manual/click/hover/drag），
   /// 供舞台区分「工具点播动画应暂停走动」与「走动打断旧动作的迟到通知」。
   final void Function(bool busy, List<String> reasons)? onPlaybackBusyChanged;
@@ -149,7 +151,12 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
     );
     if (!accepted) return;
     final next = _playback.ended(request.generation);
-    if (next == null) return;
+    if (next == null) {
+      // 一次性请求自然结束且无后续动画：该路径不经过 _present(null)，
+      // 需显式停音频，否则最后一段声音会继续响。
+      _audio.stop();
+      return;
+    }
     unawaited(_present(next));
     if (request.kind == VideoPetPlaybackKind.movement && !request.loop) {
       widget.onMovementComplete?.call();
@@ -329,16 +336,30 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
     final image = _image;
     _image = null;
     _request = null;
+    // 释放展示（退后台 / 停用）时同步停掉音频，任务描述保留供恢复重启。
+    _audio.stop();
     if (image != null) unawaited(image.evict());
   }
 
   Future<Uint8List> _readImage(Uri uri) => readVideoPetImageBytes(uri);
 
+  /// 音频跟随动画：帧时钟为主时钟，音频按帧时间轴 seek。
+  late final VideoPetAudioController _audio = VideoPetAudioController();
+
   Future<void> _present(VideoPetPlaybackRequest? request) async {
     _notifyBusy();
     final package = _package;
-    if (request == null || package == null || _released) return;
+    if (request == null || package == null || _released) {
+      if (!_released) _audio.stop();
+      return;
+    }
     if (_request?.generation == request.generation && _image != null) {
+      // 同一动画重入（暂停恢复 / 生命周期回前台）：音频保持/恢复进度。
+      if (_playing) {
+        _audio.resume();
+      } else {
+        _audio.pause();
+      }
       setState(() {});
       return;
     }
@@ -378,14 +399,48 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
         _error = null;
       });
       if (previous != null) unawaited(previous.evict());
+      // 图像就绪后按实际精灵动画起点启播音频（失败由控制器静默降级）。
+      _startAudio(request, package, animation);
     } catch (error) {
       if (image != null) unawaited(image.evict());
       if (!mounted || epoch != _epoch || _released) return;
       debugPrint(
         '[VideoPetPlayer] load failed model=${widget.manifest.id} generation=${_playback.generation} error=$error',
       );
+      // 精灵图加载失败时不留旧音频继续响。
+      _audio.stop();
       setState(() => _error = '精灵图加载失败，点击重试\n$error');
     }
+  }
+
+  /// 解析动画音频（相对路径 → baseUri/resolvedSources 绝对引用）并按
+  /// 精灵动画起点（startFrame / fps 帧时间）预加载；无音频约定时仅停止
+  /// 旧音频。此处只加载 + seek + 保持暂停，实际启播由精灵面 onStarted
+  /// 回调触发（图像显示与 postFrame play 同时），避免音频先于画面响。
+  void _startAudio(
+    VideoPetPlaybackRequest request,
+    VideoPetPackage package,
+    VideoPetAnimation animation,
+  ) {
+    final fps = animation.spritesheet?.fps ?? 0;
+    final resolved = animation.resolveAudio(
+      package.baseUri,
+      package.resolvedSources,
+    );
+    _audio.start(
+      generation: request.generation,
+      uri: resolved == null ? null : Uri.parse(resolved),
+      offset: fps <= 0
+          ? Duration.zero
+          : Duration(
+              microseconds:
+                  ((request.startFrame ?? 0) /
+                          fps *
+                          Duration.microsecondsPerSecond)
+                      .round(),
+            ),
+      autoplay: false,
+    );
   }
 
   ({double x, double y})? _point(Offset position, Size size) =>
@@ -481,6 +536,30 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
                       startFrame: request.startFrame,
                       endFrame: request.endFrame,
                       onComplete: () => _complete(request),
+                      onStarted: () {
+                        if (!mounted ||
+                            !_playing ||
+                            _error != null ||
+                            !identical(_request, request)) {
+                          return;
+                        }
+                        // 精灵面实际播放：音频从预加载暂停态原位续播。
+                        _audio.resume();
+                      },
+                      onLoop: () {
+                        if (!mounted ||
+                            !_playing ||
+                            _error != null ||
+                            !identical(_request, request)) {
+                          return;
+                        }
+                        // 帧区间循环回绕：音频显式 seek 回区间起点。
+                        _audio.onLoop(
+                          generation: request.generation,
+                          loopStartFrame: request.startFrame ?? 0,
+                          fps: sheet.fps,
+                        );
+                      },
                       onFrame: (frame) {
                         if (!mounted ||
                             !_playing ||
@@ -495,6 +574,17 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
                             currentFrame: frame,
                             generation: request.generation,
                           ),
+                        );
+                        // 帧时钟驱动音频：正常推进零操作；帧号回落 = 循环
+                        // wrap，音频 seek 回循环起点（帧区间循环起点，
+                        // 整段循环为 0）继续播放，绝不逐帧 seek。
+                        _audio.onFrame(
+                          generation: request.generation,
+                          frame: frame,
+                          loopStartFrame: request.endFrame != null
+                              ? (request.startFrame ?? 0)
+                              : 0,
+                          fps: sheet.fps,
                         );
                       },
                     ),
@@ -533,6 +623,7 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
     widget.animationRequest?.removeListener(_manual);
     widget.frameAnimationRequest?.removeListener(_frameAnimation);
     _release();
+    _audio.dispose();
     super.dispose();
   }
 }
@@ -546,6 +637,8 @@ class _SpriteSurface extends StatefulWidget {
     required this.loop,
     required this.onComplete,
     required this.onFrame,
+    this.onStarted,
+    this.onLoop,
     this.startFrame,
     this.endFrame,
   });
@@ -559,6 +652,13 @@ class _SpriteSurface extends StatefulWidget {
   final int? endFrame;
   final VoidCallback onComplete;
   final ValueChanged<int> onFrame;
+
+  /// 精灵面实际开始播放时触发一次（音频预加载后的实际启播点）。
+  final VoidCallback? onStarted;
+
+  /// 帧区间循环回到起点时触发（goToFrame 直接回跳无帧号回落信号，
+  /// 音频需借此显式 seek 回循环起点）。
+  final VoidCallback? onLoop;
   @override
   State<_SpriteSurface> createState() => _SpriteSurfaceState();
 }
@@ -576,6 +676,8 @@ class _SpriteSurfaceState extends State<_SpriteSurface> {
       if (_rangeCompleted) return;
       if (widget.loop) {
         _controller.goToFrame(widget.startFrame ?? 0);
+        // goToFrame 直接回跳不产生帧号回落，音频循环由显式回调驱动。
+        widget.onLoop?.call();
         return;
       }
       _rangeCompleted = true;
@@ -606,7 +708,11 @@ class _SpriteSurfaceState extends State<_SpriteSurface> {
       // 帧区间播放：从 startFrame 起播（goToFrame 在 play 之前，静默生效）。
       final start = widget.startFrame;
       if (start != null && start > 0) _controller.goToFrame(start);
-      if (widget.playing) _controller.play();
+      if (widget.playing) {
+        _controller.play();
+        // 实际启播点：此刻画面与声音同步开始（音频已在队列中预加载）。
+        widget.onStarted?.call();
+      }
     });
   }
 

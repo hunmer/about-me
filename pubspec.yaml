@@ -230,6 +230,7 @@ flutter:
     - assets/live2d/video/dsh_pet/LICENSE-assets.txt
     - assets/live2d/video/dsh_pet/LICENSE-code.txt
     - assets/live2d/video/dsh_pet/spritesheet/
+    - assets/live2d/video/dsh_pet/audio/
     - assets/models/mao/motions/
     - assets/models/mao/expressions/
     - lib/plugins/agent_chat/tools/
