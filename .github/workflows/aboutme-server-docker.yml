@@ -2,9 +2,8 @@ name: Build Aboutme Server Docker Image
 
 on:
   push:
-    branches: [main, master]
     tags:
-      - 'v.*'
+      - 'v*'
 
 permissions:
   contents: read
