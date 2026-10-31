@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 
 import 'app_store/app_store_screen.dart';
 import 'components/webview_add_card_form.dart';
+import 'download_records_screen.dart';
 import 'webview_cards_screen.dart';
 
 /// WebView 主界面 - 已安装 / 商店 双页签宿主页
@@ -43,6 +44,7 @@ class _WebViewMainScreenState extends State<WebViewMainScreen> {
               builders: [
                 (_) => const WebViewCardsScreen(),
                 (_) => const AppStoreScreen(),
+                (_) => const DownloadRecordsScreen(),
               ],
             ),
 
@@ -75,6 +77,10 @@ class _WebViewMainScreenState extends State<WebViewMainScreen> {
                     DSNavItem(
                       icon: DsIconKind.store,
                       label: 'webview_tab_store'.tr,
+                    ),
+                    DSNavItem(
+                      icon: DsIconKind.download,
+                      label: 'webview_tab_downloads'.tr,
                     ),
                   ],
                 ),

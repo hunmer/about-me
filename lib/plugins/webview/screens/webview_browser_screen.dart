@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'dart:collection';
 import 'package:aboutme/core/services/toast_service.dart';
-import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
-import 'package:aboutme/design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:aboutme/design_system/design_system.dart';
+import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
@@ -15,6 +16,8 @@ import '../models/webview_tab.dart';
 import '../models/webview_card.dart';
 import '../services/tab_manager.dart';
 import '../services/js_bridge_injector.dart';
+import '../services/download_flow.dart';
+import '../widgets/download_records_list.dart';
 import 'tab_manager_screen.dart';
 
 /// WebView 浏览器界面
@@ -329,6 +332,19 @@ class _WebViewBrowserScreenState extends State<WebViewBrowserScreen> {
     );
   }
 
+  /// 打开下载管理底部弹层
+  void _showDownloadManager() {
+    final manager = WebViewPlugin.instance.browserDownloadManager;
+    SmoothBottomSheet.showWithTitle(
+      context: context,
+      title: 'webview_download_manager_title'.tr,
+      child: ChangeNotifierProvider.value(
+        value: manager,
+        child: const DownloadRecordsList(),
+      ),
+    );
+  }
+
   Widget _buildBottomBar(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
     return Container(
@@ -414,6 +430,53 @@ class _WebViewBrowserScreenState extends State<WebViewBrowserScreen> {
                           ),
                         ),
                       ),
+                  ],
+                ),
+              ),
+
+              // 下载管理（badge 显示正在下载数量）
+              SizedBox(
+                width: 52,
+                height: 52,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Center(
+                      child: DSIconButton(
+                        icon: DsIconKind.download,
+                        size: 44,
+                        color: theme.surfaceAlt,
+                        iconColor: theme.textSub,
+                        onPressed: () => _showDownloadManager(),
+                        tooltip: 'webview_download_manager_title'.tr,
+                      ),
+                    ),
+                    ListenableBuilder(
+                      listenable: WebViewPlugin.instance.browserDownloadManager,
+                      builder: (context, _) {
+                        final count = WebViewPlugin
+                            .instance.browserDownloadManager.activeCount;
+                        if (count == 0) return const SizedBox.shrink();
+                        return Positioned(
+                          right: 0,
+                          top: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: theme.primary,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Text(
+                              '$count',
+                              style: DsTypography.label.copyWith(
+                                fontSize: 10,
+                                color: theme.onPrimary,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   ],
                 ),
               ),
@@ -761,6 +824,16 @@ class _WebViewTabContentState extends State<_WebViewTabContent> {
     super.dispose();
   }
 
+  /// 处理 WebView 下载事件：复用共享下载流程（含 Content-Disposition 文件名）
+  Future<void> _handleDownloadStartRequest(DownloadStartRequest request) async {
+    await runBrowserDownloadFlow(
+      context,
+      url: request.url.toString(),
+      suggestedFilename: request.suggestedFilename,
+      contentDisposition: request.contentDisposition,
+    );
+  }
+
   /// 创建 Aboutme UserScript（在页面加载前注入）
   UserScript _createAboutmeUserScript() {
     const script = '''
@@ -1077,6 +1150,9 @@ class _WebViewTabContentState extends State<_WebViewTabContent> {
         // 记录 URL 并允许导航
         _lastProcessedUrl = url;
         return NavigationActionPolicy.ALLOW;
+      },
+      onDownloadStartRequest: (controller, request) {
+        _handleDownloadStartRequest(request);
       },
       onWebViewCreated: (controller) {
         _controller = controller;

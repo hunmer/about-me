@@ -57,6 +57,7 @@ class ToolOrchestrator {
     try {
       if (isCancelling()) throw StateError('已取消发送');
       if (files.isEmpty &&
+          context.extraToolsProvider == null &&
           !NativeToolAgentService.instance.supports(agent, enableToolCalling)) {
         await _executePlainResponse(
           agent: agent,
@@ -139,6 +140,7 @@ class ToolOrchestrator {
             }
           }),
           isCancelling: isCancelling,
+          extraTools: context.extraToolsProvider?.call() ?? const [],
         );
         if (response.trim().isEmpty && !isCancelling()) {
           throw StateError('AI响应为空');

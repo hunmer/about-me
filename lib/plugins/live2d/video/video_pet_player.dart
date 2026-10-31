@@ -271,7 +271,10 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
         state == AppLifecycleState.hidden ||
         state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached;
-    _inactive = state != AppLifecycleState.resumed;
+    // Windows 桌面点击按钮会短暂失焦发出 inactive，若视为暂停会冻结
+    // 一次性动画（如转身东张西望），onComplete 永不触发。与舞台侧
+    // didChangeAppLifecycleState 一致：仅真正退后台（hidden/paused/detached）才暂停。
+    _inactive = _background;
     _lifecycle();
   }
 

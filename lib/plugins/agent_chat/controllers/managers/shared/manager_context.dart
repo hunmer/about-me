@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:dartantic_ai/dartantic_ai.dart' show Tool;
 import '../../../services/conversation_service.dart';
 import '../../../services/message_service.dart';
 import '../../../services/message_detail_service.dart';
@@ -19,6 +20,7 @@ class ManagerContext {
   /// 获取插件设置的回调
   final Map<String, dynamic> Function()? getSettings;
   final bool Function()? useJsTools;
+  final List<Tool<Map<String, dynamic>>> Function()? extraToolsProvider;
 
   /// 状态通知回调 - 用于触发 UI 更新
   final VoidCallback? notifyListeners;
@@ -34,6 +36,7 @@ class ManagerContext {
     this.templateService,
     this.getSettings,
     this.useJsTools,
+    this.extraToolsProvider,
     this.notifyListeners,
     this.onTypingStatus,
   });

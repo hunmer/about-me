@@ -27,6 +27,7 @@ import 'services/proxy_controller_service.dart';
 import 'services/local_http_server.dart';
 import 'services/app_store_manager.dart';
 import 'services/download_manager.dart';
+import 'services/browser_download_manager.dart';
 import 'screens/webview_main_screen.dart';
 import 'screens/webview_settings_screen.dart';
 
@@ -51,8 +52,8 @@ class WebViewPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
     },
     {
       'project': 'octubre_calendar',
-      'title': '十月拍立得日历',
-      'description': '拍立得日历拼贴海报，从相册多选照片填充',
+      'title': '拍立得日历海报',
+      'description': '拍立得日历拼贴海报合集：十月单月海报 + 2025 全年剪贴簿，从相册多选照片填充',
     },
   ];
 
@@ -73,6 +74,7 @@ class WebViewPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
   late final LocalHttpServer localHttpServer;
   late final AppStoreManager appStoreManager;
   late final DownloadManager downloadManager;
+  late final BrowserDownloadManager browserDownloadManager;
   late WebViewSettings webviewSettings;
 
   /// 待复制的文件列表（用于 Android 11+ 的文件访问）
@@ -142,6 +144,9 @@ class WebViewPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
       appStoreManager: appStoreManager,
       httpServer: localHttpServer,
     );
+
+    // 初始化浏览器下载管理器（WebView 下载事件记录）
+    browserDownloadManager = BrowserDownloadManager();
 
     // 检查 proxy 支持
     await proxyController.checkSupport();
@@ -310,6 +315,7 @@ class WebViewPlugin extends BasePlugin with ChangeNotifier, JSBridgePlugin {
         ChangeNotifierProvider.value(value: tabManager),
         ChangeNotifierProvider.value(value: appStoreManager),
         ChangeNotifierProvider.value(value: downloadManager),
+        ChangeNotifierProvider.value(value: browserDownloadManager),
       ],
       child: const WebViewMainScreen(),
     );

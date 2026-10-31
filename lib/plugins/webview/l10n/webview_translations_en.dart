@@ -121,6 +121,20 @@ const Map<String, String> webviewTranslationsEn = {
   'webview_install_failed': 'Install Failed',
   'webview_downloading_files': 'Downloading files',
 
+  // Download dialog
+  'webview_download_title': 'Download File',
+  'webview_download_file_name': 'File name',
+  'webview_download_save': 'Save',
+  'webview_download_cancel': 'Cancel',
+  'webview_download_downloading': 'Downloading',
+  'webview_download_success': 'Download complete',
+  'webview_download_failed': 'Download failed',
+  'webview_download_cancelled': 'Cancelled',
+  'webview_download_empty': 'No downloads yet',
+  'webview_download_manager_title': 'Downloads',
+  'webview_download_clear': 'Clear finished',
+  'webview_tab_downloads': 'Downloads',
+
   // Widget Home Strings
   'webview_widgetName': 'Browser',
   'webview_widgetDescription': 'Quick access to Browser',

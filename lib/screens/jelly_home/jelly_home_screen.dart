@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
+import 'package:dartantic_ai/dartantic_ai.dart';
 import 'package:aboutme/core/app_initializer.dart';
 import 'package:aboutme/core/event/event.dart';
 import 'package:aboutme/core/widgets/lazy_indexed_stack.dart';
@@ -203,6 +204,7 @@ class _CottageTabState extends State<_CottageTab> {
   String? _pendingLive2dReply;
   bool _pendingLive2dStreaming = false;
   bool _live2dReplyFrameScheduled = false;
+  final ValueNotifier<String?> _videoAnimationRequest = ValueNotifier(null);
 
   @override
   void initState() {
@@ -213,6 +215,7 @@ class _CottageTabState extends State<_CottageTab> {
   @override
   void dispose() {
     _companion.dispose();
+    _videoAnimationRequest.dispose();
     super.dispose();
   }
 
@@ -261,6 +264,7 @@ class _CottageTabState extends State<_CottageTab> {
                     fitContainer: true,
                     topInset: topInset,
                     panel: widget.panel,
+                    videoAnimationRequest: _videoAnimationRequest,
                     statusPanel: JellyStatusPanel(controller: _companion),
                     message: _live2dMessage,
                     reaction: _live2dReaction,
@@ -357,7 +361,10 @@ class _CottageTabState extends State<_CottageTab> {
                     visible: widget.chatVisible,
                     maintainState: true,
                     maintainAnimation: true,
-                    child: Live2DChatInput(onReply: _scheduleLive2dReply),
+                    child: Live2DChatInput(
+                      onReply: _scheduleLive2dReply,
+                      videoAnimationRequest: _videoAnimationRequest,
+                    ),
                   ),
                 ),
               ],
@@ -466,9 +473,14 @@ class _CottageTabState extends State<_CottageTab> {
 }
 
 class Live2DChatInput extends StatefulWidget {
-  const Live2DChatInput({super.key, required this.onReply});
+  const Live2DChatInput({
+    super.key,
+    required this.onReply,
+    required this.videoAnimationRequest,
+  });
 
   final void Function(String reply, bool streaming) onReply;
+  final ValueNotifier<String?> videoAnimationRequest;
 
   @override
   State<Live2DChatInput> createState() => _Live2DChatInputState();
@@ -512,10 +524,58 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
     });
   }
 
+  List<Tool<Map<String, dynamic>>> _videoPetTools() => [
+    Tool<Map<String, dynamic>>(
+      name: 'list_animations',
+      description: '列出当前视频桌宠已有动画及其 ID、名称、分类和启用状态。',
+      inputSchema: Schema.fromMap({'type': 'object', 'properties': {}}),
+      onCall: (_) async {
+        final animations =
+            Live2DPlugin.instance.selected?.videoManifest?.animations;
+        if (animations == null) return {'error': '当前没有可用的视频桌宠动画清单'};
+        return {
+          'animations': animations
+              .map(
+                (animation) => {
+                  'id': animation.id,
+                  'name': animation.name,
+                  'category': animation.category,
+                  'enabled': animation.enabled,
+                },
+              )
+              .toList(),
+        };
+      },
+    ),
+    Tool<Map<String, dynamic>>(
+      name: 'play_animation',
+      description: '按 list_animations 返回的动画 ID 播放当前视频桌宠动画。',
+      inputSchema: Schema.fromMap({
+        'type': 'object',
+        'properties': {
+          'id': {'type': 'string', 'description': '要播放的动画 ID'},
+        },
+        'required': ['id'],
+      }),
+      onCall: (args) async {
+        final id = args['id'];
+        if (id is! String || id.isEmpty) return {'error': '动画 ID 不能为空'};
+        final animation = Live2DPlugin.instance.selected?.videoManifest
+            ?.animation(id);
+        if (animation == null) return {'error': '找不到动画 ID: $id'};
+        widget.videoAnimationRequest.value = null;
+        widget.videoAnimationRequest.value = id;
+        return {'success': true, 'id': id, 'name': animation.name};
+      },
+    ),
+  ];
+
   Future<ChatController?> _initialize() async {
     final archive = Live2DPlugin.instance.selected;
     final agentChat = AgentChatPlugin.instance.conversationController;
-    if (archive?.agentId == null || agentChat == null) return null;
+    if (archive == null || archive.agentId == null || agentChat == null) {
+      return null;
+    }
 
     // 正式会话（携带存档绑定的 agentId 保存到频道数据）：
     // 会话列表默认不展示，仅通过 Agent 过滤显示
@@ -539,6 +599,7 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
       ),
       templateService: ToolTemplateService(Live2DPlugin.instance.storage),
       getSettings: () => AgentChatPlugin.instance.settings,
+      extraToolsProvider: archive.isVideo ? _videoPetTools : null,
     );
     await controller.initialize();
     _messageService = messageService;
@@ -581,7 +642,8 @@ class _Live2DChatInputState extends State<Live2DChatInput> {
   }
 
   void _onMessagesChanged() {
-    final messages = _messageService?.currentMessages ?? const [];    final latestUserIndex = messages.lastIndexWhere(
+    final messages = _messageService?.currentMessages ?? const [];
+    final latestUserIndex = messages.lastIndexWhere(
       (message) => message.isUser,
     );
     if (latestUserIndex < 0) return;

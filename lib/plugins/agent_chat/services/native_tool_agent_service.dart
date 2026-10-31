@@ -277,6 +277,7 @@ class NativeToolAgentService {
     bool useJsTools = false,
     bool alivenessOnlyTools = false,
     bool imageOnlyTools = false,
+    List<Tool<Map<String, dynamic>>> extraTools = const [],
   }) async {
     final run = _NativeToolRunContext(
       onToolSteps,
@@ -348,6 +349,8 @@ class NativeToolAgentService {
       useJsTools: alivenessOnlyTools ? false : useJsTools,
       builtInOnly: alivenessOnlyTools,
     );
+    // 会话专属工具不受插件候选预筛或全局工具开关影响。
+    tools = [...tools, ...extraTools];
     if (imageOnlyTools) {
       tools = tools.where((tool) => tool.name == 'read_image').toList();
     }
@@ -579,8 +582,7 @@ class NativeToolAgentService {
   }) {
     // builtin 插件配置只提供硬编码工具的开关；未初始化或缺失时默认启用
     final builtinConfig = ToolConfigManager.instance.getPluginTools('builtin');
-    final jsEnabled =
-        builtinConfig?.tools['builtin_run_js']?.enabled ?? true;
+    final jsEnabled = builtinConfig?.tools['builtin_run_js']?.enabled ?? true;
     final batchRunEnabled =
         builtinConfig?.tools['builtin_batch_run']?.enabled ?? true;
     final jsTool = Tool<Map<String, dynamic>>(
@@ -679,14 +681,8 @@ class NativeToolAgentService {
                 'items': {
                   'type': 'object',
                   'properties': {
-                    'tool': {
-                      'type': 'string',
-                      'enum': toolMap.keys.toList(),
-                    },
-                    'args': {
-                      'type': 'object',
-                      'description': '目标工具的完整参数对象',
-                    },
+                    'tool': {'type': 'string', 'enum': toolMap.keys.toList()},
+                    'args': {'type': 'object', 'description': '目标工具的完整参数对象'},
                   },
                   'required': ['tool', 'args'],
                 },

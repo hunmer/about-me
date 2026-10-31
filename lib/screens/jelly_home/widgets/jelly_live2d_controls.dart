@@ -13,20 +13,18 @@ extension _JellyLive2DControls on _JellyLive2DState {
     }
   }
 
-  Future<void> _changeSize(double delta) async {
-    final next = (_size.value + delta).clamp(_minSize, _maxSize);
-    if (next == _size.value) return;
-    _size.value = next;
+  /// 设置绝对逻辑尺寸（舞台滚轮/捏合调整大小入口），统一 clamp + 持久化
+  Future<void> _setSize(double next) async {
+    final clamped = next.clamp(_minSize, _maxSize);
+    if (clamped == _size.value) return;
+    _size.value = clamped;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setDouble(_sizePrefKey, next);
+    await prefs.setDouble(_sizePrefKey, clamped);
   }
 
-  Future<void> _resetSize() async {
-    if (_size.value == _defaultSize) return;
-    _size.value = _defaultSize;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setDouble(_sizePrefKey, _defaultSize);
-  }
+  Future<void> _changeSize(double delta) async => _setSize(_size.value + delta);
+
+  Future<void> _resetSize() async => _setSize(_defaultSize);
 
   Future<void> _showControls() async {
     if (_videoControlsOpen) return;
@@ -50,65 +48,67 @@ extension _JellyLive2DControls on _JellyLive2DState {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   SizedBox(height: theme.spacing.sm),
-                  Text(
-                    'screens_jellyLive2dCharacterSize'.tr,
-                    style: DsTypography.heading.copyWith(color: theme.text),
-                  ),
-                  SizedBox(height: theme.spacing.sm),
-                  ValueListenableBuilder<double>(
-                    valueListenable: _size,
-                    builder: (context, size, _) => Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: DSButton(
-                                label: 'screens_jellyLive2dShrink'.tr,
-                                size: DSButtonSize.sm,
-                                onPressed: size > _minSize
-                                    ? () => _changeSize(-_sizeStep)
-                                    : null,
-                              ),
-                            ),
-                            SizedBox(width: theme.spacing.sm),
-                            Expanded(
-                              child: DSButton(
-                                label: 'screens_jellyLive2dEnlarge'.tr,
-                                size: DSButtonSize.sm,
-                                onPressed: size < _maxSize
-                                    ? () => _changeSize(_sizeStep)
-                                    : null,
-                              ),
-                            ),
-                            SizedBox(width: theme.spacing.sm),
-                            Expanded(
-                              child: DSButton(
-                                label: 'screens_jellyLive2dReset'.tr,
-                                size: DSButtonSize.sm,
-                                onPressed: size == _defaultSize
-                                    ? null
-                                    : _resetSize,
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: theme.spacing.sm),
-                        Text(
-                          'screens_jellyLive2dCurrentSize'.trParams({
-                            'percent': (size / _defaultSize * 100)
-                                .round()
-                                .toString(),
-                            'size': size.round().toString(),
-                          }),
-                          textAlign: TextAlign.center,
-                          style: DsTypography.caption.copyWith(
-                            color: theme.textSub,
-                          ),
-                        ),
-                      ],
+                  if (_isVideo) ...[
+                    Text(
+                      'screens_jellyLive2dCharacterSize'.tr,
+                      style: DsTypography.heading.copyWith(color: theme.text),
                     ),
-                  ),
+                    SizedBox(height: theme.spacing.sm),
+                    ValueListenableBuilder<double>(
+                      valueListenable: _size,
+                      builder: (context, size, _) => Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: DSButton(
+                                  label: 'screens_jellyLive2dShrink'.tr,
+                                  size: DSButtonSize.sm,
+                                  onPressed: size > _minSize
+                                      ? () => _changeSize(-_sizeStep)
+                                      : null,
+                                ),
+                              ),
+                              SizedBox(width: theme.spacing.sm),
+                              Expanded(
+                                child: DSButton(
+                                  label: 'screens_jellyLive2dEnlarge'.tr,
+                                  size: DSButtonSize.sm,
+                                  onPressed: size < _maxSize
+                                      ? () => _changeSize(_sizeStep)
+                                      : null,
+                                ),
+                              ),
+                              SizedBox(width: theme.spacing.sm),
+                              Expanded(
+                                child: DSButton(
+                                  label: 'screens_jellyLive2dReset'.tr,
+                                  size: DSButtonSize.sm,
+                                  onPressed: size == _defaultSize
+                                      ? null
+                                      : _resetSize,
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: theme.spacing.sm),
+                          Text(
+                            'screens_jellyLive2dCurrentSize'.trParams({
+                              'percent': (size / _defaultSize * 100)
+                                  .round()
+                                  .toString(),
+                              'size': size.round().toString(),
+                            }),
+                            textAlign: TextAlign.center,
+                            style: DsTypography.caption.copyWith(
+                              color: theme.textSub,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   if (!_isVideo) ...[
                     SizedBox(height: theme.spacing.xl),
                     Text(

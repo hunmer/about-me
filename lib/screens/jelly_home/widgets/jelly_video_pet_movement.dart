@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -58,6 +59,8 @@ class JellyVideoPetStage extends StatefulWidget {
     this.initialBottomGap = 0,
     this.active = true,
     this.random,
+    this.logicalSize,
+    this.onResize,
   });
 
   final String modelId;
@@ -75,6 +78,13 @@ class JellyVideoPetStage extends StatefulWidget {
   final double initialBottomGap;
   final bool active;
   final math.Random? random;
+
+  /// 当前逻辑尺寸（与持久化的 jelly_live2d.size 同单位）；
+  /// 与 [onResize] 同时提供时启用滚轮/双指捏合调整大小。
+  final double? logicalSize;
+
+  /// 调整大小回调：接收新的逻辑尺寸（clamp 与持久化由外部负责）。
+  final ValueChanged<double>? onResize;
 
   static String preferenceKey(String modelId) =>
       'jelly_video_pet.${Uri.encodeComponent(modelId)}';
@@ -114,6 +124,60 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
   final ValueNotifier<VideoPetManualAnimation?> _frameRequest =
       ValueNotifier<VideoPetManualAnimation?>(null);
   int _wallBumpNonce = 0;
+
+  /// 捏合调整大小的手动指针跟踪（双指 = 缩放；单指仍走子级拖拽）。
+  final Map<int, Offset> _activePointers = {};
+  double? _pinchBaseDistance;
+  double? _pinchBaseSize;
+
+  bool get _resizeEnabled =>
+      widget.onResize != null &&
+      widget.logicalSize != null &&
+      widget.logicalSize! > 0;
+
+  void _pointerAdded(int pointer, Offset position) {
+    _activePointers[pointer] = position;
+    _syncPinchBase();
+  }
+
+  void _pointerMoved(int pointer, Offset position) {
+    if (!_resizeEnabled) return;
+    _activePointers[pointer] = position;
+    if (_activePointers.length != 2 ||
+        _pinchBaseDistance == null ||
+        _pinchBaseSize == null ||
+        _pinchBaseDistance! <= 0) {
+      return;
+    }
+    final points = _activePointers.values.toList(growable: false);
+    final distance = (points[0] - points[1]).distance;
+    if (distance <= 0) return;
+    widget.onResize!(_pinchBaseSize! * distance / _pinchBaseDistance!);
+  }
+
+  void _pointerRemoved(int pointer) {
+    _activePointers.remove(pointer);
+    _syncPinchBase();
+  }
+
+  /// 双指在位时记录基准；指头变化后重置基准避免跳变。
+  void _syncPinchBase() {
+    if (_activePointers.length == 2 && _resizeEnabled) {
+      final points = _activePointers.values.toList(growable: false);
+      final distance = (points[0] - points[1]).distance;
+      _pinchBaseDistance = distance > 0 ? distance : null;
+      _pinchBaseSize = _pinchBaseDistance == null ? null : widget.logicalSize;
+    } else {
+      _pinchBaseDistance = null;
+      _pinchBaseSize = null;
+    }
+  }
+
+  /// 滚轮：向上滚放大、向下滚缩小（每 tick 20 逻辑像素，外部 clamp）。
+  void _wheelResize(double scrollDeltaY) {
+    if (!_resizeEnabled || scrollDeltaY == 0) return;
+    widget.onResize!(widget.logicalSize! + (scrollDeltaY < 0 ? 20 : -20));
+  }
 
   String? get _movementAnimationId => _turning
       ? (_left
@@ -219,8 +283,7 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _foreground = switch (
-      WidgetsBinding.instance.lifecycleState) {
+    _foreground = switch (WidgetsBinding.instance.lifecycleState) {
       null || AppLifecycleState.resumed || AppLifecycleState.inactive => true,
       _ => false,
     };
@@ -282,14 +345,22 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // inactive 仅失焦（窗口仍可见，桌面端点菜单/浮层失焦是常态），
     // 不视为后台；只有 paused/hidden/detached 才停止走动。
-    _foreground =
+    // 状态未翻转（如 inactive 重复触发）时不得 _stop，
+    // 否则点编辑器按钮的一次失焦会取消刚发起的转身/走动。
+    final foreground =
         state == AppLifecycleState.resumed ||
         state == AppLifecycleState.inactive;
+    if (foreground == _foreground) return;
+    _foreground = foreground;
     setState(_stop);
     _schedule();
   }
 
   void _stop() {
+    debugPrint(
+      '[VideoPetStage] stop requested phase=$_phase turning=$_turning walking=$_walking\n'
+      '${StackTrace.current.toString().split('\n').take(3).join('\n')}',
+    );
     if (_turning) _log('turn cancelled phase=$_phase');
     if (_walking) {
       _log('walk end phase=$_phase position=$_position target=$_target');
@@ -359,7 +430,7 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
       }
       return;
     }
-    _beginWalk(left: left);
+    _beginWalk(left: left, turnBeforeWalk: false);
   }
 
   /// 外部帧区间点播（编辑器 AB 循环预览等）：直接注入点播请求。
@@ -385,15 +456,13 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
     });
   }
 
-  void _beginWalk({bool? left}) {
+  void _beginWalk({bool? left, bool turnBeforeWalk = true}) {
     if (left == null) {
       _target = _minX + _random.nextDouble() * _range.width;
       final minDistance = math.min(80.0, _range.width / 2);
       if ((_target - _position.dx).abs() < minDistance) {
         // Keep this walk opportunity even when randomness picks our position.
-        _target = _position.dx - _minX >= _maxX - _position.dx
-            ? _minX
-            : _maxX;
+        _target = _position.dx - _minX >= _maxX - _position.dx ? _minX : _maxX;
       }
     } else {
       // 指定方向：直接走到该侧边界（触发撞墙/反向逻辑）。
@@ -402,10 +471,10 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
     _log(
       'target selected x=$_target from=${_position.dx} left=$left xBounds=[$_minX,$_maxX]',
     );
-    _departToward();
+    _departToward(turnBeforeWalk: turnBeforeWalk);
   }
 
-  /// 无撞墙动画时到达边界：转身并反向走回场地内部。
+  /// 无撞墙动画时到达边界：水平翻转并反向走回场地内部。
   void _reverseFromWall() {
     final minDistance = math.min(80.0, _range.width / 2);
     final atLeft = (_minX - _target).abs() < 0.5;
@@ -417,11 +486,12 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
         : 1.0;
     _target = _position.dx + (far - _position.dx) * t;
     _log('wall reverse target=$_target from=${_position.dx}');
-    _departToward();
+    // 没有撞墙动画时直接反向走；方向由移动动画的水平翻转体现。
+    _departToward(turnBeforeWalk: false);
   }
 
   /// 朝 [_target] 发起走动：按需先请求转身动画，再启动位移。
-  void _departToward() {
+  void _departToward({bool turnBeforeWalk = true}) {
     final movement = widget.movement;
     // bounds 可能因 regions/容器变化而缩小，目标夹回界内避免永远走不到。
     _target = _target.clamp(_minX, _maxX).toDouble();
@@ -435,7 +505,7 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
     );
     setState(() {
       ++_phase;
-      _turning = left != _facingLeft && turn.isNotEmpty;
+      _turning = turnBeforeWalk && left != _facingLeft && turn.isNotEmpty;
       _left = left;
       if (_turning) {
         _log('turn request animation=$turn left=$left phase=$_phase');
@@ -652,48 +722,86 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
             top: widget.topInset + _position.dy,
             width: size.width,
             height: size.height,
-            child: Transform.flip(
-              flipX: _flipX,
-              child: widget.builder(
-                context,
-                JellyVideoPetPlayback(
-                  animationId: animation,
-                  dragAnimationId:
-                      _dragging && movement.dragAnimationId.isNotEmpty
-                      ? movement.dragAnimationId
-                      : null,
-                  loop: !_turning,
-                  frameRequest: _frameRequest,
-                  movementInterrupt: _interruptToken,
-                  onComplete: () {
-                    if (!mounted) return;
-                    if (phase != _phase) {
-                      _log('turn complete REJECTED stalePhase=$phase phase=$_phase turning=$_turning');
-                    } else if (!_turning) {
-                      _log('turn complete REJECTED notTurning phase=$phase');
-                    } else if (!_canWalk) {
-                      _log('turn complete REJECTED blocked=[${_blocked.join(',')}]');
-                    } else {
-                      _log('turn complete phase=$phase');
-                      setState(_startWalking);
+            child: Listener(
+              // 滚轮/双指捏合调整大小（单指拖拽仍由子级 VideoPetPlayer 处理）。
+              onPointerDown: _resizeEnabled
+                  ? (event) => _pointerAdded(event.pointer, event.position)
+                  : null,
+              onPointerMove: _resizeEnabled
+                  ? (event) => _pointerMoved(event.pointer, event.position)
+                  : null,
+              onPointerUp: _resizeEnabled
+                  ? (event) => _pointerRemoved(event.pointer)
+                  : null,
+              onPointerCancel: _resizeEnabled
+                  ? (event) => _pointerRemoved(event.pointer)
+                  : null,
+              onPointerSignal: _resizeEnabled
+                  ? (event) {
+                      if (event is PointerScrollEvent) {
+                        _wheelResize(event.scrollDelta.dy);
+                      }
                     }
-                  },
-                  onAnimationFrame: (frame) => _animationFrame(frame, phase),
-                  onBusyChanged: (busy) {
-                    if (_busy == busy || !mounted) return;
-                    final wasBusy = _busy;
-                    setState(() {
-                      _busy = busy;
-                      // 只有真实进入/退出 busy 状态才停止当前动作；
-                      // 播放器初始化时的 busy=false 不应取消转身流程。
-                      if (busy || wasBusy) _stop();
-                    });
-                    _schedule();
-                  },
-                  onDragStart: _dragStart,
-                  onDragUpdate: _dragUpdate,
-                  onDragEnd: (_) => _dragEnd(),
-                  onDragCancel: () => _dragEnd(cancelled: true),
+                  : null,
+              child: Transform.flip(
+                flipX: _flipX,
+                child: widget.builder(
+                  context,
+                  JellyVideoPetPlayback(
+                    animationId: animation,
+                    dragAnimationId:
+                        _dragging && movement.dragAnimationId.isNotEmpty
+                        ? movement.dragAnimationId
+                        : null,
+                    loop: !_turning,
+                    frameRequest: _frameRequest,
+                    movementInterrupt: _interruptToken,
+                    onComplete: () {
+                      if (!mounted) return;
+                      if (phase != _phase) {
+                        _log(
+                          'turn complete REJECTED stalePhase=$phase phase=$_phase turning=$_turning',
+                        );
+                      } else if (!_turning) {
+                        _log('turn complete REJECTED notTurning phase=$phase');
+                      } else if (!_canWalk) {
+                        _log(
+                          'turn complete REJECTED blocked=[${_blocked.join(',')}]',
+                        );
+                      } else {
+                        _log('turn complete phase=$phase');
+                        setState(_startWalking);
+                      }
+                    },
+                    onAnimationFrame: (frame) => _animationFrame(frame, phase),
+                    onBusyChanged: (busy) {
+                      if (!mounted) return;
+                      _log(
+                        'busy callback busy=$busy current=$_busy turning=$_turning walking=$_walking phase=$_phase',
+                      );
+                      if (_busy == busy) return;
+                      // 显式走动已通过 movementInterrupt 打断旧动作，
+                      // 迟到的 busy=true 不应再取消当前转身/走动。
+                      if (busy && (_turning || _walking)) {
+                        _log(
+                          'busy ignored busy=$busy turning=$_turning walking=$_walking phase=$_phase',
+                        );
+                        return;
+                      }
+                      final wasBusy = _busy;
+                      setState(() {
+                        _busy = busy;
+                        // 只有真实进入/退出 busy 状态才停止当前动作；
+                        // 播放器初始化时的 busy=false 不应取消转身流程。
+                        if (busy || wasBusy) _stop();
+                      });
+                      _schedule();
+                    },
+                    onDragStart: _dragStart,
+                    onDragUpdate: _dragUpdate,
+                    onDragEnd: (_) => _dragEnd(),
+                    onDragCancel: () => _dragEnd(cancelled: true),
+                  ),
                 ),
               ),
             ),

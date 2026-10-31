@@ -11,6 +11,7 @@ class DSTopBar extends StatelessWidget {
   const DSTopBar({
     super.key,
     required this.title,
+    this.center,
     this.onBack,
     this.onMenu,
     this.actions,
@@ -18,11 +19,14 @@ class DSTopBar extends StatelessWidget {
 
   final String title;
 
+  /// 自定义中部内容；非 null 时替代标题文本展示（title 仅保留语义）
+  final Widget? center;
+
   /// 为 null 时隐藏返回按钮
   final VoidCallback? onBack;
   final VoidCallback? onMenu;
 
-  /// 尾部附加动作（替代菜单按钮的位置）
+  /// 尾部附加动作（跟随菜单按钮之后）
   final List<Widget>? actions;
 
   @override
@@ -42,22 +46,20 @@ class DSTopBar extends StatelessWidget {
           else
             const SizedBox(width: 36, height: 36),
           Expanded(
-            child: Text(
-              title,
-              textAlign: TextAlign.center,
-              style: DsTypography.heading.copyWith(color: theme.text),
-            ),
+            child:
+                center ??
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: DsTypography.heading.copyWith(color: theme.text),
+                ),
           ),
-          // 尾部：自定义 actions 优先，其次菜单按钮；
+          // 尾部：菜单按钮（如有）+ 自定义 actions；
           // 都没有时留与返回钮等宽的占位，保证标题恒居中
-          if (onMenu != null)
-            _BarIcon(
-              icon: DsIconKind.more,
-              onTap: onMenu,
-            )
-          else if (actions != null && actions!.isNotEmpty)
-            Row(mainAxisSize: MainAxisSize.min, children: actions!)
-          else
+          if (onMenu != null) _BarIcon(icon: DsIconKind.more, onTap: onMenu),
+          if (actions != null && actions!.isNotEmpty)
+            Row(mainAxisSize: MainAxisSize.min, children: actions!),
+          if (onMenu == null && (actions == null || actions!.isEmpty))
             const SizedBox(width: 36, height: 36),
         ],
       ),
@@ -88,8 +90,8 @@ class _BarIcon extends StatelessWidget {
             color: pressed
                 ? theme.surfaceAlt
                 : hovered
-                    ? theme.surfaceAlt.withValues(alpha: 0.6)
-                    : null,
+                ? theme.surfaceAlt.withValues(alpha: 0.6)
+                : null,
           ),
           child: DsIcon(icon, size: 20, color: theme.text),
         );

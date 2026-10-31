@@ -27,6 +27,8 @@ import 'package:aboutme/plugins/agent_chat/services/message_detail_service.dart'
 import 'package:aboutme/plugins/agent_chat/services/message_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/tool_template_service.dart';
 import 'package:aboutme/plugins/openai/services/chat_assistant_service.dart';
+import 'package:aboutme/plugins/personal_assistant/services/grok_bot_instance_service.dart';
+import 'package:aboutme/plugins/personal_assistant/widgets/static_grok_avatar.dart';
 import 'package:aboutme/screens/jelly_home/widgets/jelly_status_panel_settings.dart';
 import 'package:aboutme/screens/widgets_gallery/common_widgets/widgets/marquee_button_list_card.dart';
 import 'package:aboutme/widgets/adaptive_image.dart';
@@ -34,7 +36,9 @@ import 'package:get/get.dart' hide Value;
 
 /// 个人助手主视图：手绘风快捷速记入口，
 /// 绑定内置「聊天助手」agent（[ChatAssistantService]）的临时会话；
-/// 也作为果冻小屋主页的助手页签复用
+/// 也作为果冻小屋主页的助手页签复用。
+/// 顶栏维护多个 grokbot 实例（形象随机抽取、各自独立会话），
+/// 点击图标切换会话，加号新增实例
 class PersonalAssistantScreen extends StatefulWidget {
   const PersonalAssistantScreen({super.key});
 
@@ -44,12 +48,41 @@ class PersonalAssistantScreen extends StatefulWidget {
 }
 
 class _PersonalAssistantScreenState extends State<PersonalAssistantScreen> {
-  Future<ChatController?>? _controllerFuture;
-  ChatController? _controller;
-  MessageService? _messageService;
+  /// grokbot 实例列表（含随机形象与各实例专属会话路由）
+  final GrokBotInstanceService _botService = GrokBotInstanceService();
+
+  /// 当前展示的实例 id
+  String? _activeBotId;
+
+  /// 各实例独立的会话控制器/消息服务（按实例 id 索引）
+  final Map<String, ChatController> _botControllers = {};
+  final Map<String, MessageService> _botMessageServices = {};
+
+  /// 各实例初始化 Future（防止快速切换时重复初始化）
+  final Map<String, Future<ChatController?>> _botFutures = {};
+
+  /// 顶栏切换条中各实例的独立小角色（多个视图不能共享一个 character）
+  final Map<String, GrokCharacter> _headerCharacters = {};
+
+  /// 顶栏图标横滚控制器（新增实例后滚到最右）
+  final ScrollController _botStripController = ScrollController();
   final ScrollController _scrollController = ScrollController();
 
-  final GrokBotStyleController _botStyle = GrokBotStyleController();
+  ChatController? get _controller =>
+      _activeBotId == null ? null : _botControllers[_activeBotId];
+
+  MessageService? get _messageService =>
+      _activeBotId == null ? null : _botMessageServices[_activeBotId];
+
+  /// 当前活动实例（未加载完成时为 null）
+  GrokBotInstance? get _activeBot {
+    final id = _activeBotId;
+    if (id == null) return null;
+    for (final bot in _botService.bots) {
+      if (bot.id == id) return bot;
+    }
+    return null;
+  }
 
   /// 用户头像/昵称（与状态面板共用），更换头像后消息头像同步刷新
   final JellyStatusPanelSettings _userSettings =
@@ -59,7 +92,8 @@ class _PersonalAssistantScreenState extends State<PersonalAssistantScreen> {
   /// 位置弹簧会按新宽度放大旧偏移（清空消息出现闪现/侧滑回归）。
   /// 两实例同步同一套表情状态：处理中 thinking / 完成 happy 片刻 /
   /// 待机（首页 curious 张望、头像 idle 眨眼），点击跳一下；
-  /// 身形/墨色取自外观设置（启动时已加载完成）
+  /// 初始身形/墨色取自外观设置（启动时已加载完成），
+  /// 实例列表加载后由 [_applyActiveBotStyle] 覆盖为活动 bot 的形象
   final GrokCharacter _heroCharacter = GrokCharacter(
     mode: 'hold',
     state: 'curious',
@@ -81,23 +115,41 @@ class _PersonalAssistantScreenState extends State<PersonalAssistantScreen> {
   void initState() {
     super.initState();
     eventManager.subscribe('plugin_loaded', _onPluginLoaded);
-    _botStyle.addListener(_onBotStyleChanged);
+    _botService.addListener(_onBotsChanged);
     _userSettings.load();
     _userSettings.addListener(_onUserSettingsChanged);
+    _boot();
+  }
+
+  /// 加载实例列表：空则创建首个实例（沿用外观设置的身形/墨色），
+  /// 默认激活首个并开始初始化其会话
+  Future<void> _boot() async {
+    var bots = await _botService.loadBots();
+    if (bots.isEmpty) {
+      final style = GrokBotStyleController();
+      await _botService.addBot(
+        id: GrokBotInstanceService.firstBotId,
+        shapeId: style.shapeId,
+        colorId: style.colorId,
+      );
+      bots = _botService.bots;
+    }
+    if (!mounted || bots.isEmpty) return;
+    setState(() => _activeBotId ??= bots.first.id);
+    _applyActiveBotStyle();
+    _botFutures[bots.first.id] ??= _initializeFor(bots.first.id);
+  }
+
+  /// 实例列表/形象变化：同步活动 bot 形象并刷新顶栏
+  void _onBotsChanged() {
+    if (!mounted) return;
+    _applyActiveBotStyle();
+    setState(() {});
   }
 
   /// 头像/昵称变化：重建消息头像
   void _onUserSettingsChanged() {
     if (mounted) setState(() {});
-  }
-
-  /// 外观设置变化：同步应用到两个角色实例
-  /// （setShape 走弹簧变形动画，setColor 每帧自绘即时生效）
-  void _onBotStyleChanged() {
-    _heroCharacter.setShape(_botStyle.shapeId);
-    _avatarCharacter.setShape(_botStyle.shapeId);
-    _heroCharacter.setColor(_botStyle.colorId);
-    _avatarCharacter.setColor(_botStyle.colorId);
   }
 
   void _onPluginLoaded(EventArgs args) {
@@ -106,36 +158,55 @@ class _PersonalAssistantScreenState extends State<PersonalAssistantScreen> {
     }
     setState(() {
       _resetController();
-      _controllerFuture = null;
+      _botFutures.clear();
+      final activeId = _activeBotId;
+      if (activeId != null) {
+        _botFutures[activeId] = _initializeFor(activeId);
+      }
     });
   }
 
   /// 帧末再释放旧 controller，避免 MessageInput 先行移除监听
   void _resetController() {
-    final controller = _controller;
-    final messageService = _messageService;
-    _controller = null;
-    _messageService = null;
-    controller?.removeListener(_onControllerChanged);
-    messageService?.removeListener(_onControllerChanged);
-    if (controller != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => controller.dispose());
+    final controllers = _botControllers.values.toList();
+    final services = _botMessageServices.values.toList();
+    _botControllers.clear();
+    _botMessageServices.clear();
+    for (final controller in controllers) {
+      controller.removeListener(_onControllerChanged);
+    }
+    for (final service in services) {
+      service.removeListener(_onControllerChanged);
+    }
+    if (controllers.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        for (final controller in controllers) {
+          controller.dispose();
+        }
+      });
     }
   }
 
-  Future<ChatController?> _initialize() async {
+  /// 初始化指定实例的会话控制器：按实例专属路由取/建临时会话
+  Future<ChatController?> _initializeFor(String botId) async {
     await ChatAssistantService.ensureBuiltinAgent();
+    final bots = await _botService.loadBots();
     final agentChat = AgentChatPlugin.instance.conversationController;
     if (agentChat == null) return null;
+    // 列表尚未含该 id（理论上仅首个实例竞态时）回退到第一个实例
+    GrokBotInstance? bot;
+    for (final item in bots) {
+      if (item.id == botId) bot = item;
+    }
+    bot ??= bots.isNotEmpty ? bots.first : null;
+    if (bot == null) return null;
 
     var conversation = agentChat.conversationService
-        .getTemporaryConversationForRoute(
-          ChatAssistantService.conversationRoute,
-        );
+        .getTemporaryConversationForRoute(bot.conversationRoute);
     conversation ??= await agentChat.conversationService
         .createTemporaryConversation(
           title: '聊天助手',
-          routeName: ChatAssistantService.conversationRoute,
+          routeName: bot.conversationRoute,
           agentId: ChatAssistantService.builtinAgentId,
         );
 
@@ -154,12 +225,53 @@ class _PersonalAssistantScreenState extends State<PersonalAssistantScreen> {
       controller.dispose();
       return null;
     }
-    _messageService = messageService;
-    _controller = controller;
+    _botMessageServices[bot.id] = messageService;
+    _botControllers[bot.id] = controller;
     controller.addListener(_onControllerChanged);
     messageService.addListener(_onControllerChanged);
     _syncCharacterState(controller.isSending);
     return controller;
+  }
+
+  /// 切换活动实例：已初始化则直接展示，否则异步初始化
+  void _switchBot(GrokBotInstance bot) {
+    if (_activeBotId == bot.id) return;
+    setState(() => _activeBotId = bot.id);
+    _applyActiveBotStyle();
+    _syncCharacterState(_botControllers[bot.id]?.isSending ?? false);
+    _botFutures[bot.id] ??= _initializeFor(bot.id);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _scrollToBottom();
+    });
+  }
+
+  /// 新增实例：形象随机抽取，顶栏滚到最右并切入新实例
+  Future<void> _addBot() async {
+    final bot = await _botService.addBot();
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_botStripController.hasClients) return;
+      _botStripController.animateTo(
+        _botStripController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 240),
+        curve: Curves.easeOutCubic,
+      );
+    });
+    _switchBot(bot);
+  }
+
+  /// 应用活动实例的身形/墨色到各角色实例
+  /// （setShape 走弹簧变形动画，setColor 每帧自绘即时生效）
+  void _applyActiveBotStyle() {
+    final bot = _activeBot;
+    if (bot == null) return;
+    _heroCharacter.setShape(bot.shapeId);
+    _avatarCharacter.setShape(bot.shapeId);
+    _heroCharacter.setColor(bot.colorId);
+    _avatarCharacter.setColor(bot.colorId);
+    final header = _headerCharacters[bot.id];
+    header?.setShape(bot.shapeId);
+    header?.setColor(bot.colorId);
   }
 
   /// 处理状态映射角色表情：处理中 thinking，完成先 happy 片刻，
@@ -171,8 +283,9 @@ class _PersonalAssistantScreenState extends State<PersonalAssistantScreen> {
     _wasSending = sending;
     if (sending) {
       _heroCharacter.setStateName('thinking');
-      // 头像不用 thinking（三点眼）——与占位气泡的墨点加载动画重复
-      _avatarCharacter.setStateName('searching');
+      // 头像不用 thinking（三点眼）——与占位气泡的墨点加载动画重复；
+      // 也不用 searching——该状态每 4-7s 自动转一圈，回复长时反复转圈
+      _avatarCharacter.setStateName('listening');
       return;
     }
     _heroCharacter.setStateName('happy');
@@ -212,15 +325,23 @@ class _PersonalAssistantScreenState extends State<PersonalAssistantScreen> {
   @override
   void dispose() {
     eventManager.unsubscribe('plugin_loaded', _onPluginLoaded);
-    _botStyle.removeListener(_onBotStyleChanged);
+    _botService.removeListener(_onBotsChanged);
     _userSettings.removeListener(_onUserSettingsChanged);
     _settleTimer?.cancel();
-    _controller?.removeListener(_onControllerChanged);
-    _messageService?.removeListener(_onControllerChanged);
-    _controller?.dispose();
+    for (final controller in _botControllers.values) {
+      controller.removeListener(_onControllerChanged);
+      controller.dispose();
+    }
+    for (final service in _botMessageServices.values) {
+      service.removeListener(_onControllerChanged);
+    }
     _scrollController.dispose();
+    _botStripController.dispose();
     _heroCharacter.dispose();
     _avatarCharacter.dispose();
+    for (final character in _headerCharacters.values) {
+      character.dispose();
+    }
     super.dispose();
   }
 
@@ -232,12 +353,13 @@ class _PersonalAssistantScreenState extends State<PersonalAssistantScreen> {
     final bottomInset = math.max(mq.padding.bottom, mq.viewInsets.bottom);
     // setColor 不触发重建，角色每帧自绘，可在 build 中安全同步墨色
     final scheme = theme.isDark ? 'dark' : 'light';
+    final activeColorId =
+        _activeBot?.colorId ?? GrokBotStyleController().colorId;
     if (_heroCharacter.scheme != scheme) {
-      // 主题明暗切换只换 scheme，墨色保留外观设置的选择
-      _heroCharacter.setColor(_botStyle.colorId, scheme);
-      _avatarCharacter.setColor(_botStyle.colorId, scheme);
+      // 主题明暗切换只换 scheme，墨色保留活动实例的选择
+      _heroCharacter.setColor(activeColorId, scheme);
+      _avatarCharacter.setColor(activeColorId, scheme);
     }
-    _controllerFuture ??= _initialize();
 
     return AppTheme(
       data: theme,
@@ -251,60 +373,8 @@ class _PersonalAssistantScreenState extends State<PersonalAssistantScreen> {
               constraints: const BoxConstraints(maxWidth: 760),
               child: Column(
                 children: [
-                  _buildHeader(theme),
-                  Expanded(
-                    child: FutureBuilder<ChatController?>(
-                      future: _controllerFuture,
-                      builder: (context, snapshot) {
-                        final controller = snapshot.data;
-                        if (snapshot.hasError) {
-                          return Center(
-                            child: Text(
-                              'screens_assistantInitFailed'.tr,
-                              style: DsTypography.body.copyWith(
-                                color: theme.textSub,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          );
-                        }
-                        if (controller == null) return const SizedBox.shrink();
-                        final messages = controller.messages;
-                        return Column(
-                          children: [
-                            Expanded(
-                              child: messages.isEmpty
-                                  ? _buildHero(theme, controller)
-                                  : _buildMessageList(
-                                      theme,
-                                      controller,
-                                      messages,
-                                    ),
-                            ),
-                            // removeBottom：外部已按导航栏/键盘避让，
-                            // 去掉 MessageInput 内部 SafeArea 的底部 inset
-                            MediaQuery.removePadding(
-                              context: context,
-                              removeBottom: true,
-                              child: Padding(
-                                padding: EdgeInsets.fromLTRB(
-                                  theme.spacing.lg,
-                                  theme.spacing.sm,
-                                  theme.spacing.lg,
-                                  bottomInset,
-                                ),
-                                child: MessageInput(
-                                  controller: controller,
-                                  showPanelStroke: true,
-                                  dashedPanelStroke: true,
-                                ),
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                  ),
+                  _buildHeader(theme, scheme),
+                  Expanded(child: _buildChatArea(theme, bottomInset, scheme)),
                 ],
               ),
             ),
@@ -314,7 +384,74 @@ class _PersonalAssistantScreenState extends State<PersonalAssistantScreen> {
     );
   }
 
-  Widget _buildHeader(AppThemeData theme) {
+  /// 对话区：活动实例已有缓存控制器时直接渲染（瞬时切换），
+  /// 否则挂 FutureBuilder 等待初始化完成
+  Widget _buildChatArea(AppThemeData theme, double bottomInset, String scheme) {
+    final controller = _controller;
+    if (controller != null) {
+      return _buildChatContent(context, theme, bottomInset, controller);
+    }
+    return FutureBuilder<ChatController?>(
+      future: _activeBotId == null ? null : _botFutures[_activeBotId],
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Center(
+            child: Text(
+              'screens_assistantInitFailed'.tr,
+              style: DsTypography.body.copyWith(color: theme.textSub),
+              textAlign: TextAlign.center,
+            ),
+          );
+        }
+        final live = snapshot.data;
+        if (live == null) return const SizedBox.shrink();
+        return _buildChatContent(context, theme, bottomInset, live);
+      },
+    );
+  }
+
+  Widget _buildChatContent(
+    BuildContext context,
+    AppThemeData theme,
+    double bottomInset,
+    ChatController controller,
+  ) {
+    final messages = controller.messages;
+    // 切换实例时强制重建 MessageInput 的 State，避免其残留旧控制器的监听
+    return KeyedSubtree(
+      key: ValueKey('chat_${controller.conversation.id}'),
+      child: Column(
+        children: [
+          Expanded(
+            child: messages.isEmpty
+                ? _buildHero(theme, controller)
+                : _buildMessageList(theme, controller, messages),
+          ),
+          // removeBottom：外部已按导航栏/键盘避让，
+          // 去掉 MessageInput 内部 SafeArea 的底部 inset
+          MediaQuery.removePadding(
+            context: context,
+            removeBottom: true,
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                theme.spacing.lg,
+                theme.spacing.sm,
+                theme.spacing.lg,
+                bottomInset,
+              ),
+              child: MessageInput(
+                controller: controller,
+                showPanelStroke: true,
+                dashedPanelStroke: true,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader(AppThemeData theme, String scheme) {
     final controller = _controller;
     final sending = controller?.isSending ?? false;
     return Padding(
@@ -323,7 +460,9 @@ class _PersonalAssistantScreenState extends State<PersonalAssistantScreen> {
         vertical: theme.spacing.sm,
       ),
       child: DSTopBar(
+        // 中部展示 grokbot 实例切换条（title 仅保留语义/无障碍）
         title: 'screens_assistantTitle'.tr,
+        center: _buildBotSwitcher(theme, scheme),
         onMenu: () => _openFullChat(controller),
         actions: [
           if (kDebugMode)
@@ -388,8 +527,110 @@ class _PersonalAssistantScreenState extends State<PersonalAssistantScreen> {
                 ),
               ),
             ),
+          // 最右侧固定：新增 grokbot 实例
+          _buildAddBotButton(theme),
         ],
       ),
+    );
+  }
+
+  /// 顶栏中部 grokbot 切换条：横滚图标列表，点击切换会话
+  Widget _buildBotSwitcher(AppThemeData theme, String scheme) {
+    final bots = _botService.bots;
+    if (bots.isEmpty) return const SizedBox.shrink();
+    return SingleChildScrollView(
+      controller: _botStripController,
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final bot in bots) _buildBotChip(theme, scheme, bot: bot),
+        ],
+      ),
+    );
+  }
+
+  /// 顶栏单个 grokbot 图标：34px 手绘圆框 + 28px 动态小角色，
+  /// 活动实例以主题色描边加底
+  Widget _buildBotChip(
+    AppThemeData theme,
+    String scheme, {
+    required GrokBotInstance bot,
+  }) {
+    final active = bot.id == _activeBotId;
+    // 非活动图标静态化：N 个动态角色每帧全量自绘会拖低帧率，
+    // 弹簧动画（转一圈等）因 dt 钳制被慢放；仅活动 bot 保留动态视图。
+    Widget avatar;
+    if (active) {
+      final character = _headerCharacterFor(bot);
+      // setColor 不触发重建，角色每帧自绘，可在 build 中安全同步明暗
+      if (character.scheme != scheme) {
+        character.setColor(bot.colorId, scheme);
+      }
+      avatar = GrokCharacterView(character: character, sizePx: 28);
+    } else {
+      avatar = StaticGrokAvatar(
+        shapeId: bot.shapeId,
+        colorId: bot.colorId,
+        scheme: scheme,
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 3),
+      child: GestureDetector(
+        onTap: () => _switchBot(bot),
+        child: Container(
+          width: 34,
+          height: 34,
+          decoration: dsSketchDecoration(
+            theme: theme,
+            circle: true,
+            fillColor: active ? theme.primary.withValues(alpha: 0.14) : null,
+            stroke: active ? theme.primary : null,
+            strokeWidth: active ? 2.2 : 1.6,
+            seed: bot.id.hashCode,
+          ),
+          child: Padding(padding: const EdgeInsets.all(2), child: avatar),
+        ),
+      ),
+    );
+  }
+
+  /// 顶栏小角色按实例 id 懒创建（多视图不能共享 character）
+  GrokCharacter _headerCharacterFor(GrokBotInstance bot) {
+    return _headerCharacters.putIfAbsent(
+      bot.id,
+      () => GrokCharacter(
+        mode: 'hold',
+        state: 'idle',
+        shapeName: bot.shapeId,
+        colorId: bot.colorId,
+      )..updateRenderWidth(30),
+    );
+  }
+
+  /// 新增实例按钮：与顶栏图标钮同尺寸的手绘按压圆钮
+  Widget _buildAddBotButton(AppThemeData theme) {
+    return Pressable(
+      onPressed: _addBot,
+      builder: (context, states) {
+        final pressed = states.contains(WidgetState.pressed);
+        final hovered = states.contains(WidgetState.hovered);
+        return Container(
+          width: 36,
+          height: 36,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: pressed
+                ? theme.surfaceAlt
+                : hovered
+                ? theme.surfaceAlt.withValues(alpha: 0.6)
+                : null,
+          ),
+          child: DsIcon(DsIconKind.plus, size: 20, color: theme.text),
+        );
+      },
     );
   }
 
@@ -557,8 +798,11 @@ class _PersonalAssistantScreenState extends State<PersonalAssistantScreen> {
     );
   }
 
-  /// 首页角色右上角设置：选择身形/墨色，即时应用到当前角色并持久化
+  /// 首页角色右上角设置：选择当前活动实例的身形/墨色，
+  /// 即时应用到各角色并持久化到实例配置
   void _openBotStyleSheet() {
+    final bot = _activeBot;
+    if (bot == null) return;
     final theme = DSThemeBridge.resolve(context);
     showModalBottomSheet(
       context: context,
@@ -575,10 +819,15 @@ class _PersonalAssistantScreenState extends State<PersonalAssistantScreen> {
               maxHeight: MediaQuery.of(sheetContext).size.height * 0.7,
             ),
             child: AnimatedBuilder(
-              animation: _botStyle,
+              animation: _botService,
               builder: (context, _) {
-                final selectedShape = _botStyle.shapeId;
-                final selectedColor = _botStyle.colorId;
+                // updateStyle 会替换实例对象，读列表取最新值
+                GrokBotInstance selected = bot;
+                for (final item in _botService.bots) {
+                  if (item.id == bot.id) selected = item;
+                }
+                final selectedShape = selected.shapeId;
+                final selectedColor = selected.colorId;
                 return SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
                   child: Column(
@@ -621,6 +870,10 @@ class _PersonalAssistantScreenState extends State<PersonalAssistantScreen> {
                               id: entry.key,
                               label: entry.value.label,
                               selected: entry.key == selectedShape,
+                              onTap: () => _botService.updateStyle(
+                                bot.id,
+                                shapeId: entry.key,
+                              ),
                             ),
                         ],
                       ),
@@ -643,6 +896,10 @@ class _PersonalAssistantScreenState extends State<PersonalAssistantScreen> {
                               id: entry.key,
                               colorValue: entry.value.$1,
                               selected: entry.key == selectedColor,
+                              onTap: () => _botService.updateStyle(
+                                bot.id,
+                                colorId: entry.key,
+                              ),
                             ),
                         ],
                       ),
@@ -662,9 +919,10 @@ class _PersonalAssistantScreenState extends State<PersonalAssistantScreen> {
     required String id,
     required String label,
     required bool selected,
+    required VoidCallback onTap,
   }) {
     return GestureDetector(
-      onTap: () => _botStyle.setShape(id),
+      onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: dsSketchDecoration(
@@ -687,9 +945,10 @@ class _PersonalAssistantScreenState extends State<PersonalAssistantScreen> {
     required String id,
     required int colorValue,
     required bool selected,
+    required VoidCallback onTap,
   }) {
     return GestureDetector(
-      onTap: () => _botStyle.setColor(id),
+      onTap: onTap,
       child: Container(
         width: 30,
         height: 30,
@@ -819,7 +1078,8 @@ class _PersonalAssistantScreenState extends State<PersonalAssistantScreen> {
                             children: [
                               _buildBotAvatar(
                                 theme,
-                                live: !showPlaceholder && message.id == lastAiId,
+                                live:
+                                    !showPlaceholder && message.id == lastAiId,
                               ),
                               SizedBox(width: theme.spacing.sm),
                               _buildBubbleFooter(theme, message),

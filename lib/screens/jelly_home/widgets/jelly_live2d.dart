@@ -671,6 +671,10 @@ class _JellyLive2DState extends State<JellyLive2D>
                                       _videoManifest!.canvasHeight /
                                       _videoManifest!.canvasWidth,
                                 ),
+                                // 滚轮/捏合调整大小：走 _setSize 统一 clamp
+                                // 并持久化到 jelly_live2d.size
+                                logicalSize: size,
+                                onResize: _setSize,
                                 builder: (context, playback) => VideoPetPlayer(
                                   key: ValueKey(
                                     '${_selectedModel.modelDir}:${jsonEncode(_videoManifest!.toJson())}',

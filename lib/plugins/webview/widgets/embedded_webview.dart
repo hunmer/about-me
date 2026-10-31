@@ -2,6 +2,7 @@ import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:aboutme/plugins/webview/webview_plugin.dart';
+import '../services/download_flow.dart';
 
 /// 可复用的嵌入式 WebView 组件
 ///
@@ -319,6 +320,15 @@ class _EmbeddedWebViewState extends State<EmbeddedWebView> {
       },
       onUpdateVisitedHistory: (controller, url, androidIsReload) {
         widget.onUrlChanged?.call(url?.toString() ?? '');
+      },
+      // 下载事件：复用浏览器页的共享下载流程（文件名对话框 + 选目录 + 进度）
+      onDownloadStartRequest: (controller, request) {
+        runBrowserDownloadFlow(
+          context,
+          url: request.url.toString(),
+          suggestedFilename: request.suggestedFilename,
+          contentDisposition: request.contentDisposition,
+        );
       },
     );
   }

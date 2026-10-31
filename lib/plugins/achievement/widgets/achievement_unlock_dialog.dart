@@ -223,6 +223,15 @@ class _UnlockDialogBody extends StatelessWidget {
               ),
             ),
           ),
+          // 右上角关闭按钮
+          Positioned(
+            top: 0,
+            right: 0,
+            child: IconButton(
+              icon: Icon(Icons.close, size: 20, color: theme.hintColor),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ),
           // 撒花动画：绘制在对话框内容上方，底边对齐对话框底边并允许超出弹窗
           Positioned(
             left: -100,

@@ -121,6 +121,20 @@ const Map<String, String> webviewTranslationsZh = {
   'webview_install_failed': '安装失败',
   'webview_downloading_files': '正在下载文件',
 
+  // 下载对话框
+  'webview_download_title': '下载文件',
+  'webview_download_file_name': '文件名',
+  'webview_download_save': '保存',
+  'webview_download_cancel': '取消',
+  'webview_download_downloading': '正在下载',
+  'webview_download_success': '下载完成',
+  'webview_download_failed': '下载失败',
+  'webview_download_cancelled': '已取消',
+  'webview_download_empty': '暂无下载记录',
+  'webview_download_manager_title': '下载管理',
+  'webview_download_clear': '清空已结束记录',
+  'webview_tab_downloads': '下载',
+
   // Widget Home Strings
   'webview_widgetName': '浏览器',
   'webview_widgetDescription': '快速打开内置浏览器',

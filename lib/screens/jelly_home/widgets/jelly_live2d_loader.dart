@@ -238,42 +238,7 @@ extension _JellyLive2DLoader on _JellyLive2DState {
       debugPrint('[Live2D][Jev] 回复为空，跳过自动表情动作');
       return;
     }
-    if (_isVideo) {
-      // 视频桌宠：候选 = 编辑器中启用的动画，命中后一次性播放。
-      final candidates =
-          _selectedModel.videoManifest?.animations
-              .where((item) => item.enabled)
-              .toList() ??
-          const [];
-      if (candidates.isEmpty) {
-        debugPrint('[Live2D][Jev] 视频档案没有启用中的动作，跳过决策');
-        return;
-      }
-      final result = await Live2DPlugin.instance.decideAppearance(
-        reply,
-        model: _selectedModel,
-        videoAnimations: candidates
-            .map((item) => item.name.isEmpty ? item.id : item.name)
-            .toList(),
-      );
-      final choice = result['motion'];
-      if (choice == null) {
-        debugPrint('[Live2D][Jev] 决策未返回动作，回退随机动画');
-        await _playRandomMotion();
-        return;
-      }
-      final match = candidates
-          .where((item) => item.name == choice || item.id == choice)
-          .firstOrNull;
-      if (match == null) {
-        debugPrint('[Live2D][Jev] 决策结果 $choice 不在候选动画中，回退随机动画');
-        await _playRandomMotion();
-        return;
-      }
-      debugPrint('[Live2D][Jev] 播放视频动画: ${match.id}');
-      _requestVideoAnimation(match.id);
-      return;
-    }
+    if (_isVideo) return;
     _jevMotionActive = false;
     _syncVoiceGaze();
     debugPrint('[Live2D][Jev] 收到完整回复，准备选择表情动作');

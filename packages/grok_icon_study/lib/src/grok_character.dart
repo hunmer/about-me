@@ -129,7 +129,6 @@ class GrokCharacter extends ChangeNotifier {
   tr.Trick? trick;
   double hopAt = -1;
   double trickAt = 0;
-  int trickCycle = 0;
   bool wildWide = false;
   double ovSpin = 0;
   double ovTurnAcc = 0;
@@ -188,14 +187,18 @@ class GrokCharacter extends ChangeNotifier {
         rnd = math.Random(seed) {
     eyeTopology = eyeTopologyOverride ?? loginWrap;
     faceTune = faceTuneOverride ?? (loginWrap ? t.faceTune : null);
-    uniformEyes = uniformEyesOverride ?? (loginWrap ? t.uniformEyesDefault : false);
-    eyeScaleProp = eyeScaleOverride ?? (loginWrap ? t.shapeEyeScaleOf(shapeName) : 1);
+    uniformEyes =
+        uniformEyesOverride ?? (loginWrap ? t.uniformEyesDefault : false);
+    eyeScaleProp =
+        eyeScaleOverride ?? (loginWrap ? t.shapeEyeScaleOf(shapeName) : 1);
     particles = Particles(
       getRadius: () {
         final sh = GrokGeometry.shapes[shapeName]!;
         final k = k2(clampN(shapeSpring.x, 0, 1));
         final to = sh.beltRadius ?? beltRadius(sh.path, GrokGeometry.re);
-        var je = k < 0.999 && prevBelt != null ? prevBelt! + (to - prevBelt!) * k : to;
+        var je = k < 0.999 && prevBelt != null
+            ? prevBelt! + (to - prevBelt!) * k
+            : to;
         if (state == 'loading') {
           je += (52 - je) * clampN(overlay.x, 0, 1);
         }
@@ -209,7 +212,8 @@ class GrokCharacter extends ChangeNotifier {
     last = 0;
     nowMs = 0;
     moodN = 0;
-    eyeUntil = t0 + randOf(rnd, t.eyeHoldMs['idle']!.$1, t.eyeHoldMs['idle']!.$2);
+    eyeUntil =
+        t0 + randOf(rnd, t.eyeHoldMs['idle']!.$1, t.eyeHoldMs['idle']!.$2);
     blinkUntil = t0 + randOf(rnd, 1500, 7000);
     gazeUntil = t0 + 800;
     winkAt = -1e9;
@@ -218,7 +222,6 @@ class GrokCharacter extends ChangeNotifier {
     trick = null;
     hopAt = -1;
     trickAt = t0 + randOf(rnd, 2500, 5000);
-    trickCycle = rnd.nextInt(5);
     wildWide = false;
     ovSpin = 0;
     ovTurnAcc = 0;
@@ -328,7 +331,8 @@ class GrokCharacter extends ChangeNotifier {
     final hold = t.eyeHoldMs[name]!;
     eyeUntil = stateAt + randOf(rnd, hold.$1, hold.$2);
     final bc = t.blinkMs[name];
-    blinkUntil = bc == null ? double.infinity : stateAt + randOf(rnd, 1500, 7000);
+    blinkUntil =
+        bc == null ? double.infinity : stateAt + randOf(rnd, 1500, 7000);
     gazeUntil = stateAt + randOf(rnd, 500, 1400);
     winkUntil = stateAt + randOf(rnd, 3000, 8000);
     ctx = PoseCtx()..reset(stateAt, rnd);
@@ -382,8 +386,20 @@ class GrokCharacter extends ChangeNotifier {
   /// 消除从偏移位置弹入的位移动画（不影响后续表情/跳动动画）
   void snapPose() {
     for (final s in [
-      spin, txS, tyS, squash, blink, eyeScale, gazeX, gazeY,
-      eyeMorph, overlay, overlayMix, notify, humDots, shapeSpring,
+      spin,
+      txS,
+      tyS,
+      squash,
+      blink,
+      eyeScale,
+      gazeX,
+      gazeY,
+      eyeMorph,
+      overlay,
+      overlayMix,
+      notify,
+      humDots,
+      shapeSpring,
       overlayTurn,
     ]) {
       s.x = s.t;
@@ -426,21 +442,11 @@ class GrokCharacter extends ChangeNotifier {
 
   void _cycleShapeTrick() {
     if (reduceMotion || paused) return;
-    trickCycle = (trickCycle + 1) % 5;
     wildWide = false;
-    if (trickCycle == 0) {
-      _pn(1);
-    } else if (trickCycle == 1) {
-      wildWide = true;
-      _pn(2);
-    } else if (trickCycle == 2) {
-      trick = tr.startTrick('spinBounce', reduceMotion, nowMs, rnd);
-    } else if (trickCycle == 3) {
-      trick = tr.startTrick('spinDizzy', reduceMotion, nowMs, rnd);
-    } else {
-      _pn(1);
-      particles.burst(16, 0.95, 0.3);
-    }
+    // 换形彩蛋统一为单圈俏皮旋转：曾按 5 次循环轮换 spinDizzy(3-4 圈)/
+    // _pn(2) 多圈，叠加转圈观感差，频繁切换形状（多 bot）场景尤甚
+    _pn(1);
+    particles.burst(16, 0.95, 0.3);
   }
 
   void _stepOverlay(double now) {
@@ -500,7 +506,9 @@ class GrokCharacter extends ChangeNotifier {
     final src = gazeTargetRel ?? (followPointer ? pointerRel : null);
     final size = _pointerSize;
     if (src != null && size != null && size.width > 0) {
-      final mapped = gazeTargetRel != null ? src : mapPointer(size.width, size.height, src);
+      final mapped = gazeTargetRel != null
+          ? src
+          : mapPointer(size.width, size.height, src);
       pointerTx = clampN(mapped.dx / size.width, -0.6, 0.6) * 22;
       pointerTy = clampN(mapped.dy / size.height, -0.6, 0.6) * 14;
     } else {
@@ -576,7 +584,10 @@ class GrokCharacter extends ChangeNotifier {
 
     _stepOverlay(now);
 
-    if (celebrateAt > 0 && now >= celebrateAt && trick == null && spinTurn == null) {
+    if (celebrateAt > 0 &&
+        now >= celebrateAt &&
+        trick == null &&
+        spinTurn == null) {
       trick = tr.startTrick('spinWild', reduceMotion, now, rnd);
       celebrateAt = now + 6200;
     }
@@ -647,7 +658,8 @@ class GrokCharacter extends ChangeNotifier {
       blinkUntil = now + randOf(rnd, blinkCadence.$1, blinkCadence.$2);
     }
     final blinkKey = consumeBlink(blinkQueue, now);
-    blink.t = blinkKey ?? (blinkQueue.isNotEmpty ? blink.t : (tf.lidMul ?? pose.lid));
+    blink.t =
+        blinkKey ?? (blinkQueue.isNotEmpty ? blink.t : (tf.lidMul ?? pose.lid));
 
     if (now >= gazeUntil) {
       final gz = nextGaze(_state, rnd);
@@ -766,9 +778,14 @@ class GrokCharacter extends ChangeNotifier {
     final r = GrokGeometry.re;
     final shape = GrokGeometry.shapes[shapeName]!;
     final fxFrame = FxFrame();
-    particles.update(now, _pendingDt, spinAngle, partScale,
+    particles.update(
+        now,
+        _pendingDt,
+        spinAngle,
+        partScale,
         (trick?.kind == 'spinWild') || wildWide || _state == 'humming',
-        _state == 'humming' || _state == 'loading', fxFrame);
+        _state == 'humming' || _state == 'loading',
+        fxFrame);
 
     final morphK = k2(clampN(shapeSpring.x, 0, 1));
     final morphing = morphK < 0.999 && prevFace != null;
@@ -778,8 +795,11 @@ class GrokCharacter extends ChangeNotifier {
     } else {
       face = GrokFacePort.from(shape.face);
     }
-    final fromTilt = prevTilt ?? (GrokGeometry.shapes[prevShape]?.tiltScale ?? 1);
-    final tilt = morphing ? fromTilt + (shape.tiltScale - fromTilt) * morphK : shape.tiltScale;
+    final fromTilt =
+        prevTilt ?? (GrokGeometry.shapes[prevShape]?.tiltScale ?? 1);
+    final tilt = morphing
+        ? fromTilt + (shape.tiltScale - fromTilt) * morphK
+        : shape.tiltScale;
 
     final yl = clampN(overlay.x, 0, 1);
     final mix = clampN(overlayMix.x, 0, 1);
@@ -788,8 +808,12 @@ class GrokCharacter extends ChangeNotifier {
     final bodyW = 1 - yl;
     final ex = extras;
     final tx = txS.x * bodyW + ex.yi * bodyW + ov.yre * yl;
-    final ty = (tyS.x + ex.hop) * bodyW + ex.ki * bodyW - ov.rx.lift * ov.lee + ov.ax * yl;
-    final rot = (spin.x * bodyW + ex.kr * bodyW) * tilt + ex.yr * bodyW + ov.wl * yl;
+    final ty = (tyS.x + ex.hop) * bodyW +
+        ex.ki * bodyW -
+        ov.rx.lift * ov.lee +
+        ov.ax * yl;
+    final rot =
+        (spin.x * bodyW + ex.kr * bodyW) * tilt + ex.yr * bodyW + ov.wl * yl;
     final sx = bodyW + ov.wre * yl;
     final sy = squash.x * bodyW + ov.wre * yl;
     final groupOpacity = (1 - (1 - ov.rx.tone) * ov.lee) * (1 - ov.fade);
@@ -804,7 +828,8 @@ class GrokCharacter extends ChangeNotifier {
         : shapeRing(shape.path, r);
     var liveRing = restRing;
     var turned = false;
-    final turnAt = !morphing && spinning ? turnAtOf(shapeName, shape.path, r) : null;
+    final turnAt =
+        !morphing && spinning ? turnAtOf(shapeName, shape.path, r) : null;
     if (turnAt != null) {
       liveRing = turnAt(spinAmt!);
       turned = true;
@@ -821,7 +846,8 @@ class GrokCharacter extends ChangeNotifier {
     }
     Path bodyD;
     if (jc >= 1) {
-      bodyD = isPencil ? closedSpline(overlayRing(ovKind, r, tear)) : fx.circlePath;
+      bodyD =
+          isPencil ? closedSpline(overlayRing(ovKind, r, tear)) : fx.circlePath;
     } else if (jc <= 0 && !morphing && !turned) {
       bodyD = parseSvgPath(shape.path);
     } else {
@@ -829,7 +855,8 @@ class GrokCharacter extends ChangeNotifier {
       bodyD = closedSpline(jc <= 0 ? liveRing : lerpRing(liveRing, to, k2(jc)));
     }
 
-    fx.paint(fxFrame, now, stateAt, ovKind, ovPrev, yl, mix, r, reduce: reduceMotion);
+    fx.paint(fxFrame, now, stateAt, ovKind, ovPrev, yl, mix, r,
+        reduce: reduceMotion);
 
     final shrink = 1 - dke(clampN((pxW - 44) / 90, 0, 1));
     final pScale = poseScaleVal;
@@ -840,13 +867,16 @@ class GrokCharacter extends ChangeNotifier {
     final morphT = clampN(eyeMorph.x, 0, 1);
     final polys = _currentPolys(morphT);
     final cr = eyeTopology
-        ? relRot(rot3(poseTurn, poseTilt, poseRoll), rot3(homeTurn, homeTilt, homeRoll))
+        ? relRot(rot3(poseTurn, poseTilt, poseRoll),
+            rot3(homeTurn, homeTilt, homeRoll))
         : null;
-    final overlayLive = yl > 0.001 || (overlayTurn.t - overlayTurn.x).abs() > 0.01;
+    final overlayLive =
+        yl > 0.001 || (overlayTurn.t - overlayTurn.x).abs() > 0.01;
     double? cyl = overlayLive ? overlayTurn.x : null;
     if (ex.turn != null) cyl = (cyl ?? 0) + ex.turn!;
     final ringHint = morphing || turned ? liveRing : null;
-    final hasPtr = gazeTargetRel != null || (followPointer && pointerRel != null);
+    final hasPtr =
+        gazeTargetRel != null || (followPointer && pointerRel != null);
     final eyesResult = computeEyes(EyesInput(
       now: now,
       polys: polys,

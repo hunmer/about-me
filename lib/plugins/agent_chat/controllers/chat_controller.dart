@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+import 'package:dartantic_ai/dartantic_ai.dart' show Tool;
 import 'package:uuid/uuid.dart';
 import 'package:universal_platform/universal_platform.dart';
 import 'package:aboutme_foreground_service/aboutme_foreground_service.dart';
@@ -46,6 +47,7 @@ class ChatController extends ChangeNotifier with WidgetsBindingObserver {
   final MessageDetailService messageDetailService;
   final ToolTemplateService? templateService;
   final Map<String, dynamic> Function()? getSettings; // 获取插件设置的回调
+  final List<Tool<Map<String, dynamic>>> Function()? extraToolsProvider;
 
   // ========== 管理器实例 ==========
 
@@ -113,6 +115,7 @@ class ChatController extends ChangeNotifier with WidgetsBindingObserver {
     required this.messageDetailService,
     this.templateService,
     this.getSettings,
+    this.extraToolsProvider,
   });
 
   // ========== Getters ==========
@@ -286,6 +289,7 @@ class ChatController extends ChangeNotifier with WidgetsBindingObserver {
         templateService: templateService,
         getSettings: getSettings,
         useJsTools: () => _useJsTools,
+        extraToolsProvider: extraToolsProvider,
         notifyListeners: notifyListeners,
         onTypingStatus: setTypingStatus,
       );
