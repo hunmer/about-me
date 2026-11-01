@@ -117,11 +117,11 @@ extension _VideoPetEditorPresetPanel on _VideoPetEditorScreenState {
                           : (widget.resolvedSources[Uri.parse(
                                   widget.baseUri,
                                 ).resolve(source).toString()] ??
-                              Uri.parse(
-                                widget.baseUri,
-                              ).resolve(source).toString());
-                      final range = await VideoPetAnimationResourceEditor
-                          .showVideoPetFrameRangeSheet(
+                                Uri.parse(
+                                  widget.baseUri,
+                                ).resolve(source).toString());
+                      final range =
+                          await VideoPetAnimationResourceEditor.showVideoPetFrameRangeSheet(
                             context,
                             title: _text('videoPet_wallBump', '撞墙动画'),
                             sheet: sheet,
@@ -321,13 +321,6 @@ extension _VideoPetEditorPresetPanel on _VideoPetEditorScreenState {
             (binding) => _updateSelectedRegion(hover: binding),
           ),
           const Divider(height: 22),
-          _buildBindingEditor(
-            _text('videoPet_click', 'Click 动画'),
-            selected.click,
-            _draft.click,
-            (binding) => _updateSelectedRegion(click: binding),
-          ),
-          const Divider(height: 22),
           ListTile(
             contentPadding: EdgeInsets.zero,
             title: Text(_text('videoPet_showRegions', '显示区域')),
@@ -401,7 +394,7 @@ extension _VideoPetEditorPresetPanel on _VideoPetEditorScreenState {
     );
   }
 
-  /// 「动作预设」分区：Idle / 全局 Hover / 全局 Click 绑定 + 随机移动。
+  /// 「动作预设」分区：Idle / 全局 Click 绑定 + 随机移动。
   List<Widget> _buildPresetSections() => [
     Text(
       _text('videoPet_presets', '动作预设'),
@@ -410,10 +403,25 @@ extension _VideoPetEditorPresetPanel on _VideoPetEditorScreenState {
     const SizedBox(height: 10),
     _buildIdleSelector(),
     const SizedBox(height: 12),
-    _buildGlobalBindingEditor(
-      _text('videoPet_globalHover', '全局 Hover'),
-      _draft.hover,
-      (binding) => _updateGlobalBinding(hover: binding),
+    ListTile(
+      contentPadding: EdgeInsets.zero,
+      title: Text(
+        _text('videoPet_globalClickMode', '使用全局 Click'),
+        style: Theme.of(context).textTheme.titleSmall,
+      ),
+      trailing: DSSwitch(
+        key: const ValueKey('videoPetGlobalClickMode'),
+        value: _draft.globalClickEnabled,
+        onChanged: (value) =>
+            _setDraft(_draft.copyWith(globalClickEnabled: value)),
+      ),
+    ),
+    Text(
+      _text(
+        'videoPet_globalClickModeHint',
+        '开启后所有点击使用全局列表；关闭后按区域列表，旧区域空值继承全局，清空列表即禁用。',
+      ),
+      style: Theme.of(context).textTheme.bodySmall,
     ),
     const SizedBox(height: 8),
     _buildGlobalBindingEditor(

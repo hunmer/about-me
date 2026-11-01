@@ -26,6 +26,8 @@ class GlobalPetView extends StatefulWidget {
     required this.size,
     this.opacity = 1.0,
     this.active = true,
+    this.videoInteractive = false,
+    this.debugLogging = false,
     this.onManifestResolved,
   });
 
@@ -41,6 +43,15 @@ class GlobalPetView extends StatefulWidget {
 
   /// 视频桌宠播放开关（Live2D 恒为渲染态）
   final bool active;
+
+  /// 恢复视频桌宠内部点按（区域 click binding / manifest.click 兜底 /
+  /// 动画与回调，逻辑全在 VideoPetPlayer._tap）。开启后视频子树不再
+  /// IgnorePointer；播放器不注册内部 pan（未传 drag 回调），拖拽仍由
+  /// 外层悬浮层统一处理，tap 与外层 pan 在手势竞技场互斥：
+  /// 移动超 slop 判拖拽，原地起落判点击，互不误触发。
+  /// Live2D 子树恒定 IgnorePointer（平台视图吃事件靠 setInteractive）。
+  final bool videoInteractive;
+  final bool debugLogging;
 
   /// 视频清单解析完成回调（含 model.videoManifest 为空时的
   /// loadDefault 兜底结果）；外层悬浮层用它做区域命中过滤。
@@ -70,6 +81,12 @@ class _GlobalPetViewState extends State<GlobalPetView> {
   final Live2DViewController _controller = Live2DViewController();
   JellyLive2DCropRegion _cropRegion = const JellyLive2DCropRegion.full();
   VideoPetPackage? _videoPackage;
+
+  void _debugLog(String message) {
+    if (widget.debugLogging) {
+      debugPrint('[Live2D][GlobalPetView] $message');
+    }
+  }
 
   /// 与小屋舞台共用同一份用户裁剪偏好（jelly_live2d.crop.*），
   /// 小屋里裁剪过的模型在全局悬浮下呈现一致取景
@@ -106,6 +123,11 @@ class _GlobalPetViewState extends State<GlobalPetView> {
   Future<void> _load() async {
     final model = widget.model;
     if (model.isVideo) {
+      _debugLog(
+        'video load start modelDir=${model.modelDir} modelFile=${model.modelFile} '
+        'source=${model.videoManifest == null ? "default" : "model"} '
+        'interactive=${widget.videoInteractive} active=${widget.active}',
+      );
       try {
         final manifest =
             model.videoManifest ??
@@ -116,6 +138,12 @@ class _GlobalPetViewState extends State<GlobalPetView> {
           resolvedSources: model.videoResolvedSources,
         );
         if (!mounted) return;
+        _debugLog(
+          'video package ready model=${model.label} manifest=${package.manifest.id} '
+          'regions=${package.manifest.regions.length} '
+          'manifestClickIds=${package.manifest.click.animationIds} '
+          'baseUri=${package.baseUri}',
+        );
         setState(() => _videoPackage = package);
         // 通知外层（区域命中过滤用）：含 loadDefault 兜底解析出的清单
         widget.onManifestResolved?.call(package.manifest);
@@ -155,12 +183,14 @@ class _GlobalPetViewState extends State<GlobalPetView> {
   @override
   Widget build(BuildContext context) {
     final box = GlobalPetView.boxSizeFor(widget.model, widget.size);
-    // 整棵子树退出命中测试：视频播放器内部即使 interactive=false 仍有
-    // opaque Listener/GestureDetector，平台视图（iOS/Android）也经框架
-    // 命中参与事件路由——统一屏蔽后，拖拽/点击完全由外层悬浮层接管；
+    // 视频可交互模式放开子树命中（内部仅 tap，拖拽仍归外层）；
+    // 其余情况整棵子树退出命中测试：视频播放器即使 interactive=false
+    // 仍有 opaque Listener/GestureDetector，平台视图（iOS/Android）也经
+    // 框架命中参与事件路由——统一屏蔽后，拖拽/点击完全由外层悬浮层接管；
     // macOS WKWebView 是原生 NSView 直接吃 AppKit 事件，靠上面
     // setInteractive(false) 的原生 hitTest 关闭兜底
     return IgnorePointer(
+      ignoring: !(widget.model.isVideo && widget.videoInteractive),
       child: Opacity(
         opacity: widget.opacity,
         child: SizedBox(
@@ -180,8 +210,10 @@ class _GlobalPetViewState extends State<GlobalPetView> {
       baseUri: package.baseUri,
       resolvedSources: package.resolvedSources,
       active: widget.active,
-      // 内部点按/拖拽动画全部关闭：拖拽由外层悬浮层统一处理
-      interactive: false,
+      // interactive 只开内部点按（区域 click/manifest.click 兜底/回调）；
+      // 不传 onDrag* 回调 → 不注册内部 pan，拖拽由外层悬浮层统一处理
+      interactive: widget.videoInteractive,
+      debugLogging: widget.debugLogging,
     );
   }
 

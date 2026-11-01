@@ -92,6 +92,91 @@ extension _VideoPetEditorRegionOps on _VideoPetEditorScreenState {
     );
   }
 
+  void _updateRegionClick(String regionId, VideoPetBinding? binding) {
+    _setDraft(
+      _draft.copyWith(
+        regions: [
+          for (final region in _draft.regions)
+            if (region.id == regionId)
+              region.copyWith(click: binding)
+            else
+              region,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRegionClickEditor(VideoPetRegion region) {
+    final inherited = region.click == null;
+    final binding = region.click ?? _draft.click;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '${_text('videoPet_click', 'Click 动画')} · '
+                  '${inherited ? _text('videoPet_inheritGlobal', '继承全局') : _text('videoPet_regionClickActions', '区域动作')}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
+              if (!inherited)
+                TextButton.icon(
+                  onPressed: () => _updateRegionClick(region.id, null),
+                  icon: const Icon(Icons.refresh, size: 16),
+                  label: Text(_text('videoPet_inheritGlobal', '继承全局')),
+                ),
+            ],
+          ),
+          DSMultiCombobox<String>(
+            key: ValueKey('videoPetRegionClick_${region.id}'),
+            items: [
+              for (final animation in _draft.animations)
+                DSSelectItem(
+                  value: animation.id,
+                  label: animation.name.isEmpty ? animation.id : animation.name,
+                ),
+            ],
+            values: binding.animationIds,
+            hint: _text('videoPet_selectAnimations', '选择动画'),
+            onChanged: (ids) => _updateRegionClick(
+              region.id,
+              binding.copyWith(animationIds: ids),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  _text('videoPet_strategy', '播放策略'),
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
+              SizedBox(
+                width: 130,
+                child: DSSelect<String>(
+                  value: binding.strategy,
+                  items: const [
+                    DSSelectItem(value: 'random', label: 'random'),
+                    DSSelectItem(value: 'sequence', label: 'sequence'),
+                  ],
+                  onChanged: (value) => _updateRegionClick(
+                    region.id,
+                    binding.copyWith(strategy: value),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildRegionPanel() {
     final panel = Padding(
       padding: const EdgeInsets.all(12),
@@ -137,38 +222,47 @@ extension _VideoPetEditorRegionOps on _VideoPetEditorScreenState {
               itemCount: _draft.regions.length,
               itemBuilder: (context, index) {
                 final region = _draft.regions[index];
-                return ListTile(
-                  dense: true,
-                  selected: region.id == _selectedRegionId,
-                  leading: CircleAvatar(
-                    radius: 12,
-                    child: Text('${index + 1}'),
-                  ),
-                  title: Text(
-                    region.name.isEmpty ? region.id : region.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  subtitle: Text(
-                    '${region.priority} · ${region.enabled ? _text('videoPet_enabled', '启用') : _text('videoPet_disabled', '停用')}',
-                  ),
-                  trailing: DSIconButton(
-                    icon: region.enabled ? DsIconKind.eye : DsIconKind.eyeOff,
-                    size: 32,
-                    color: DSThemeBridge.resolve(context).surfaceAlt,
-                    iconColor: region.enabled
-                        ? DSThemeBridge.resolve(context).text
-                        : DSThemeBridge.resolve(context).textSub,
-                    tooltip: region.enabled
-                        ? _text('videoPet_disableRegion', '停用区域')
-                        : _text('videoPet_enableRegion', '启用区域'),
-                    // 点击眼睛直接切换该区域启用状态（并选中该区域）。
-                    onPressed: () {
-                      _selectedRegionId = region.id;
-                      _updateSelectedRegion(enabled: !region.enabled);
-                    },
-                  ),
-                  onTap: () => setState(() => _selectedRegionId = region.id),
+                return Column(
+                  children: [
+                    ListTile(
+                      dense: true,
+                      selected: region.id == _selectedRegionId,
+                      leading: CircleAvatar(
+                        radius: 12,
+                        child: Text('${index + 1}'),
+                      ),
+                      title: Text(
+                        region.name.isEmpty ? region.id : region.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      subtitle: Text(
+                        '${region.priority} · ${region.enabled ? _text('videoPet_enabled', '启用') : _text('videoPet_disabled', '停用')}',
+                      ),
+                      trailing: DSIconButton(
+                        icon: region.enabled
+                            ? DsIconKind.eye
+                            : DsIconKind.eyeOff,
+                        size: 32,
+                        color: DSThemeBridge.resolve(context).surfaceAlt,
+                        iconColor: region.enabled
+                            ? DSThemeBridge.resolve(context).text
+                            : DSThemeBridge.resolve(context).textSub,
+                        tooltip: region.enabled
+                            ? _text('videoPet_disableRegion', '停用区域')
+                            : _text('videoPet_enableRegion', '启用区域'),
+                        // 点击眼睛直接切换该区域启用状态（并选中该区域）。
+                        onPressed: () {
+                          _selectedRegionId = region.id;
+                          _updateSelectedRegion(enabled: !region.enabled);
+                        },
+                      ),
+                      onTap: () =>
+                          setState(() => _selectedRegionId = region.id),
+                    ),
+                    if (!_draft.globalClickEnabled)
+                      _buildRegionClickEditor(region),
+                  ],
                 );
               },
             ),

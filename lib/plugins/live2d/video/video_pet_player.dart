@@ -62,6 +62,7 @@ class VideoPetPlayer extends StatefulWidget {
     this.onTap,
     this.onInteraction,
     this.interactive = true,
+    this.debugLogging = false,
     this.showRegions = false,
     this.resolvedSources = const {},
     this.onContextMenu,
@@ -95,6 +96,7 @@ class VideoPetPlayer extends StatefulWidget {
   final void Function(String? regionId, String? regionName)? onTap;
   final void Function(String? regionId, String? animationId)? onInteraction;
   final bool interactive;
+  final bool debugLogging;
   final bool showRegions;
   final Map<String, String> resolvedSources;
   final VoidCallback? onContextMenu;
@@ -166,6 +168,14 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
   bool get _released => !widget.active || _background;
   bool get _playing => !_released && !widget.paused && !_inactive;
 
+  void _debugLog(String message) {
+    if (widget.debugLogging) {
+      debugPrint(
+        '[VideoPetPlayer][GlobalPet] model=${widget.manifest.id} $message',
+      );
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -195,6 +205,11 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
       if (!mounted || epoch != _packageEpoch) return;
       _package = package;
       _playback = VideoPetPlaybackState(package.manifest);
+      _debugLog(
+        'package ready baseUri=${package.baseUri} manifest=${package.manifest.id} '
+        'regions=${package.manifest.regions.length} '
+        'manifestClickIds=${package.manifest.click.animationIds}',
+      );
       _playback.setLifecycle(
         active: !_released,
         paused: widget.paused || _inactive,
@@ -350,9 +365,17 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
     _notifyBusy();
     final package = _package;
     if (request == null || package == null || _released) {
+      _debugLog(
+        'present skipped request=${request?.animationId ?? "<none>"} '
+        'packageReady=${package != null} released=$_released',
+      );
       if (!_released) _audio.stop();
       return;
     }
+    _debugLog(
+      'present start animation=${request.animationId} kind=${request.kind.name} '
+      'generation=${request.generation} epochNext=${_epoch + 1}',
+    );
     if (_request?.generation == request.generation && _image != null) {
       // 同一动画重入（暂停恢复 / 生命周期回前台）：音频保持/恢复进度。
       if (_playing) {
@@ -377,7 +400,13 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
       image = MemoryImage(
         await _readImage(Uri.parse(package.resolveSource(source))),
       );
-      if (!mounted || epoch != _epoch || _released) return;
+      if (!mounted || epoch != _epoch || _released) {
+        _debugLog(
+          'present abandoned after image read animation=${request.animationId} '
+          'epoch=$epoch currentEpoch=$_epoch mounted=$mounted released=$_released',
+        );
+        return;
+      }
       Object? decodeError;
       await precacheImage(
         image,
@@ -386,9 +415,16 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
       );
       if (decodeError != null) throw decodeError!;
       if (!mounted || epoch != _epoch || _released) {
+        _debugLog(
+          'present abandoned after precache animation=${request.animationId} '
+          'epoch=$epoch currentEpoch=$_epoch mounted=$mounted released=$_released',
+        );
         unawaited(image.evict());
         return;
       }
+      _debugLog(
+        'present loaded animation=${request.animationId} generation=${request.generation} epoch=$epoch',
+      );
       debugPrint(
         '[VideoPetPlayer] load success animation=${request.animationId} generation=${request.generation} epoch=$epoch',
       );
@@ -454,6 +490,14 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
       );
 
   void _pointer(String type, Offset position, Size size) {
+    if (type == 'pointerdown' ||
+        type == 'pointerup' ||
+        type == 'pointercancel') {
+      _debugLog(
+        '$type received local=$position interactive=${widget.interactive} '
+        'playing=$_playing packageReady=${_package != null}',
+      );
+    }
     final point = _point(position, size);
     if (point != null) {
       widget.onEditPointer?.call(type, point.x, point.y);
@@ -475,15 +519,43 @@ class _VideoPetPlayerState extends State<VideoPetPlayer>
   }
 
   void _tap(Offset position, Size size) {
-    if (!widget.interactive || !_playing || _package == null) return;
+    if (!widget.interactive || !_playing || _package == null) {
+      _debugLog(
+        'tap rejected interactive=${widget.interactive} playing=$_playing '
+        'packageReady=${_package != null} active=${widget.active} '
+        'paused=${widget.paused} background=$_background inactive=$_inactive',
+      );
+      return;
+    }
     final point = _point(position, size);
-    if (point == null) return;
+    if (point == null) {
+      _debugLog('tap outside canvas local=$position size=$size');
+      return;
+    }
     final manifest = _package!.manifest;
     final region = manifest.hitTest(point.x, point.y);
+    final binding = manifest.clickBindingFor(region);
+    final bindingSource = manifest.globalClickEnabled
+        ? 'global-mode'
+        : region?.click == null
+        ? 'manifest-inherit'
+        : 'region';
+    _debugLog(
+      'tap hit local=$position normalized=(${point.x.toStringAsFixed(3)},'
+      '${point.y.toStringAsFixed(3)}) region=${region?.id ?? "<none>"} '
+      'manifest=${manifest.id} binding=$bindingSource '
+      'clickIds=${binding.animationIds} strategy=${binding.strategy}',
+    );
     widget.onTap?.call(region?.id, region?.name);
-    final binding = region?.click ?? manifest.click;
-    if (binding.animationIds.isEmpty) return;
+    if (binding.animationIds.isEmpty) {
+      _debugLog('tap has no click binding; playback unchanged');
+      return;
+    }
     final request = _playback.playClick(binding);
+    _debugLog(
+      'tap selected animation=${request?.animationId ?? "<none>"} '
+      'kind=${request?.kind.name ?? "<none>"} generation=${request?.generation ?? -1}',
+    );
     widget.onInteraction?.call(region?.id, request?.animationId);
     unawaited(_present(request));
   }

@@ -182,6 +182,41 @@ void main() {
     },
   );
 
+  test('click mode preserves legacy bindings and survives mode switches', () {
+    const globalClick = VideoPetBinding(
+      animationIds: ['idle'],
+      strategy: 'sequence',
+    );
+    const regionClick = VideoPetBinding(animationIds: ['idle']);
+    const disabledClick = VideoPetBinding();
+    final legacy = _manifest.copyWith(
+      click: globalClick,
+      regions: [
+        _region,
+        _region.copyWith(id: 'custom', click: regionClick),
+        _region.copyWith(id: 'disabled', click: disabledClick),
+      ],
+    );
+
+    expect(legacy.globalClickEnabled, isFalse);
+    expect(legacy.clickBindingFor(legacy.regions[0]).strategy, 'sequence');
+    expect(legacy.clickBindingFor(legacy.regions[1]).strategy, 'random');
+    expect(legacy.clickBindingFor(legacy.regions[2]).animationIds, isEmpty);
+    expect(legacy.clickBindingFor(null).animationIds, ['idle']);
+
+    final globalMode = legacy.copyWith(globalClickEnabled: true);
+    expect(globalMode.clickBindingFor(legacy.regions[1]), same(globalClick));
+    expect(globalMode.regions[1].click, same(regionClick));
+    expect(globalMode.regions[2].click, same(disabledClick));
+
+    final restored = VideoPetManifest.fromJson(globalMode.toJson());
+    expect(restored.globalClickEnabled, isTrue);
+    expect(restored.regions[1].click?.animationIds, ['idle']);
+    expect(restored.regions[2].click?.animationIds, isEmpty);
+    final oldJson = legacy.toJson()..remove('globalClickEnabled');
+    expect(VideoPetManifest.fromJson(oldJson).globalClickEnabled, isFalse);
+  });
+
   test('movement defaults, optional directions, roundtrip and validation', () {
     final legacy = VideoPetManifest.fromJson(
       _manifest.toJson()..remove('movement'),
@@ -898,40 +933,47 @@ void main() {
     },
   );
 
-  test('default asset manifest contains base-action WebP spritesheets', () async {
-    const service = VideoPetImportService();
-    final package = await service.loadDefault();
-    expect(package.baseUri, 'assets/live2d/video/dsh_pet/');
-    expect(package.manifest.animations, isNotEmpty);
-    expect(
-      package.manifest.animations.map((animation) => animation.category).toSet(),
-      unorderedEquals(['移动', '待机', '拖拽']),
-    );
-    expect(package.manifest.canvasWidth, 640);
-    expect(package.manifest.canvasHeight, 360);
-    expect(package.manifest.idleAnimationId, '待机呼吸休闲');
-    final ids = package.manifest.animations.map((animation) => animation.id).toSet();
-    expect(package.manifest.click.animationIds.every(ids.contains), isTrue);
-    for (final animation in package.manifest.animations) {
-      expect(animation.sources.keys, ['webp']);
-      final sheet = animation.spritesheet!;
-      expect(sheet.frameWidth, 640);
-      expect(sheet.frameHeight, 360);
-      expect(sheet.fps, 12);
-      expect(sheet.columns, 8);
-      expect(sheet.frameCount, anyOf(59, 120, 360));
-      expect(sheet.rows, (sheet.frameCount / sheet.columns).ceil());
-      final source = animation.imageSource!;
-      final file = File.fromUri(Uri.parse(package.resolveSource(source)));
-      expect(file.existsSync(), isTrue, reason: source);
-      final maxBytes = const {'工作加班', '熬夜刷手机'}.contains(animation.id)
-          ? 4000000
-          : 1000000;
-      expect(file.lengthSync(), inExclusiveRange(0, maxBytes));
-    }
-    expect(
-      package.manifest.metadata['commit'],
-      'b78e3fcf92ac78cee569aed7cc27eeb2a8d51757',
-    );
-  });
+  test(
+    'default asset manifest contains base-action WebP spritesheets',
+    () async {
+      const service = VideoPetImportService();
+      final package = await service.loadDefault();
+      expect(package.baseUri, 'assets/live2d/video/dsh_pet/');
+      expect(package.manifest.animations, isNotEmpty);
+      expect(
+        package.manifest.animations
+            .map((animation) => animation.category)
+            .toSet(),
+        unorderedEquals(['移动', '待机', '拖拽']),
+      );
+      expect(package.manifest.canvasWidth, 640);
+      expect(package.manifest.canvasHeight, 360);
+      expect(package.manifest.idleAnimationId, '待机呼吸休闲');
+      final ids = package.manifest.animations
+          .map((animation) => animation.id)
+          .toSet();
+      expect(package.manifest.click.animationIds.every(ids.contains), isTrue);
+      for (final animation in package.manifest.animations) {
+        expect(animation.sources.keys, ['webp']);
+        final sheet = animation.spritesheet!;
+        expect(sheet.frameWidth, 640);
+        expect(sheet.frameHeight, 360);
+        expect(sheet.fps, 12);
+        expect(sheet.columns, 8);
+        expect(sheet.frameCount, anyOf(59, 120, 360));
+        expect(sheet.rows, (sheet.frameCount / sheet.columns).ceil());
+        final source = animation.imageSource!;
+        final file = File.fromUri(Uri.parse(package.resolveSource(source)));
+        expect(file.existsSync(), isTrue, reason: source);
+        final maxBytes = const {'工作加班', '熬夜刷手机'}.contains(animation.id)
+            ? 4000000
+            : 1000000;
+        expect(file.lengthSync(), inExclusiveRange(0, maxBytes));
+      }
+      expect(
+        package.manifest.metadata['commit'],
+        'b78e3fcf92ac78cee569aed7cc27eeb2a8d51757',
+      );
+    },
+  );
 }

@@ -15,6 +15,7 @@ class VideoPetManifest {
     this.idleAnimationId = '',
     this.hover = const VideoPetBinding(),
     this.click = const VideoPetBinding(),
+    this.globalClickEnabled = false,
     this.movement = const VideoPetMovement(),
     this.regions = const [],
     this.metadata = const {},
@@ -29,6 +30,9 @@ class VideoPetManifest {
   final String idleAnimationId;
   final VideoPetBinding hover;
   final VideoPetBinding click;
+
+  /// Missing values in older manifests preserve legacy region resolution.
+  final bool globalClickEnabled;
   final VideoPetMovement movement;
   final List<VideoPetRegion> regions;
   final Map<String, dynamic> metadata;
@@ -51,6 +55,7 @@ class VideoPetManifest {
       idleAnimationId: _string(json, 'idleAnimationId'),
       hover: VideoPetBinding.fromJson(_object(json, 'hover')),
       click: VideoPetBinding.fromJson(_object(json, 'click')),
+      globalClickEnabled: _boolean(json, 'globalClickEnabled', false),
       movement: VideoPetMovement.fromJson(_object(json, 'movement')),
       regions: List.unmodifiable(
         _objects(json, 'regions').map(VideoPetRegion.fromJson),
@@ -71,6 +76,7 @@ class VideoPetManifest {
     'idleAnimationId': idleAnimationId,
     'hover': hover.toJson(),
     'click': click.toJson(),
+    'globalClickEnabled': globalClickEnabled,
     'movement': movement.toJson(),
     'regions': regions.map((r) => r.toJson()).toList(),
     'metadata': metadata,
@@ -86,6 +92,7 @@ class VideoPetManifest {
     String? idleAnimationId,
     VideoPetBinding? hover,
     VideoPetBinding? click,
+    bool? globalClickEnabled,
     VideoPetMovement? movement,
     List<VideoPetRegion>? regions,
     Map<String, dynamic>? metadata,
@@ -99,6 +106,7 @@ class VideoPetManifest {
     idleAnimationId: idleAnimationId ?? this.idleAnimationId,
     hover: hover ?? this.hover,
     click: click ?? this.click,
+    globalClickEnabled: globalClickEnabled ?? this.globalClickEnabled,
     movement: movement ?? this.movement,
     regions: List.unmodifiable(regions ?? this.regions),
     metadata: Map.unmodifiable(metadata ?? this.metadata),
@@ -126,6 +134,10 @@ class VideoPetManifest {
     }
     return result;
   }
+
+  /// Resolves clicks while preserving legacy region overrides by default.
+  VideoPetBinding clickBindingFor(VideoPetRegion? region) =>
+      globalClickEnabled ? click : region?.click ?? click;
 
   void validate() {
     _require(schemaVersion == 1, 'Unsupported schemaVersion: $schemaVersion');
@@ -509,9 +521,13 @@ class VideoPetAnimation {
             audio!.codeUnits.every((unit) => unit >= 0x20) &&
             audioUri != null &&
             (!audioUri.hasScheme ||
-                const ['http', 'https', 'file', 'data', 'blob'].contains(
-                  audioUri.scheme,
-                )),
+                const [
+                  'http',
+                  'https',
+                  'file',
+                  'data',
+                  'blob',
+                ].contains(audioUri.scheme)),
         'Invalid audio for $id',
       );
     }
@@ -799,6 +815,12 @@ double _number(Map<String, dynamic> json, String key, double fallback) {
   final value = json[key] ?? fallback;
   _require(value is num, '$key must be a number');
   return (value as num).toDouble();
+}
+
+bool _boolean(Map<String, dynamic> json, String key, bool fallback) {
+  final value = json[key] ?? fallback;
+  _require(value is bool, '$key must be a bool');
+  return value as bool;
 }
 
 int _integer(Map<String, dynamic> json, String key) {

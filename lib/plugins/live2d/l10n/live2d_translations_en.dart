@@ -23,7 +23,8 @@ const Map<String, String> live2dTranslationsEn = {
   'live2d_agentSection': 'Agent Persona',
   'live2d_noAgentSelected': 'Not selected',
   'live2d_autoReadTitle': 'Auto-read AI replies',
-  'live2d_autoReadSubtitle': 'Automatically read replies when complete (stored in the bound agent\'s voice settings)',
+  'live2d_autoReadSubtitle':
+      'Automatically read replies when complete (stored in the bound agent\'s voice settings)',
   'live2d_bindAgentFirst': 'Bind an agent to the archive first',
   'live2d_voiceTitle': 'Voice',
   'live2d_defaultVoice': 'Use default voice',
@@ -98,7 +99,8 @@ const Map<String, String> live2dTranslationsEn = {
   'videoPet_drag': 'Drag floating',
   'videoPet_drawHint': 'Drag on the preview to draw a region',
   'videoPet_edit': 'Edit',
-  'videoPet_editHint': 'Drag region to move, drag bottom-right corner to resize',
+  'videoPet_editHint':
+      'Drag region to move, drag bottom-right corner to resize',
   'videoPet_editPreview': 'Edit preview',
   'videoPet_editorTitle': 'Spritesheet pet editor',
   'videoPet_enableRegion': 'Enable region',
@@ -108,7 +110,9 @@ const Map<String, String> live2dTranslationsEn = {
   'videoPet_fullRange': 'Full range',
   'videoPet_geometry': 'Position & size',
   'videoPet_globalClick': 'Global Click',
-  'videoPet_globalHover': 'Global Hover',
+  'videoPet_globalClickMode': 'Use global Click',
+  'videoPet_globalClickModeHint':
+      'On: all clicks use this list. Off: use region lists; legacy null regions inherit global, and an empty list disables.',
   'videoPet_height': 'Height',
   'videoPet_hit': 'Hit',
   'videoPet_hover': 'Hover animation',
@@ -130,6 +134,7 @@ const Map<String, String> live2dTranslationsEn = {
   'videoPet_presets': 'Action presets',
   'videoPet_priority': 'Priority',
   'videoPet_regionProperties': 'Region properties',
+  'videoPet_regionClickActions': 'Region actions',
   'videoPet_regions': 'Regions',
   'videoPet_resetPosition': 'Reset',
   'videoPet_resume': 'Resume',

@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart'
+    show PanGestureRecognizer, PointerDeviceKind;
 import 'package:aboutme/core/app_initializer.dart';
 import 'package:aboutme/core/event/ai_auto_reply_event_args.dart';
 import 'package:aboutme/core/event/event_manager.dart';
@@ -30,7 +32,7 @@ class GlobalFloatingPetService {
   static final GlobalFloatingPetService instance = GlobalFloatingPetService._();
 
   /// 调试日志开关（代码或调试器翻转；命中/拖拽/路由/事件决策全链路输出）
-  static bool debugLogging = false;
+  static bool debugLogging = true;
 
   static void _log(String message) {
     if (debugLogging) {
@@ -264,6 +266,34 @@ class _GlobalFloatingPetStageState extends State<_GlobalFloatingPetStage> {
     _bubbleSafetyTimer = Timer(const Duration(seconds: 2), _onBubbleTyped);
   }
 
+  /// 所有 enabled 区域的归一化并集外接矩形投影到展示盒坐标。
+  ///
+  /// 无清单 / 无区域 / 无启用区域 → 整画布（0,0,1,1），即整盒贴边
+  /// （Live2D 与未配置区域视频的原行为，全禁用视频本就无处可拖）。
+  /// petBox 与画布等比（boxSizeFor 保证），归一化直接线性映射，
+  /// 缩放（fitScale）与横竖视频天然正确。
+  static Rect _projectUnionBox(VideoPetManifest? manifest, Size petBox) {
+    final regions = manifest?.regions;
+    if (regions == null || regions.isEmpty) {
+      return Offset.zero & petBox;
+    }
+    double left = 1.0, top = 1.0, right = 0.0, bottom = 0.0;
+    for (final region in regions) {
+      if (!region.enabled) continue;
+      left = math.min(left, region.x);
+      top = math.min(top, region.y);
+      right = math.max(right, region.x + region.width);
+      bottom = math.max(bottom, region.y + region.height);
+    }
+    if (right < left || bottom < top) return Offset.zero & petBox;
+    return Rect.fromLTRB(
+      left * petBox.width,
+      top * petBox.height,
+      right * petBox.width,
+      bottom * petBox.height,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // 首页（果冻小屋及其子页签）隐藏：不渲染也不参与命中
@@ -323,16 +353,25 @@ class _GlobalFloatingPetStageState extends State<_GlobalFloatingPetStage> {
                       ? _resolvedVideoManifest
                       : null))
             : null;
-        // 首次挂载默认停在右下角
+        // 交互区域并集（归一化画布坐标）投影到当前展示盒：
+        // petBox 与画布等比（boxSizeFor），归一化直接线性映射。
+        // 拖拽贴边以并集为准——交互区域贴住屏幕四边，非交互画布
+        // 允许局部出屏（Positioned 取负值，屏幕外由 Stack 裁剪不可见）；
+        // Live2D / 未配置区域的视频并集=整盒 → 与原整盒贴边完全一致
+        final unionBox = _projectUnionBox(videoManifest, petBox);
+        // 首次挂载默认停在右下角（并集右下角对齐边界右下角）
         _petPosition ??= Offset(
-          math.max(bounds.left, bounds.right - petBox.width),
-          math.max(bounds.top, bounds.bottom - petBox.height),
+          math.max(bounds.left - unionBox.left, bounds.right - unionBox.right),
+          math.max(bounds.top - unionBox.top, bounds.bottom - unionBox.bottom),
         );
-        final maxLeft = math.max(bounds.left, bounds.right - petBox.width);
-        final maxTop = math.max(bounds.top, bounds.bottom - petBox.height);
+        // petBox 允许位置范围：并集始终落在可活动边界内
+        final minLeft = bounds.left - unionBox.left;
+        final maxLeft = bounds.right - unionBox.right;
+        final minTop = bounds.top - unionBox.top;
+        final maxTop = bounds.bottom - unionBox.bottom;
         // 展示位置：窗口/安全区变化时把宠物夹回边界内（不改内存位置）
-        final petLeft = _petPosition!.dx.clamp(bounds.left, maxLeft).toDouble();
-        final petTop = _petPosition!.dy.clamp(bounds.top, maxTop).toDouble();
+        final petLeft = _petPosition!.dx.clamp(minLeft, maxLeft).toDouble();
+        final petTop = _petPosition!.dy.clamp(minTop, maxTop).toDouble();
 
         // 气泡尺寸与位置：跟随宠物且保持在屏幕内
         final bubbleWidth = math.min(260.0, bounds.width).toDouble();
@@ -408,42 +447,62 @@ class _GlobalFloatingPetStageState extends State<_GlobalFloatingPetStage> {
                     'pointer down local=${event.localPosition} '
                     'global=${event.position} kind=${event.kind}',
                   ),
-                  child: GestureDetector(
+                  child: RawGestureDetector(
                     behavior: HitTestBehavior.opaque,
-                    onPanStart: (details) {
-                      _dragStartGlobal = details.globalPosition;
-                      _dragOrigin = Offset(petLeft, petTop);
-                      GlobalFloatingPetService._log(
-                        'drag start origin=$_dragOrigin '
-                        'global=$_dragStartGlobal',
-                      );
-                    },
-                    onPanUpdate: (details) {
-                      final start = _dragStartGlobal;
-                      final origin = _dragOrigin;
-                      if (start == null || origin == null) return;
-                      // 稳定起点 + 全局坐标换算：同帧多事件也不丢 delta
-                      final next = origin + (details.globalPosition - start);
-                      setState(() {
-                        _petPosition = Offset(
-                          next.dx.clamp(bounds.left, maxLeft).toDouble(),
-                          next.dy.clamp(bounds.top, maxTop).toDouble(),
-                        );
-                      });
-                    },
-                    onPanEnd: (details) {
-                      GlobalFloatingPetService._log(
-                        'drag end pos=$_petPosition v=${details.velocity.pixelsPerSecond}',
-                      );
-                      _dragStartGlobal = null;
-                      _dragOrigin = null;
-                    },
-                    onPanCancel: () {
-                      GlobalFloatingPetService._log(
-                        'drag cancel pos=$_petPosition',
-                      );
-                      _dragStartGlobal = null;
-                      _dragOrigin = null;
+                    // 鼠标点击的微抖动（1-2px）若走默认 pan 判定（鼠标
+                    // slop 仅 1px）会抢先竞技场、吃掉播放器的 tap，导致
+                    // 区域点击动画失效；改用自定识别器把鼠标接受阈值
+                    // 提高到 8px，让 tap 存活，拖拽行为不变。
+                    gestures: {
+                      _GlobalPetPanGestureRecognizer:
+                          GestureRecognizerFactoryWithHandlers<
+                            _GlobalPetPanGestureRecognizer
+                          >(
+                            () => _GlobalPetPanGestureRecognizer(
+                              debugOwner: this,
+                            ),
+                            (recognizer) {
+                              recognizer.onStart = (details) {
+                                _dragStartGlobal = details.globalPosition;
+                                _dragOrigin = Offset(petLeft, petTop);
+                                GlobalFloatingPetService._log(
+                                  'drag start origin=$_dragOrigin '
+                                  'global=$_dragStartGlobal',
+                                );
+                              };
+                              recognizer.onUpdate = (details) {
+                                final start = _dragStartGlobal;
+                                final origin = _dragOrigin;
+                                if (start == null || origin == null) return;
+                                // 稳定起点 + 全局坐标换算：同帧多事件也不丢
+                                // delta；夹在并集贴边范围内（非交互画布可
+                                // 局部出屏）
+                                final next =
+                                    origin + (details.globalPosition - start);
+                                setState(() {
+                                  _petPosition = Offset(
+                                    next.dx.clamp(minLeft, maxLeft).toDouble(),
+                                    next.dy.clamp(minTop, maxTop).toDouble(),
+                                  );
+                                });
+                              };
+                              recognizer.onEnd = (details) {
+                                GlobalFloatingPetService._log(
+                                  'drag end pos=$_petPosition '
+                                  'v=${details.velocity.pixelsPerSecond}',
+                                );
+                                _dragStartGlobal = null;
+                                _dragOrigin = null;
+                              };
+                              recognizer.onCancel = () {
+                                GlobalFloatingPetService._log(
+                                  'drag cancel pos=$_petPosition',
+                                );
+                                _dragStartGlobal = null;
+                                _dragOrigin = null;
+                              };
+                            },
+                          ),
                     },
                     // 独立全局宠物组件：无背景/无随机游走/无内部手势，
                     // macOS 原生吃事件已在组件内通过 setInteractive 关闭
@@ -454,6 +513,11 @@ class _GlobalFloatingPetStageState extends State<_GlobalFloatingPetStage> {
                       model: model,
                       size: petSize,
                       opacity: plugin.globalPetOpacity,
+                      debugLogging: GlobalFloatingPetService.debugLogging,
+                      // 视频恢复内部点按（区域 click/manifest.click 兜底），
+                      // 内部不注册 pan，拖拽仍由本层 GestureDetector 处理；
+                      // tap 与 pan 手势竞技场互斥，拖动不会误触点击
+                      videoInteractive: model.isVideo,
                       // 异步解析的视频清单（loadDefault 兜底路径）回报，
                       // 驱动区域命中过滤；切档由 ValueKey 重建重新解析
                       onManifestResolved: (manifest) {
@@ -471,6 +535,33 @@ class _GlobalFloatingPetStageState extends State<_GlobalFloatingPetStage> {
           ],
         );
       },
+    );
+  }
+}
+
+/// 悬浮宠物拖拽识别器：仅对鼠标（precise 指针）提高接受阈值。
+///
+/// Flutter 默认鼠标 pan slop 仅 1px（kPrecisePointerHitSlop），点击时的
+/// 微抖动会让本层 pan 在手势竞技场抢先胜出、拒绝播放器的 tap，区域点击
+/// 动画因此失效；要求移动 ≥8px 才接受 pan，tap 得以存活，触摸维持
+/// 默认 18px 判定，拖拽手感不受影响。
+class _GlobalPetPanGestureRecognizer extends PanGestureRecognizer {
+  _GlobalPetPanGestureRecognizer({super.debugOwner});
+
+  /// 鼠标指针的 pan 接受阈值（像素）
+  static const double _preciseAcceptSlop = 8.0;
+
+  @override
+  bool hasSufficientGlobalDistanceToAccept(
+    PointerDeviceKind pointerDeviceKind,
+    double? deviceTouchSlop,
+  ) {
+    if (pointerDeviceKind == PointerDeviceKind.mouse) {
+      return globalDistanceMoved.abs() > _preciseAcceptSlop;
+    }
+    return super.hasSufficientGlobalDistanceToAccept(
+      pointerDeviceKind,
+      deviceTouchSlop,
     );
   }
 }
