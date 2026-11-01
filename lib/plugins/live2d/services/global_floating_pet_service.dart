@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:aboutme/core/app_initializer.dart';
 import 'package:aboutme/core/event/ai_auto_reply_event_args.dart';
 import 'package:aboutme/core/event/event_manager.dart';
+import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/live2d/live2d_plugin.dart';
 import 'package:aboutme/screens/jelly_home/widgets/jelly_live2d.dart';
@@ -15,16 +16,28 @@ import 'package:aboutme/screens/jelly_home/widgets/jelly_speech_bubble.dart';
 ///
 /// - [refresh] 依据插件设置挂载/摘除根 OverlayEntry；
 /// - 订阅 [AiAutoReplyEventArgs] 广播，转发开关开启且宠物确实可展示
-///   （stage 已附着 + 模型可解析）时，同步标记 handled 拦截默认 Toast，
-///   改为宠物气泡展示；否则不拦截，交由发射方默认展示。
+///   （stage 已附着 + 模型可解析 + 不在首页路由）时，同步标记 handled
+///   拦截默认 Toast，改为宠物气泡展示；否则不拦截，交由发射方默认展示；
+/// - 监听 [RouteHistoryManager.topRouteName]，首页（/jelly_home 及其
+///   子页签路由、旧首页 / 与 home）隐藏宠物且不拦截 AI 事件，离开恢复。
 class GlobalFloatingPetService {
   GlobalFloatingPetService._();
 
   static final GlobalFloatingPetService instance = GlobalFloatingPetService._();
 
+  /// 调试日志开关（代码或调试器翻转；命中/拖拽/路由/事件决策全链路输出）
+  static bool debugLogging = false;
+
+  static void _log(String message) {
+    if (debugLogging) {
+      debugPrint('[Live2D][GlobalPet] $message');
+    }
+  }
+
   OverlayEntry? _entry;
   bool _subscribed = false;
   bool _stageAttached = false;
+  bool _onHomeRoute = false;
   int _mountRetries = 0;
   static const int _maxMountRetries = 120;
 
@@ -33,7 +46,19 @@ class GlobalFloatingPetService {
 
   bool get isMounted => _entry != null;
 
-  /// 插件初始化时调用：订阅事件 + 按设置挂载
+  /// 首页路由名：/jelly_home 与 /jelly_home/1..4 子页签、旧首页 / 与 home
+  static bool _isHomeRoute(String? name) {
+    if (name == null) return true; // 启动初期未知路由按首页处理（默认 /jelly_home）
+    return name == '/jelly_home' ||
+        name.startsWith('/jelly_home/') ||
+        name == '/' ||
+        name == 'home';
+  }
+
+  /// 当前是否应渲染悬浮宠物（首页隐藏）
+  bool get shouldRender => !_onHomeRoute;
+
+  /// 插件初始化时调用：订阅事件 + 路由 + 按设置挂载
   void ensureInitialized() {
     if (!_subscribed) {
       _subscribed = true;
@@ -46,14 +71,17 @@ class GlobalFloatingPetService {
         Live2DPlugin.archiveSelectedEvent,
         (_) => refresh(),
       );
+      // 真实路由跟踪：进首页隐藏（不拦截事件），离开恢复
+      RouteHistoryManager.instance.topRouteName.addListener(_onRouteChanged);
+      _onRouteChanged();
     }
     refresh();
   }
 
   /// 悬浮宠物此刻是否真的能承接气泡展示：
-  /// entry 已插入、stage 已附着（气泡监听就位）、模型可解析
+  /// entry 已插入、stage 已附着（气泡监听就位）、不在首页、模型可解析
   bool get _canDisplay {
-    if (_entry == null || !_stageAttached) return false;
+    if (_entry == null || !_stageAttached || _onHomeRoute) return false;
     final plugin = Live2DPlugin.instance;
     final archive = plugin.globalPetArchive;
     if (archive == null) return false;
@@ -69,9 +97,24 @@ class GlobalFloatingPetService {
     final plugin = Live2DPlugin.instance;
     if (!plugin.globalPetEnabled || !plugin.forwardAiReplyEnabled) return;
     // 仅在宠物确实可展示时拦截默认展示，否则交回默认 Toast
-    if (!_canDisplay) return;
+    if (!_canDisplay) {
+      _log('ai_auto_reply 不拦截：canDisplay=false（未挂载/首页隐藏/模型缺失）');
+      return;
+    }
     args.handled = true;
+    _log('ai_auto_reply 已拦截 ${args.text.length} 字');
     pendingReply.value = Live2DPlugin.cleanReply(args.text);
+  }
+
+  /// 路由变化：进首页隐藏并清气泡，离开恢复
+  void _onRouteChanged() {
+    final name = RouteHistoryManager.instance.currentTopRouteName;
+    final onHome = _isHomeRoute(name);
+    if (onHome == _onHomeRoute) return;
+    _onHomeRoute = onHome;
+    _log('路由="$name" 首页=$onHome → ${onHome ? "隐藏" : "恢复"}');
+    if (onHome) pendingReply.value = null;
+    _entry?.markNeedsBuild();
   }
 
   /// 设置变化后重算挂载状态；导航器未就绪时按帧重试
@@ -96,7 +139,7 @@ class GlobalFloatingPetService {
     final overlay = navigatorKey.currentState?.overlay;
     if (overlay == null || !overlay.mounted) {
       if (_mountRetries >= _maxMountRetries) {
-        debugPrint('[Live2D][GlobalPet] Overlay 未就绪，放弃挂载重试');
+        _log('Overlay 未就绪，放弃挂载重试');
         return;
       }
       _mountRetries++;
@@ -105,14 +148,15 @@ class GlobalFloatingPetService {
     }
     _mountRetries = 0;
     _stageAttached = false;
-    final entry = OverlayEntry(
-      builder: (_) => const _GlobalFloatingPetStage(),
-    );
+    final entry = OverlayEntry(builder: (_) => _GlobalFloatingPetStage());
     overlay.insert(entry);
     _entry = entry;
+    _log('已挂载根 Overlay（首页隐藏中=$_onHomeRoute）');
   }
 
   void _unmount() {
+    if (_entry == null) return;
+    _log('摘除挂载');
     _mountRetries = 0;
     _stageAttached = false;
     _entry?.remove();
@@ -121,7 +165,7 @@ class GlobalFloatingPetService {
   }
 }
 
-/// 全屏透明的悬浮宠物宿主：右下角展示宠物与转发回复气泡
+/// 全屏透明的悬浮宠物宿主：可拖拽宠物 + 转发回复气泡
 class _GlobalFloatingPetStage extends StatefulWidget {
   const _GlobalFloatingPetStage();
 
@@ -134,6 +178,24 @@ class _GlobalFloatingPetStageState extends State<_GlobalFloatingPetStage> {
   String? _bubbleText;
   Timer? _bubbleTimer;
   Timer? _bubbleSafetyTimer;
+
+  /// 宠物左上角位置（逻辑像素）。仅内存保留：跨路由不丢，
+  /// 不做持久化；窗口/安全区变化时在 build 中夹回屏幕边界。
+  Offset? _petPosition;
+
+  /// 本次拖拽的稳定起点：按下时的全局指针位置 + 当时宠物位置。
+  /// 每帧直接用 globalPosition 相对起点换算，避免 build 闭包里的
+  /// 旧坐标在同帧多事件时丢 delta / 跳变 / 吸边。
+  Offset? _dragStartGlobal;
+  Offset? _dragOrigin;
+
+  static const double _bubbleGap = 8.0;
+
+  /// 内层渲染盒相对命中盒的收缩比：Live2D 平台视图
+  /// （macOS WKWebView / Android 平台 View 等）会吃掉自身 frame 内
+  /// 的指针事件且 IgnorePointer 拦不住，收窄渲染盒让平台视图
+  /// 不铺满整个方盒，留出 Flutter 可靠接收拖拽的边距环。
+  static const double _renderScale = 0.82;
 
   @override
   void initState() {
@@ -148,8 +210,9 @@ class _GlobalFloatingPetStageState extends State<_GlobalFloatingPetStage> {
     GlobalFloatingPetService.instance._stageAttached = false;
     _bubbleTimer?.cancel();
     _bubbleSafetyTimer?.cancel();
-    GlobalFloatingPetService.instance.pendingReply
-        .removeListener(_onPendingReply);
+    GlobalFloatingPetService.instance.pendingReply.removeListener(
+      _onPendingReply,
+    );
     super.dispose();
   }
 
@@ -163,6 +226,7 @@ class _GlobalFloatingPetStageState extends State<_GlobalFloatingPetStage> {
     _bubbleTimer?.cancel();
     _bubbleSafetyTimer?.cancel();
     setState(() => _bubbleText = text);
+    GlobalFloatingPetService._log('气泡展示 ${text.length} 字');
     // 兜底：打字回调异常时也按时收起
     _bubbleSafetyTimer = Timer(const Duration(seconds: 90), _hideBubble);
   }
@@ -172,6 +236,7 @@ class _GlobalFloatingPetStageState extends State<_GlobalFloatingPetStage> {
     _bubbleSafetyTimer?.cancel();
     if (!mounted) return;
     setState(() => _bubbleText = null);
+    GlobalFloatingPetService._log('气泡收起');
   }
 
   /// 与小屋舞台一致：打字结束后按文本长度展示 6-30 秒再收起
@@ -193,6 +258,10 @@ class _GlobalFloatingPetStageState extends State<_GlobalFloatingPetStage> {
 
   @override
   Widget build(BuildContext context) {
+    // 首页（果冻小屋及其子页签）隐藏：不渲染也不参与命中
+    if (!GlobalFloatingPetService.instance.shouldRender) {
+      return const SizedBox.shrink();
+    }
     final plugin = Live2DPlugin.instance;
     final archive = plugin.globalPetArchive;
     final model = archive == null
@@ -203,84 +272,178 @@ class _GlobalFloatingPetStageState extends State<_GlobalFloatingPetStage> {
           );
     if (archive == null || model == null) return const SizedBox.shrink();
 
-    final bottomPadding = 24.0 + MediaQuery.paddingOf(context).bottom;
-    return Align(
-      alignment: Alignment.bottomRight,
-      child: Padding(
-        padding: EdgeInsets.only(right: 16, bottom: bottomPadding),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            // 屏幕过小（小屏手机/分屏）时压缩气泡与宠物，避免溢出
-            final availWidth = constraints.maxWidth;
-            final availHeight = constraints.maxHeight;
-            const bubbleGap = 8.0;
-            const bubbleBaseWidth = 260.0;
-            const bubbleBaseHeight = 140.0;
-            final bubbleWidth = math
-                .min(bubbleBaseWidth, math.max(0.0, availWidth))
-                .toDouble();
-            final bubbleHeight = math
-                .min(bubbleBaseHeight, math.max(0.0, availHeight * 0.35))
-                .toDouble();
-            final bubbleVisible = _bubbleText != null && bubbleHeight > 40;
-            final petBudget = availHeight -
-                (bubbleVisible ? bubbleHeight + bubbleGap : 0.0);
-            final petSize = plugin.globalPetSize
-                .clamp(
-                  0.0,
-                  math.max(0.0, math.min(petBudget, availWidth)),
-                )
-                .toDouble();
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final screenW = constraints.maxWidth;
+        final screenH = constraints.maxHeight;
+        final safe = MediaQuery.paddingOf(context);
+        // 键盘弹起时把宠物压回可视区（viewInsets.bottom）
+        final keyboard = MediaQuery.viewInsetsOf(context).bottom;
+        // 可活动边界：安全区内收 8px，避免宠物贴死刘海/手势条/键盘
+        final bounds = Rect.fromLTRB(
+          safe.left + 8,
+          safe.top + 8,
+          math.max(safe.left + 8, screenW - safe.right - 8),
+          math.max(
+            safe.top + 8,
+            screenH - math.max(safe.bottom + 8, keyboard + 8),
+          ),
+        );
+        if (bounds.width <= 0 || bounds.height <= 0) {
+          return const SizedBox.shrink();
+        }
+        // 小屏（分屏/窗口缩小）时按屏幕预算压缩宠物尺寸
+        final petSize = plugin.globalPetSize
+            .clamp(
+              0.0,
+              math.max(0.0, math.min(bounds.width, bounds.height * 0.6)),
+            )
+            .toDouble();
+        // 首次挂载默认停在右下角
+        _petPosition ??= Offset(
+          math.max(bounds.left, bounds.right - petSize),
+          math.max(bounds.top, bounds.bottom - petSize),
+        );
+        final maxLeft = math.max(bounds.left, bounds.right - petSize);
+        final maxTop = math.max(bounds.top, bounds.bottom - petSize);
+        // 展示位置：窗口/安全区变化时把宠物夹回边界内（不改内存位置）
+        final petLeft = _petPosition!.dx.clamp(bounds.left, maxLeft).toDouble();
+        final petTop = _petPosition!.dy.clamp(bounds.top, maxTop).toDouble();
+        // 内层渲染盒：收窄后平台视图不再铺满命中盒
+        final renderSize = petSize * _renderScale;
 
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                if (bubbleVisible) ...[
-                  SizedBox(
-                    width: bubbleWidth,
-                    height: bubbleHeight,
-                    child: AppTheme(
-                      data: AppTheme.of(context),
-                      child: JellySpeechBubble(
-                        key: ValueKey('global-pet-bubble-$_bubbleText'),
-                        text: _bubbleText!,
-                        modelName: model.label,
-                        bubbleAsset: plugin.bubbleAsset,
-                        customRegions: BubbleTextRegions.fromSettings(
-                          plugin.bubbleAsset,
-                          plugin.bubbleRegions,
-                        ),
-                        typingInterval: plugin.bubbleTypingInterval,
-                        onTypingComplete: _onBubbleTyped,
-                        onUserInteract: _onBubbleInteract,
-                        onTap: _hideBubble,
-                      ),
+        // 气泡尺寸与位置：跟随宠物且保持在屏幕内
+        final bubbleWidth = math.min(260.0, bounds.width).toDouble();
+        final bubbleHeight = math
+            .min(140.0, math.max(0.0, bounds.height * 0.35))
+            .toDouble();
+        final bubbleVisible = _bubbleText != null && bubbleHeight > 40;
+        double bubbleTop = petTop;
+        double bubbleLeft = petLeft;
+        if (bubbleVisible) {
+          final roomAbove = petTop - bounds.top;
+          final roomBelow = bounds.bottom - petTop - petSize;
+          final showBelow =
+              roomAbove < bubbleHeight + _bubbleGap && roomBelow > roomAbove;
+          bubbleTop = showBelow
+              ? math.min(
+                  petTop + petSize + _bubbleGap,
+                  bounds.bottom - bubbleHeight,
+                )
+              : math.max(bounds.top, petTop - bubbleHeight - _bubbleGap);
+          bubbleLeft = (petLeft + petSize / 2 - bubbleWidth / 2)
+              .clamp(
+                bounds.left,
+                math.max(bounds.left, bounds.right - bubbleWidth),
+              )
+              .toDouble();
+        }
+
+        // 全屏透明 Stack：自身不命中，只有宠物盒与气泡参与手势，
+        // 不遮挡 App 其他区域的交互
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            if (bubbleVisible)
+              Positioned(
+                left: bubbleLeft,
+                top: bubbleTop,
+                width: bubbleWidth,
+                height: bubbleHeight,
+                child: AppTheme(
+                  data: AppTheme.of(context),
+                  child: JellySpeechBubble(
+                    key: ValueKey('global-pet-bubble-$_bubbleText'),
+                    text: _bubbleText!,
+                    modelName: model.label,
+                    bubbleAsset: plugin.bubbleAsset,
+                    customRegions: BubbleTextRegions.fromSettings(
+                      plugin.bubbleAsset,
+                      plugin.bubbleRegions,
                     ),
+                    typingInterval: plugin.bubbleTypingInterval,
+                    onTypingComplete: _onBubbleTyped,
+                    onUserInteract: _onBubbleInteract,
+                    onTap: _hideBubble,
                   ),
-                  const SizedBox(height: bubbleGap),
-                ],
-                // 宠物本体：透明度只作用于本体，气泡保持全不透明可读
-                Opacity(
-                  opacity: plugin.globalPetOpacity,
-                  child: SizedBox(
-                    width: petSize,
-                    height: petSize,
-                    child: JellyLive2D(
-                      key: ValueKey(
-                        'global-pet-${archive.id}-${model.modelDir}-${model.modelFile}',
+                ),
+              ),
+            // 宠物命中盒：外层拖拽。opaque 确保拖拽不被下层页面滚动抢走；
+            // 全屏 Stack 自身不命中，宠物盒之外的区域仍穿透到 App。
+            // Listener 记录 Flutter 是否收到指针（平台视图吃事件时无此日志）
+            Positioned(
+              left: petLeft,
+              top: petTop,
+              width: petSize,
+              height: petSize,
+              child: Listener(
+                onPointerDown: (event) => GlobalFloatingPetService._log(
+                  'pointer down local=${event.localPosition} '
+                  'global=${event.position} kind=${event.kind}',
+                ),
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onPanStart: (details) {
+                    _dragStartGlobal = details.globalPosition;
+                    _dragOrigin = Offset(petLeft, petTop);
+                    GlobalFloatingPetService._log(
+                      'drag start origin=$_dragOrigin '
+                      'global=$_dragStartGlobal',
+                    );
+                  },
+                  onPanUpdate: (details) {
+                    final start = _dragStartGlobal;
+                    final origin = _dragOrigin;
+                    if (start == null || origin == null) return;
+                    // 稳定起点 + 全局坐标换算：同帧多事件也不丢 delta
+                    final next = origin + (details.globalPosition - start);
+                    setState(() {
+                      _petPosition = Offset(
+                        next.dx.clamp(bounds.left, maxLeft).toDouble(),
+                        next.dy.clamp(bounds.top, maxTop).toDouble(),
+                      );
+                    });
+                  },
+                  onPanEnd: (details) {
+                    GlobalFloatingPetService._log(
+                      'drag end pos=$_petPosition v=${details.velocity.pixelsPerSecond}',
+                    );
+                    _dragStartGlobal = null;
+                    _dragOrigin = null;
+                  },
+                  onPanCancel: () {
+                    GlobalFloatingPetService._log(
+                      'drag cancel pos=$_petPosition',
+                    );
+                    _dragStartGlobal = null;
+                    _dragOrigin = null;
+                  },
+                  child: Opacity(
+                    opacity: plugin.globalPetOpacity,
+                    // 收窄的渲染盒：居中留边，边距环由 Flutter 命中
+                    child: Center(
+                      child: SizedBox(
+                        width: renderSize,
+                        height: renderSize,
+                        child: JellyLive2D(
+                          key: ValueKey(
+                            'global-pet-${archive.id}-${model.modelDir}-${model.modelFile}',
+                          ),
+                          initialModel: model,
+                          fitContainer: true,
+                          typingInterval: plugin.bubbleTypingInterval,
+                          showBackground: false,
+                          interactive: false,
+                        ),
                       ),
-                      initialModel: model,
-                      fitContainer: true,
-                      typingInterval: plugin.bubbleTypingInterval,
                     ),
                   ),
                 ),
-              ],
-            );
-          },
-        ),
-      ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

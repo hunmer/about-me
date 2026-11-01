@@ -173,6 +173,24 @@ final Map<String, String> openaiTranslationsEn = {
   'openai_confirmDeleteProviderMessage':
       'Are you sure you want to delete this provider?',
   'openai_pluginSettingsTitle': 'AI Assistant Settings',
+  // AI Auto Reply (migrated from the ai_encouragement_bot online script)
+  'openai_aiAutoReplyTitle': 'AI Auto Reply',
+  'openai_aiAutoReplyDescription':
+      'Generate a one-line AI encouragement when business events fire; shown via pet bubble when mounted',
+  'openai_aiAutoReplyStatusOn': 'On · @count events',
+  'openai_aiAutoReplyStatusOff': 'Off',
+  'openai_aiAutoReplyAgent': 'Auto Reply Agent',
+  'openai_aiAutoReplyAgentDescription': 'Agent used to generate replies',
+  'openai_aiAutoReplyTemplate': 'Reply Prompt Template',
+  'openai_aiAutoReplyTemplateHint':
+      'Use {eventDescription} as the event placeholder',
+  'openai_aiAutoReplyEventsTitle': 'Monitored Events',
+  'openai_aiAutoReplyEventsDescription':
+      'Toggle events individually; auto reply stays off when all are off',
+  'openai_aiAutoReplyNotSet': 'Not set',
+  'openai_aiAutoReplyCancel': 'Cancel',
+  'openai_aiAutoReplySave': 'Save',
+  'openai_aiAutoReplySaveFailed': 'Save failed, please retry',
   'openai_providerSettingsTitle': 'Provider Settings',
   'openai_addProviderTooltip': 'Add new AI provider',
   'openai_noProvidersConfigured': 'No providers configured',
@@ -347,7 +365,8 @@ final Map<String, String> openaiTranslationsEn = {
   'openai_memoryExtractionByInterval': 'Extract by time interval',
   'openai_memoryExtractionRounds': 'Rounds per extraction',
   'openai_memoryExtractionInterval': 'Interval (minutes)',
-  'openai_memoryExtractionHint': 'Each channel tracks completed exchanges independently. Extract in batches when the selected threshold is reached; skip when there are no new exchanges.',
+  'openai_memoryExtractionHint':
+      'Each channel tracks completed exchanges independently. Extract in batches when the selected threshold is reached; skip when there are no new exchanges.',
   'openai_memoryManagementDesc':
       'The AI automatically remembers important details and recalls them while chatting (works without Aliveness Boost)',
   'openai_decisionLog': 'Decision Log',
@@ -467,5 +486,5 @@ final Map<String, String> openaiTranslationsEn = {
   'openai_topicAnswered': 'Answered',
   'openai_topicOpenDetail': 'View details',
   'openai_cloneProviderFailed': 'Failed to clone provider',
-    'openai_cloneProviderSuccess': 'Cloned successfully',
+  'openai_cloneProviderSuccess': 'Cloned successfully',
 };

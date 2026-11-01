@@ -42,6 +42,30 @@ class RouteHistoryManager extends RouteObserver<PageRoute<dynamic>> {
   /// 用于把页面手动设置的上下文绑定到路由
   Route<dynamic>? _currentTopPageRoute;
 
+  /// 当前栈顶页面路由名的独立通知器
+  ///
+  /// 与 [_currentTopPageRoute] 同步维护，但只反映"真实路由名"，
+  /// 不受 updateCurrentContext 手动改写影响；供悬浮宠物等
+  /// 需要跟随真实路由变化的模块监听（didPush/pop/replace/remove 同步）。
+  final ValueNotifier<String?> topRouteName = ValueNotifier<String?>(null);
+
+  /// 当前栈顶页面路由名（通知器值为空时回退内部路由对象）
+  String? get currentTopRouteName =>
+      topRouteName.value ?? _currentTopPageRoute?.settings.name;
+
+  /// 更新栈顶页面路由并同步通知器
+  ///
+  /// 只接受有名字的页面路由；PopupRoute（弹层/对话框）一律忽略——
+  /// 但不过滤 opaque=false 的业务页（OpenContainer/BackSwipePageRoute/
+  /// StoryViewer 等自定义 PageRoute 都是合法栈顶页面）。
+  void _setTopPageRoute(Route<dynamic>? route) {
+    if (route == null || route is PopupRoute<dynamic>) return;
+    final name = route.settings.name;
+    if (name == null || name.isEmpty) return;
+    _currentTopPageRoute = route;
+    topRouteName.value = name;
+  }
+
   /// 各页面路由手动设置过的上下文（弱引用，路由销毁后条目可回收）
   /// pop 返回页面时优先按它恢复，避免只按路由名恢复而丢失 channelId 等参数
   final Expando<PageVisitRecord> _manualRouteContexts = Expando();
@@ -308,9 +332,7 @@ class RouteHistoryManager extends RouteObserver<PageRoute<dynamic>> {
     );
     _claimPendingPluginRoute(route);
     _trackPluginRoute(route, 1);
-    if (_hasRouteName(route)) {
-      _currentTopPageRoute = route;
-    }
+    _setTopPageRoute(route);
     _recordRoute(route);
   }
 
@@ -340,9 +362,7 @@ class RouteHistoryManager extends RouteObserver<PageRoute<dynamic>> {
     if (newRoute != null) {
       _claimPendingPluginRoute(newRoute);
       _trackPluginRoute(newRoute, 1);
-      if (_hasRouteName(newRoute)) {
-        _currentTopPageRoute = newRoute;
-      }
+      _setTopPageRoute(newRoute);
       _recordRoute(newRoute);
     }
   }
@@ -488,9 +508,7 @@ class RouteHistoryManager extends RouteObserver<PageRoute<dynamic>> {
   /// 优先恢复该页面手动设置过的上下文（含 channelId 等参数），
   /// 没有手动设置过才按路由名生成
   void _restoreContextForRoute(Route<dynamic> route) {
-    if (_hasRouteName(route)) {
-      _currentTopPageRoute = route;
-    }
+    _setTopPageRoute(route);
     final manual = _manualRouteContexts[route];
     if (manual != null) {
       _currentRouteContext = manual;

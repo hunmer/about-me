@@ -68,11 +68,7 @@ class AiAutoReplyService {
     AiAutoReplyEventInfo('task_completed', '任务', '完成了一个待办任务'),
     AiAutoReplyEventInfo('checkin_completed', '打卡', '完成了一次打卡'),
     AiAutoReplyEventInfo('checkin_item_added', '打卡', '新建了一个打卡项'),
-    AiAutoReplyEventInfo(
-      'habit_completion_record_saved',
-      '打卡',
-      '完成了一次习惯记录',
-    ),
+    AiAutoReplyEventInfo('habit_completion_record_saved', '打卡', '完成了一次习惯记录'),
     // 笔记与日记
     AiAutoReplyEventInfo('note_added', '笔记', '新建了一篇笔记'),
     AiAutoReplyEventInfo('note_folder_added', '笔记', '新建了一个笔记文件夹'),
@@ -93,11 +89,7 @@ class AiAutoReplyService {
     // 聊天（AI 自身消息已在 _onEvent 中过滤）
     AiAutoReplyEventInfo('chat_message_sent', '聊天', '发送了一条频道消息'),
     AiAutoReplyEventInfo('chat_channel_added', '聊天', '新建了一个聊天频道'),
-    AiAutoReplyEventInfo(
-      'agent_chat_user_message',
-      '聊天',
-      '在 AI 对话中发送了消息',
-    ),
+    AiAutoReplyEventInfo('agent_chat_user_message', '聊天', '在 AI 对话中发送了消息'),
     // 社交
     AiAutoReplyEventInfo('openai_agent_added', '社交', '新建了一个 AI 助手'),
     AiAutoReplyEventInfo('contact_created', '社交', '新建了一个联系人'),
