@@ -12,7 +12,7 @@ Aboutme 仓库 - 文件列表生成工具
     python3 generate_files_json.py --type apps           # 只处理 apps
     python3 generate_files_json.py --type scripts        # 只处理 scripts
     python3 generate_files_json.py --app password_manager  # 只处理指定应用
-    python3 generate_files_json.py --script ai_encouragement_bot  # 只处理指定脚本
+    python3 generate_files_json.py --script line_sticker  # 只处理指定脚本
     python3 generate_files_json.py --dry-run              # 预览不写入
 """
 
@@ -205,7 +205,7 @@ def main():
   %(prog)s --type apps                        # 只处理应用
   %(prog)s --type scripts                     # 只处理脚本
   %(prog)s --app password_manager             # 只处理密码管理器
-  %(prog)s --script ai_encouragement_bot      # 只处理 AI 鼓励助手
+  %(prog)s --script line_sticker              # 只处理贴纸脚本
   %(prog)s --dry-run                          # 预览模式，不实际写入文件
         """
     )

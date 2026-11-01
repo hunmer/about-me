@@ -24,6 +24,13 @@ class ScriptLoader {
     'image_search',
   ];
 
+  /// 已下线的在线脚本（2026-11 功能迁入原生 AI 自动回复）：
+  /// 在线商店已下架（online/scripts/scripts.json 移除入口），但老用户本地仍残留，
+  /// 其 triggers 会与原生能力重复触发；这里只禁用不改代码、不删除（保留用户配置）
+  static const List<String> _retiredOnlineScriptIds = [
+    'ai_encouragement_bot',
+  ];
+
   ScriptLoader(this.storage);
 
   /// 获取默认scripts目录路径（仅作文件夹展示标识，数据实际在 SDK 分区）
@@ -103,6 +110,30 @@ class ScriptLoader {
         }
       } catch (e) {
         print('⚠️ 清理下线内置脚本失败: $scriptId, 错误: $e');
+      }
+    }
+
+    // 禁用已下线的在线脚本：老用户本地残留的触发器会与原生能力重复执行，
+    // 这里只把 enabled 置 false（保留代码与用户配置，可逆），不删除脚本
+    await _disableRetiredOnlineScripts();
+  }
+
+  /// 禁用已下线的在线脚本（仅改 enabled，保留 metadata/代码/运行配置）
+  Future<void> _disableRetiredOnlineScripts() async {
+    for (final scriptId in _retiredOnlineScriptIds) {
+      try {
+        final exists = await call('existsScript', {'id': scriptId}) as bool;
+        if (!exists) continue;
+        final metadata = await call('getMeta', {'id': scriptId});
+        if (metadata is! Map) continue;
+        // 已禁用（或用户从未启用）则跳过，避免重复写盘
+        if (metadata['enabled'] != true) continue;
+        final updated = Map<String, dynamic>.from(metadata);
+        updated['enabled'] = false;
+        await call('saveMeta', {'id': scriptId, 'metadata': updated});
+        print('🧹 已禁用下线在线脚本: $scriptId');
+      } catch (e) {
+        print('⚠️ 禁用下线在线脚本失败: $scriptId, 错误: $e');
       }
     }
   }

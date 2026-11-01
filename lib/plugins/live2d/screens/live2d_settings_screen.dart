@@ -47,6 +47,10 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
   final ValueNotifier<Live2DMotionDefinition?> _motionRequest =
       ValueNotifier<Live2DMotionDefinition?>(null);
 
+  /// 全局悬浮宠物大小/透明度滑条的本地拖动值（松手才落库）
+  double? _petSizeDrag;
+  double? _petOpacityDrag;
+
   @override
   void initState() {
     super.initState();
@@ -363,6 +367,103 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
                   ),
             ],
           ],
+          const SizedBox(height: 24),
+          // ---- 全局悬浮宠物 ----
+          Text(
+            'live2d_globalPetSection'.tr,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text('live2d_globalPetTitle'.tr),
+            subtitle: Text('live2d_globalPetSubtitle'.tr),
+            value: plugin.globalPetEnabled,
+            onChanged: (value) {
+              plugin.setGlobalPetEnabled(value);
+              setState(() {});
+            },
+          ),
+          if (plugin.globalPetEnabled) ...[
+            if (plugin.archives.isNotEmpty) ...[
+              Text('live2d_globalPetChoose'.tr),
+              const SizedBox(height: 4),
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                children: [
+                  ChoiceChip(
+                    label: Text('live2d_globalPetFollowSelected'.tr),
+                    selected: plugin.globalPetArchiveId == null,
+                    onSelected: (_) {
+                      plugin.setGlobalPetArchiveId(null);
+                      setState(() {});
+                    },
+                  ),
+                  for (final item in plugin.archives)
+                    ChoiceChip(
+                      label: Text(item.name),
+                      selected: plugin.globalPetArchiveId == item.id,
+                      onSelected: (_) {
+                        plugin.setGlobalPetArchiveId(item.id);
+                        setState(() {});
+                      },
+                    ),
+                ],
+              ),
+              const SizedBox(height: 8),
+            ],
+            Text(
+              'live2d_globalPetSize'.trParams({
+                'px': (_petSizeDrag ?? plugin.globalPetSize)
+                    .round()
+                    .toString(),
+              }),
+            ),
+            Slider(
+              value: (_petSizeDrag ?? plugin.globalPetSize)
+                  .clamp(Live2DPlugin.minGlobalPetSize, Live2DPlugin.maxGlobalPetSize)
+                  .toDouble(),
+              min: Live2DPlugin.minGlobalPetSize,
+              max: Live2DPlugin.maxGlobalPetSize,
+              divisions: 18,
+              label:
+                  '${(_petSizeDrag ?? plugin.globalPetSize).round()} px',
+              onChanged: (value) => setState(() => _petSizeDrag = value),
+              onChangeEnd: (value) {
+                plugin.setGlobalPetSize(value);
+                setState(() => _petSizeDrag = null);
+              },
+            ),
+            Text(
+              'live2d_globalPetOpacity'.trParams({
+                'value': (_petOpacityDrag ?? plugin.globalPetOpacity)
+                    .toStringAsFixed(1),
+              }),
+            ),
+            Slider(
+              value: _petOpacityDrag ?? plugin.globalPetOpacity,
+              min: 0.2,
+              max: 1.0,
+              divisions: 8,
+              label: (_petOpacityDrag ?? plugin.globalPetOpacity)
+                  .toStringAsFixed(1),
+              onChanged: (value) => setState(() => _petOpacityDrag = value),
+              onChangeEnd: (value) {
+                plugin.setGlobalPetOpacity(value);
+                setState(() => _petOpacityDrag = null);
+              },
+            ),
+          ],
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text('live2d_forwardAiReplyTitle'.tr),
+            subtitle: Text('live2d_forwardAiReplySubtitle'.tr),
+            value: plugin.forwardAiReplyEnabled,
+            onChanged: (value) {
+              plugin.setForwardAiReplyEnabled(value);
+              setState(() {});
+            },
+          ),
         ],
       ),
     );

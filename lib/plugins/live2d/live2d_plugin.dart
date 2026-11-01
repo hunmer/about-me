@@ -22,6 +22,7 @@ import 'package:aboutme/screens/jelly_home/live2d_zip_import.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/decision_service.dart';
 import 'package:aboutme/plugins/tts/tts_plugin.dart';
 import 'live2d_voice_analyzer.dart';
+import 'services/global_floating_pet_service.dart';
 import 'screens/live2d_main_screen.dart';
 import 'screens/live2d_settings_screen.dart';
 
@@ -36,6 +37,11 @@ class Live2DPlugin extends BasePlugin {
   static const defaultBubbleAsset = 'assets/bubbles/可拉伸兔子聊天气泡素材.webp';
   static const defaultBackgroundBlur = 0.0;
   static const defaultBackgroundOpacity = 1.0;
+
+  /// 全局悬浮宠物默认/最小/最大显示尺寸（与 JellyLive2D 内部夹取范围一致）
+  static const defaultGlobalPetSize = 280.0;
+  static const minGlobalPetSize = 200.0;
+  static const maxGlobalPetSize = 560.0;
 
   /// 选中档案变化时广播的事件名（状态面板等据此同步头像）
   static const archiveSelectedEvent = 'live2d_archive_selected';
@@ -230,6 +236,65 @@ class Live2DPlugin extends BasePlugin {
 
   Future<void> setBackgroundOpacity(double value) async {
     await updateSettings({'backgroundOpacity': value});
+  }
+
+  // ---- 全局悬浮宠物 ----
+
+  /// 全局悬浮宠物开关
+  bool get globalPetEnabled => settings['globalPetEnabled'] as bool? ?? false;
+
+  Future<void> setGlobalPetEnabled(bool value) async {
+    await updateSettings({'globalPetEnabled': value});
+    GlobalFloatingPetService.instance.refresh();
+  }
+
+  /// 悬浮宠物使用的存档 id；null 表示跟随当前选中存档
+  String? get globalPetArchiveId =>
+      settings['globalPetArchiveId'] as String?;
+
+  Future<void> setGlobalPetArchiveId(String? value) async {
+    await updateSettings({'globalPetArchiveId': value});
+    GlobalFloatingPetService.instance.refresh();
+  }
+
+  /// 悬浮宠物实际展示的存档：优先指定 id，未指定或已失效时回退选中存档
+  Live2DArchive? get globalPetArchive {
+    final id = globalPetArchiveId;
+    if (id != null) {
+      for (final item in archives) {
+        if (item.id == id) return item;
+      }
+    }
+    return selected;
+  }
+
+  /// 悬浮宠物显示尺寸（逻辑像素，宽高一致）
+  double get globalPetSize =>
+      (settings['globalPetSize'] as num?)?.toDouble() ??
+      defaultGlobalPetSize;
+
+  Future<void> setGlobalPetSize(double value) async {
+    final clamped = value.clamp(minGlobalPetSize, maxGlobalPetSize).toDouble();
+    await updateSettings({'globalPetSize': clamped});
+    GlobalFloatingPetService.instance.refresh();
+  }
+
+  /// 悬浮宠物不透明度（0.2 ~ 1.0，仅作用于宠物本体）
+  double get globalPetOpacity =>
+      (settings['globalPetOpacity'] as num?)?.toDouble() ?? 1.0;
+
+  Future<void> setGlobalPetOpacity(double value) async {
+    final clamped = value.clamp(0.2, 1.0).toDouble();
+    await updateSettings({'globalPetOpacity': clamped});
+    GlobalFloatingPetService.instance.refresh();
+  }
+
+  /// 转发 AI 自动回复：宠物展示中时拦截默认 Toast，改为气泡展示
+  bool get forwardAiReplyEnabled =>
+      settings['forwardAiReplyEnabled'] as bool? ?? false;
+
+  Future<void> setForwardAiReplyEnabled(bool value) async {
+    await updateSettings({'forwardAiReplyEnabled': value});
   }
 
   List<String> get customBackgroundAssets =>
@@ -502,6 +567,11 @@ class Live2DPlugin extends BasePlugin {
       'bubbleRegions': <String, dynamic>{},
       'customBubbleAssets': <String>[],
       'importedModels': <Map<String, dynamic>>[],
+      'globalPetEnabled': false,
+      'globalPetArchiveId': null,
+      'globalPetSize': defaultGlobalPetSize,
+      'globalPetOpacity': 1.0,
+      'forwardAiReplyEnabled': false,
     });
     final res = await AboutmeDataService.instance.call(
       'live2d',
@@ -526,6 +596,9 @@ class Live2DPlugin extends BasePlugin {
         }),
       );
     selectedId = data is Map ? data['selectedId'] as String? : null;
+
+    // 全局悬浮宠物：订阅转发广播 + 按设置挂载根 Overlay（内部按帧重试）
+    GlobalFloatingPetService.instance.ensureInitialized();
 
     // 注册数据选择器
     _registerDataSelectors();

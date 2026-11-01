@@ -26,5 +26,5 @@ graph LR
 
 **在线脚本（scripts/）** 与 **Agent 配置（agents.json）**
 
-- 脚本同样是 JS（如 ai_encouragement_bot：监听活动事件 → AI 生成鼓励语 → toast 展示），按 `scripts.json` 分发。
+- 脚本是 JS，按 `scripts.json` 分发（客户端 `scripts_center` 下载安装并订阅事件触发器）。原示例 ai_encouragement_bot（监听活动事件 → AI 生成鼓励语 → toast 展示）已于 2026-11 下架并迁入原生 AI 自动回复，`scripts.json` 当前为 `[]`。
 - `agents.json`：`agents[]` 数组，每项含服务商（serviceProviderId/baseUrl/headers）、模型参数（model/temperature/topP…）、系统提示词 messages、图标与功能开关（enableFunctionCalling 等）。

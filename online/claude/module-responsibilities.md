@@ -15,9 +15,7 @@
 
 ## 在线脚本（`scripts/`，清单 `scripts.json`）
 
-| 脚本 | 说明 |
-|------|------|
-| `ai_encouragement_bot/`（metadata.json + script.js + files.json） | AI 鼓励助手：监听用户活动事件 → 发简要信息给 AI → toast 展示鼓励语；permissions: agent_chat |
+当前清单为空数组 `[]`。唯一脚本 **AI 鼓励助手**（`ai_encouragement_bot/`：监听用户活动事件 → 发简要信息给 AI → toast 展示鼓励语；permissions: agent_chat）已于 2026-11 下架并删除目录，能力迁入客户端原生 AI 自动回复；客户端 `scripts_center` 启动时会把本地残留的该脚本置为禁用，避免与新原生能力重复触发。
 
 ## Agent 配置（`agents.json`）
 

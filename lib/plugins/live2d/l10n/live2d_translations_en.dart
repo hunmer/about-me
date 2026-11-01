@@ -37,6 +37,18 @@ const Map<String, String> live2dTranslationsEn = {
   'live2d_saved': 'Saved',
   'live2d_deleteArchiveTitle': 'Delete profile',
   'live2d_deleteArchiveConfirm': 'Delete "@name"?',
+  // Global floating pet
+  'live2d_globalPetSection': 'Global Floating Pet',
+  'live2d_globalPetTitle': 'Enable global floating pet',
+  'live2d_globalPetSubtitle':
+      'Show the Live2D companion above all pages (in-app overlay)',
+  'live2d_globalPetChoose': 'Floating pet',
+  'live2d_globalPetFollowSelected': 'Follow selected archive',
+  'live2d_globalPetSize': 'Size: @px px',
+  'live2d_globalPetOpacity': 'Opacity: @value',
+  'live2d_forwardAiReplyTitle': 'Forward AI auto replies',
+  'live2d_forwardAiReplySubtitle':
+      'While the pet is shown, AI auto replies are displayed as floating pet bubbles instead of the default toast',
   // Main screen
   'live2d_searchPlaceholder': 'Search Live2D profiles',
   // 底部导航与商店

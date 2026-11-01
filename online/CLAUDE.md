@@ -1,6 +1,6 @@
 # online/ 在线内容仓库
 
-Aboutme WebView 插件的官方在线内容仓库，含三块：**Web 小程序**（`apps/`，4 个：密码管理器、日记时光胶囊、阅读记录、时间线展示，由 `apps.json` 清单索引，供应用内"应用商店"发现与安装）、**在线脚本**（`scripts/`，`scripts.json` 清单 + AI 鼓励助手等 JS 脚本）、**AI Agent 配置**（`agents.json`，多服务商 Agent 定义示例）。小程序发布形态为预构建静态产物（`index.html` + `assets/index-*.js/css`）+ `files.json` 完整性清单；部分小程序带 `preload.js`——它在 **QuickJS 引擎**（非 WebView）中执行，通过 `aboutme.registerTool()` 向 Agent Chat 注册 AI 可调用工具。
+Aboutme WebView 插件的官方在线内容仓库，含三块：**Web 小程序**（`apps/`，4 个：密码管理器、日记时光胶囊、阅读记录、时间线展示，由 `apps.json` 清单索引，供应用内"应用商店"发现与安装）、**在线脚本**（`scripts/`，`scripts.json` 清单；原 AI 鼓励助手已于 2026-11 下架并迁入原生 AI 自动回复，清单当前为空数组）、**AI Agent 配置**（`agents.json`，多服务商 Agent 定义示例）。小程序发布形态为预构建静态产物（`index.html` + `assets/index-*.js/css`）+ `files.json` 完整性清单；部分小程序带 `preload.js`——它在 **QuickJS 引擎**（非 WebView）中执行，通过 `aboutme.registerTool()` 向 Agent Chat 注册 AI 可调用工具。
 
 ## 约定的规则
 
@@ -21,12 +21,12 @@ Aboutme WebView 插件的官方在线内容仓库，含三块：**Web 小程序*
 | 模块 | 说明 |
 |------|------|
 | `apps/apps.json` + 4 个应用目录 | 小程序清单与产物 |
-| `scripts/scripts.json` + `ai_encouragement_bot/` | 在线脚本清单与示例 |
+| `scripts/scripts.json` | 在线脚本清单（当前 `[]`：唯一脚本 AI 鼓励助手已下架，功能迁入原生 AI 自动回复） |
 | `agents.json` | AI Agent 配置（多服务商、系统提示词） |
 | `generate_files_json.py` | files.json 生成工具 |
 
 ## 扫描状态
 
-- 更新时间：2026-09-02（本次补扫）
-- 已扫描：apps.json / scripts.json 全部条目、各应用文件清单、password_manager 的 preload.js、ai_encouragement_bot 结构、agents.json 结构。
+- 更新时间：2026-11-01（在线脚本下架）
+- 已扫描：apps.json / scripts.json 全部条目、各应用文件清单、password_manager 的 preload.js、旧的 ai_encouragement_bot 结构（2026-11 已随下架删除）、agents.json 结构。
 - 未深扫：各小程序压缩产物内部（均为构建物）、emoji-time-capsule/timeline 无 preload 的应用细节。

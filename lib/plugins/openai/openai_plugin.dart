@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:get/get.dart';
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:aboutme/core/services/toast_service.dart';
@@ -44,6 +45,7 @@ import 'controllers/service_provider_controller.dart';
 import 'controllers/model_controller.dart';
 import 'services/request_service.dart';
 import 'services/chat_assistant_service.dart';
+import 'services/ai_auto_reply_service.dart';
 import 'services/topic_chat_service.dart';
 import 'models/ai_agent.dart';
 import 'widgets/onboarding_provider_setup.dart';
@@ -149,6 +151,9 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
     // 启动活人感主动消息调度（周期检查开环/闲置触发，含三重硬限制）
     ProactiveService.instance.start();
     await MemoryExtractionService.instance.start();
+
+    // 启动 AI 自动回复（含旧脚本配置迁移，按配置订阅业务事件）
+    unawaited(AiAutoReplyService.instance.start());
 
     // 初始化 UseCase
     _initializeUseCase();
@@ -489,6 +494,9 @@ class OpenAIPlugin extends BasePlugin with JSBridgePlugin {
     // 停止主动消息调度
     ProactiveService.instance.stop();
     MemoryExtractionService.instance.stop();
+
+    // 停止 AI 自动回复事件订阅
+    AiAutoReplyService.instance.stop();
 
     // 清理事件处理器
     _chatEventHandler.dispose();

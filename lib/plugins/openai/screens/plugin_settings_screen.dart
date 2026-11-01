@@ -15,6 +15,8 @@ import '../aliveness/screens/memory_manager_screen.dart';
 import '../openai_plugin.dart';
 import '../services/soul_forge_service.dart';
 import '../services/chat_assistant_service.dart';
+import '../services/ai_auto_reply_service.dart';
+import 'package:aboutme/widgets/form_fields/event_multi_select_field.dart';
 import 'agent_edit_screen.dart';
 import 'agent_resource_list_screen.dart';
 import '../models/ai_agent.dart';
@@ -38,6 +40,12 @@ class _PluginSettingsScreenState extends State<PluginSettingsScreen> {
   /// askContext 默认 Agent ID（null 表示不使用默认）
   String? _askContextAgentId;
 
+  /// AI 自动回复：启用开关 / 回复 Agent / 提示模板 / 监听事件
+  bool _aiAutoReplyEnabled = false;
+  String? _aiAutoReplyAgentId;
+  late final TextEditingController _aiAutoReplyTemplateController;
+  List<String> _aiAutoReplyEvents = [];
+
   @override
   void initState() {
     super.initState();
@@ -45,6 +53,7 @@ class _PluginSettingsScreenState extends State<PluginSettingsScreen> {
     _loadChatAssistantModelLabel();
     _askContextAgentId =
         OpenAIPlugin.instance.settings['askContextDefaultAgentId'] as String?;
+    _initAiAutoReplyState();
     _loadAgents();
     AgentResourceSlots slots;
     try {
@@ -139,6 +148,108 @@ class _PluginSettingsScreenState extends State<PluginSettingsScreen> {
     OpenAIPlugin.instance.updateSettings(
       AgentLibResourceService.toSettings(slots),
     );
+  }
+
+  // ==================== AI 自动回复 ====================
+
+  /// 读取 AI 自动回复当前配置（缺省回退与 service 一致的默认值）
+  void _initAiAutoReplyState() {
+    final settings = OpenAIPlugin.instance.settings;
+    _aiAutoReplyEnabled =
+        settings[AiAutoReplyService.kSettingEnabled] == true;
+    _aiAutoReplyAgentId =
+        settings[AiAutoReplyService.kSettingAgentId] as String?;
+    final template = settings[AiAutoReplyService.kSettingTemplate] as String?;
+    _aiAutoReplyTemplateController = TextEditingController(
+      text:
+          template != null && template.trim().isNotEmpty
+          ? template
+          : AiAutoReplyService.defaultPromptTemplate,
+    );
+    _aiAutoReplyEvents = AiAutoReplyService.readConfiguredEvents(settings);
+  }
+
+  /// 保存并热重载订阅
+  void _saveAutoReplySettings(Map<String, dynamic> changes) {
+    OpenAIPlugin.instance.updateSettings(changes);
+    AiAutoReplyService.instance.reload();
+  }
+
+  void _onAutoReplyToggle(bool value) {
+    setState(() => _aiAutoReplyEnabled = value);
+    _saveAutoReplySettings({AiAutoReplyService.kSettingEnabled: value});
+  }
+
+  void _onAutoReplyAgentChanged(String? agentId) {
+    setState(() => _aiAutoReplyAgentId = agentId);
+    _saveAutoReplySettings({AiAutoReplyService.kSettingAgentId: agentId});
+  }
+
+  /// 弹窗编辑提示模板
+  Future<void> _editAutoReplyTemplate() async {
+    final controller = TextEditingController(
+      text: _aiAutoReplyTemplateController.text,
+    );
+    final result = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('自动回复提示模板'),
+        content: TextField(
+          controller: controller,
+          maxLines: 4,
+          autofocus: true,
+          decoration: const InputDecoration(
+            hintText: '用 {eventDescription} 占位事件描述',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(controller.text),
+            child: const Text('保存'),
+          ),
+        ],
+      ),
+    );
+    // 退出动画期间 dialog 树仍引用该 controller，延后一帧释放
+    WidgetsBinding.instance.addPostFrameCallback((_) => controller.dispose());
+    if (!mounted || result == null) return;
+    final text = result.trim().isEmpty
+        ? AiAutoReplyService.defaultPromptTemplate
+        : result.trim();
+    _aiAutoReplyTemplateController.text = text;
+    _saveAutoReplySettings({AiAutoReplyService.kSettingTemplate: text});
+  }
+
+  /// 弹窗选择监听事件（目录为 service 核实的真实事件）
+  Future<void> _editAutoReplyEvents() async {
+    final result = await showDialog<List<String>>(
+      context: context,
+      builder: (_) => EventSelectorDialog(
+        availableEvents: [
+          for (final e in AiAutoReplyService.availableEvents)
+            EventOption(
+              eventName: e.eventName,
+              category: e.category,
+              description: e.description,
+            ),
+        ],
+        initialSelectedEvents: _aiAutoReplyEvents,
+        dialogTitle: '选择监听事件',
+      ),
+    );
+    if (!mounted || result == null) return;
+    setState(() => _aiAutoReplyEvents = result);
+    _saveAutoReplySettings({AiAutoReplyService.kSettingEvents: result});
+  }
+
+  @override
+  void dispose() {
+    _aiAutoReplyTemplateController.dispose();
+    super.dispose();
   }
 
   @override
@@ -336,6 +447,91 @@ class _PluginSettingsScreenState extends State<PluginSettingsScreen> {
                             ),
                             onTap: _openChatAssistantSettings,
                           ),
+                          SizedBox(height: theme.spacing.sm),
+                          // ==== AI 自动回复（迁自 ai_encouragement_bot 在线脚本）====
+                          DSListItem(
+                            leading: DsIcon(
+                              DsIconKind.bot,
+                              size: 22,
+                              color: theme.primary,
+                            ),
+                            title: 'AI 自动回复',
+                            subtitle: '业务事件发生后由 AI 生成一句话鼓励；宠物挂载时由宠物气泡展示',
+                            showChevron: false,
+                            trailing: DSSwitch(
+                              value: _aiAutoReplyEnabled,
+                              onChanged: _onAutoReplyToggle,
+                            ),
+                          ),
+                          if (_aiAutoReplyEnabled) ...[
+                            SizedBox(height: theme.spacing.sm),
+                            DSListItem(
+                              leading: DsIcon(
+                                DsIconKind.bot,
+                                size: 22,
+                                color: theme.primary,
+                              ),
+                              title: '自动回复 Agent',
+                              subtitle: '生成回复使用的 Agent',
+                              showChevron: false,
+                              trailing: DSSelect<String?>(
+                                width: 140,
+                                value: _aiAutoReplyAgentId,
+                                hint: '未设置',
+                                items: [
+                                  const DSSelectItem<String?>(
+                                    label: '未设置',
+                                    value: null,
+                                  ),
+                                  ..._agents.map(
+                                    (agent) => DSSelectItem<String?>(
+                                      label: agent.name,
+                                      value: agent.id,
+                                    ),
+                                  ),
+                                ],
+                                onChanged: _onAutoReplyAgentChanged,
+                              ),
+                            ),
+                            SizedBox(height: theme.spacing.sm),
+                            DSListItem(
+                              leading: DsIcon(
+                                DsIconKind.book,
+                                size: 22,
+                                color: theme.primary,
+                              ),
+                              title: '回复提示模板',
+                              subtitle: '用 {eventDescription} 占位事件描述',
+                              showChevron: true,
+                              trailing: SizedBox(
+                                width: 120,
+                                child: Text(
+                                  _aiAutoReplyTemplateController.text,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  textAlign: TextAlign.end,
+                                  style: DsTypography.caption.copyWith(
+                                    color: theme.textSub,
+                                  ),
+                                ),
+                              ),
+                              onTap: _editAutoReplyTemplate,
+                            ),
+                            SizedBox(height: theme.spacing.sm),
+                            DSListItem(
+                              leading: DsIcon(
+                                DsIconKind.layers,
+                                size: 22,
+                                color: theme.primary,
+                              ),
+                              title: '监听事件',
+                              subtitle: _aiAutoReplyEvents.isEmpty
+                                  ? '未选择（不触发自动回复）'
+                                  : '已选 ${_aiAutoReplyEvents.length} 个事件',
+                              showChevron: true,
+                              onTap: _editAutoReplyEvents,
+                            ),
+                          ],
                           SizedBox(height: theme.spacing.sm),
                           DSListItem(
                             leading: DsIcon(

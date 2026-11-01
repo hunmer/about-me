@@ -35,6 +35,16 @@ const Map<String, String> live2dTranslationsZh = {
   'live2d_saved': '已保存',
   'live2d_deleteArchiveTitle': '删除存档',
   'live2d_deleteArchiveConfirm': '确定删除“@name”吗？',
+  // 全局悬浮宠物
+  'live2d_globalPetSection': '全局悬浮宠物',
+  'live2d_globalPetTitle': '启用全局悬浮宠物',
+  'live2d_globalPetSubtitle': '在所有页面的最上方展示 Live2D 伙伴（应用内悬浮）',
+  'live2d_globalPetChoose': '悬浮宠物',
+  'live2d_globalPetFollowSelected': '跟随选中存档',
+  'live2d_globalPetSize': '大小：@px px',
+  'live2d_globalPetOpacity': '不透明度：@value',
+  'live2d_forwardAiReplyTitle': '转发 AI 自动回复',
+  'live2d_forwardAiReplySubtitle': '宠物展示中时，AI 自动回复改为悬浮宠物气泡展示（替代默认提示）',
   // 主界面
   'live2d_searchPlaceholder': '搜索 Live2D 存档',
   // 底部导航与商店
