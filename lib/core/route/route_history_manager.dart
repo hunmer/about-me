@@ -42,28 +42,76 @@ class RouteHistoryManager extends RouteObserver<PageRoute<dynamic>> {
   /// 用于把页面手动设置的上下文绑定到路由
   Route<dynamic>? _currentTopPageRoute;
 
+  /// 真实页面路由栈（排除 PopupRoute 弹层/对话框）
+  ///
+  /// 与 [_currentTopPageRoute]（仅记录有名路由，服务上下文绑定语义）独立：
+  /// push/pop/remove/replace 同步增删换栈项，栈顶即 [topRouteName] 的
+  /// 来源（无名业务页也入栈，通知器值为 null）。修复旧版 didPop 仅在
+  /// `_hasRouteName(route)` 时恢复、匿名页弹出后通知器停留在已弹路由的问题。
+  final List<Route<dynamic>> _pageRouteStack = [];
+
   /// 当前栈顶页面路由名的独立通知器
   ///
-  /// 与 [_currentTopPageRoute] 同步维护，但只反映"真实路由名"，
-  /// 不受 updateCurrentContext 手动改写影响；供悬浮宠物等
-  /// 需要跟随真实路由变化的模块监听（didPush/pop/replace/remove 同步）。
+  /// 值来自 [_pageRouteStack] 栈顶的真实路由名：栈空或栈顶为无名业务页时
+  /// 为 null。供悬浮宠物等需要跟随真实路由变化的模块监听
+  /// （didPush/pop/replace/remove 全同步）。
   final ValueNotifier<String?> topRouteName = ValueNotifier<String?>(null);
 
-  /// 当前栈顶页面路由名（通知器值为空时回退内部路由对象）
-  String? get currentTopRouteName =>
-      topRouteName.value ?? _currentTopPageRoute?.settings.name;
+  /// 当前栈顶页面路由名（即通知器当前值）
+  String? get currentTopRouteName => topRouteName.value;
 
-  /// 更新栈顶页面路由并同步通知器
-  ///
-  /// 只接受有名字的页面路由；PopupRoute（弹层/对话框）一律忽略——
-  /// 但不过滤 opaque=false 的业务页（OpenContainer/BackSwipePageRoute/
-  /// StoryViewer 等自定义 PageRoute 都是合法栈顶页面）。
-  void _setTopPageRoute(Route<dynamic>? route) {
-    if (route == null || route is PopupRoute<dynamic>) return;
+  /// 把真实页面路由栈的栈顶同步到通知器
+  void _syncTopPageRoute() {
+    topRouteName.value = _pageRouteStack.isEmpty
+        ? null
+        : _pageRouteStack.last.settings.name;
+  }
+
+  /// 页面路由入栈（弹层不入栈）
+  void _pushPageRoute(Route<dynamic> route) {
+    if (route is PopupRoute<dynamic>) return;
+    _pageRouteStack.add(route);
+    _syncTopPageRoute();
     final name = route.settings.name;
-    if (name == null || name.isEmpty) return;
-    _currentTopPageRoute = route;
-    topRouteName.value = name;
+    if (name != null && name.isNotEmpty) {
+      _currentTopPageRoute = route;
+    }
+  }
+
+  /// 页面路由出栈（弹层无栈可出）；随后按新栈顶恢复通知器
+  void _removePageRoute(Route<dynamic> route) {
+    if (route is PopupRoute<dynamic>) return;
+    final index = _pageRouteStack.lastIndexOf(route);
+    if (index >= 0) {
+      _pageRouteStack.removeAt(index);
+    }
+    _syncTopPageRoute();
+    if (_currentTopPageRoute == route) {
+      _currentTopPageRoute = _pageRouteStack.isEmpty
+          ? null
+          : _pageRouteStack.last;
+    }
+  }
+
+  /// 路由替换：页面被弹层替换时出栈，否则原位换栈；旧项不在栈内且新项为
+  /// 页面时（弹层被页面替换）入栈
+  void _replacePageRoute(Route<dynamic>? newRoute, Route<dynamic>? oldRoute) {
+    final oldIsPage = oldRoute != null && oldRoute is! PopupRoute<dynamic>;
+    final newIsPage = newRoute != null && newRoute is! PopupRoute<dynamic>;
+    final index = oldRoute == null ? -1 : _pageRouteStack.lastIndexOf(oldRoute);
+    if (index >= 0) {
+      if (newIsPage) {
+        _pageRouteStack[index] = newRoute!;
+      } else {
+        _pageRouteStack.removeAt(index);
+      }
+    } else if (oldIsPage) {
+      // 旧页面不在栈内（异常状态），按出栈兜底
+      if (newIsPage) _pageRouteStack.add(newRoute!);
+    } else if (newIsPage) {
+      _pageRouteStack.add(newRoute!);
+    }
+    _syncTopPageRoute();
   }
 
   /// 各页面路由手动设置过的上下文（弱引用，路由销毁后条目可回收）
@@ -332,7 +380,7 @@ class RouteHistoryManager extends RouteObserver<PageRoute<dynamic>> {
     );
     _claimPendingPluginRoute(route);
     _trackPluginRoute(route, 1);
-    _setTopPageRoute(route);
+    _pushPageRoute(route);
     _recordRoute(route);
   }
 
@@ -346,6 +394,7 @@ class RouteHistoryManager extends RouteObserver<PageRoute<dynamic>> {
       );
     }
     _trackPluginRoute(route, -1, previousRoute);
+    _removePageRoute(route);
     // pop 操作不记录新路由，但可以更新当前上下文到前一个路由。
     // 弹出的若是弹层/对话框（无路由名），上下文一直描述其下方页面，无需恢复
     if (previousRoute != null && _hasRouteName(route)) {
@@ -362,7 +411,9 @@ class RouteHistoryManager extends RouteObserver<PageRoute<dynamic>> {
     if (newRoute != null) {
       _claimPendingPluginRoute(newRoute);
       _trackPluginRoute(newRoute, 1);
-      _setTopPageRoute(newRoute);
+    }
+    _replacePageRoute(newRoute: newRoute, oldRoute: oldRoute);
+    if (newRoute != null) {
       _recordRoute(newRoute);
     }
   }
@@ -371,6 +422,7 @@ class RouteHistoryManager extends RouteObserver<PageRoute<dynamic>> {
   void didRemove(Route<dynamic> route, Route<dynamic>? previousRoute) {
     super.didRemove(route, previousRoute);
     _trackPluginRoute(route, -1, previousRoute);
+    _removePageRoute(route);
   }
 
   /// 让刚入栈的路由认领 [markNextRouteAsPlugin] 登记的插件
@@ -507,8 +559,8 @@ class RouteHistoryManager extends RouteObserver<PageRoute<dynamic>> {
   ///
   /// 优先恢复该页面手动设置过的上下文（含 channelId 等参数），
   /// 没有手动设置过才按路由名生成
+  /// （栈顶通知器由 didPop 的 _removePageRoute 独立维护，这里只管上下文）
   void _restoreContextForRoute(Route<dynamic> route) {
-    _setTopPageRoute(route);
     final manual = _manualRouteContexts[route];
     if (manual != null) {
       _currentRouteContext = manual;

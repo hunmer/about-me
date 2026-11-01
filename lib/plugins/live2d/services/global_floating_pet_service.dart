@@ -8,7 +8,8 @@ import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/live2d/live2d_plugin.dart';
-import 'package:aboutme/screens/jelly_home/widgets/jelly_live2d.dart';
+import 'package:aboutme/plugins/live2d/widgets/global_pet_view.dart';
+import 'package:aboutme/screens/jelly_home/widgets/jelly_live2d_models.dart';
 import 'package:aboutme/screens/jelly_home/widgets/jelly_speech_bubble.dart';
 
 /// 全局悬浮宠物服务：把 Live2D 伙伴挂到应用根 Overlay，
@@ -47,8 +48,12 @@ class GlobalFloatingPetService {
   bool get isMounted => _entry != null;
 
   /// 首页路由名：/jelly_home 与 /jelly_home/1..4 子页签、旧首页 / 与 home
+  ///
+  /// null = 栈空（启动初期）或匿名业务页——按"所有页面展示"的需求保持
+  /// 可见（路由栈在首帧 Navigator 构建时即播种，悬浮宠物挂载晚于首帧，
+  /// 不会在启动时闪现；pet 默认关闭，onboarding 不受影响）。
   static bool _isHomeRoute(String? name) {
-    if (name == null) return true; // 启动初期未知路由按首页处理（默认 /jelly_home）
+    if (name == null) return false;
     return name == '/jelly_home' ||
         name.startsWith('/jelly_home/') ||
         name == '/' ||
@@ -191,12 +196,6 @@ class _GlobalFloatingPetStageState extends State<_GlobalFloatingPetStage> {
 
   static const double _bubbleGap = 8.0;
 
-  /// 内层渲染盒相对命中盒的收缩比：Live2D 平台视图
-  /// （macOS WKWebView / Android 平台 View 等）会吃掉自身 frame 内
-  /// 的指针事件且 IgnorePointer 拦不住，收窄渲染盒让平台视图
-  /// 不铺满整个方盒，留出 Flutter 可靠接收拖拽的边距环。
-  static const double _renderScale = 0.82;
-
   @override
   void initState() {
     super.initState();
@@ -292,25 +291,31 @@ class _GlobalFloatingPetStageState extends State<_GlobalFloatingPetStage> {
         if (bounds.width <= 0 || bounds.height <= 0) {
           return const SizedBox.shrink();
         }
-        // 小屏（分屏/窗口缩小）时按屏幕预算压缩宠物尺寸
-        final petSize = plugin.globalPetSize
-            .clamp(
-              0.0,
-              math.max(0.0, math.min(bounds.width, bounds.height * 0.6)),
-            )
-            .toDouble();
+        // 小屏（分屏/窗口缩小）时按屏幕预算压缩宠物尺寸。
+        // size 语义：Live2D=宠物高度，视频=宠物宽度（见 GlobalPetView），
+        // 先按原始 size 出盒，再用统一 fitScale 同比缩放，
+        // 保证宽高两个维度都不超可活动边界（竖版视频高>宽时同样受限）
+        final rawBox = GlobalPetView.boxSizeFor(model, plugin.globalPetSize);
+        final fitScale = math.min(
+          1.0,
+          math.min(
+            bounds.width / math.max(1.0, rawBox.width),
+            bounds.height / math.max(1.0, rawBox.height),
+          ),
+        );
+        final petSize = plugin.globalPetSize * fitScale;
+        // 紧贴宠物内容的展示盒：无舞台空白，盒即命中范围
+        final petBox = GlobalPetView.boxSizeFor(model, petSize);
         // 首次挂载默认停在右下角
         _petPosition ??= Offset(
-          math.max(bounds.left, bounds.right - petSize),
-          math.max(bounds.top, bounds.bottom - petSize),
+          math.max(bounds.left, bounds.right - petBox.width),
+          math.max(bounds.top, bounds.bottom - petBox.height),
         );
-        final maxLeft = math.max(bounds.left, bounds.right - petSize);
-        final maxTop = math.max(bounds.top, bounds.bottom - petSize);
+        final maxLeft = math.max(bounds.left, bounds.right - petBox.width);
+        final maxTop = math.max(bounds.top, bounds.bottom - petBox.height);
         // 展示位置：窗口/安全区变化时把宠物夹回边界内（不改内存位置）
         final petLeft = _petPosition!.dx.clamp(bounds.left, maxLeft).toDouble();
         final petTop = _petPosition!.dy.clamp(bounds.top, maxTop).toDouble();
-        // 内层渲染盒：收窄后平台视图不再铺满命中盒
-        final renderSize = petSize * _renderScale;
 
         // 气泡尺寸与位置：跟随宠物且保持在屏幕内
         final bubbleWidth = math.min(260.0, bounds.width).toDouble();
@@ -322,16 +327,16 @@ class _GlobalFloatingPetStageState extends State<_GlobalFloatingPetStage> {
         double bubbleLeft = petLeft;
         if (bubbleVisible) {
           final roomAbove = petTop - bounds.top;
-          final roomBelow = bounds.bottom - petTop - petSize;
+          final roomBelow = bounds.bottom - petTop - petBox.height;
           final showBelow =
               roomAbove < bubbleHeight + _bubbleGap && roomBelow > roomAbove;
           bubbleTop = showBelow
               ? math.min(
-                  petTop + petSize + _bubbleGap,
+                  petTop + petBox.height + _bubbleGap,
                   bounds.bottom - bubbleHeight,
                 )
               : math.max(bounds.top, petTop - bubbleHeight - _bubbleGap);
-          bubbleLeft = (petLeft + petSize / 2 - bubbleWidth / 2)
+          bubbleLeft = (petLeft + petBox.width / 2 - bubbleWidth / 2)
               .clamp(
                 bounds.left,
                 math.max(bounds.left, bounds.right - bubbleWidth),
@@ -368,14 +373,14 @@ class _GlobalFloatingPetStageState extends State<_GlobalFloatingPetStage> {
                   ),
                 ),
               ),
-            // 宠物命中盒：外层拖拽。opaque 确保拖拽不被下层页面滚动抢走；
-            // 全屏 Stack 自身不命中，宠物盒之外的区域仍穿透到 App。
+            // 宠物命中盒=展示盒（紧贴内容，无舞台空白）：外层拖拽。
+            // opaque 确保拖拽不被下层页面滚动抢走；盒外区域穿透到 App。
             // Listener 记录 Flutter 是否收到指针（平台视图吃事件时无此日志）
             Positioned(
               left: petLeft,
               top: petTop,
-              width: petSize,
-              height: petSize,
+              width: petBox.width,
+              height: petBox.height,
               child: Listener(
                 onPointerDown: (event) => GlobalFloatingPetService._log(
                   'pointer down local=${event.localPosition} '
@@ -418,25 +423,15 @@ class _GlobalFloatingPetStageState extends State<_GlobalFloatingPetStage> {
                     _dragStartGlobal = null;
                     _dragOrigin = null;
                   },
-                  child: Opacity(
-                    opacity: plugin.globalPetOpacity,
-                    // 收窄的渲染盒：居中留边，边距环由 Flutter 命中
-                    child: Center(
-                      child: SizedBox(
-                        width: renderSize,
-                        height: renderSize,
-                        child: JellyLive2D(
-                          key: ValueKey(
-                            'global-pet-${archive.id}-${model.modelDir}-${model.modelFile}',
-                          ),
-                          initialModel: model,
-                          fitContainer: true,
-                          typingInterval: plugin.bubbleTypingInterval,
-                          showBackground: false,
-                          interactive: false,
-                        ),
-                      ),
+                  // 独立全局宠物组件：无背景/无随机游走/无内部手势，
+                  // macOS 原生吃事件已在组件内通过 setInteractive 关闭
+                  child: GlobalPetView(
+                    key: ValueKey(
+                      'global-pet-${archive.id}-${model.modelDir}-${model.modelFile}',
                     ),
+                    model: model,
+                    size: petSize,
+                    opacity: plugin.globalPetOpacity,
                   ),
                 ),
               ),

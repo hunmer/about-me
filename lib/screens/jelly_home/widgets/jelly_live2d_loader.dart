@@ -141,17 +141,6 @@ extension _JellyLive2DLoader on _JellyLive2DState {
       if (!mounted || !_routeVisible || generation != _modelLoadGeneration) {
         return;
       }
-      if (!widget.interactive) {
-        // 全局悬浮模式：macOS 的 WKWebView 是真实 NSView，会先于
-        // Flutter 手势竞争吃掉 AppKit 鼠标事件；通知原生视图忽略鼠标，
-        // 外层悬浮层的拖拽手势才能拿到模型区事件（其他平台未实现
-        // 该命令时静默降级，不影响渲染与动画）。
-        try {
-          await _controller.setInteractive(false);
-        } on Live2DException catch (error) {
-          debugPrint('[Live2D] setInteractive(false) 平台未支持: $error');
-        }
-      }
       if (_controller.value.isLoaded) {
         await _controller.unloadModel();
       }
