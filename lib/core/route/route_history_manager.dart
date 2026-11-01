@@ -412,7 +412,7 @@ class RouteHistoryManager extends RouteObserver<PageRoute<dynamic>> {
       _claimPendingPluginRoute(newRoute);
       _trackPluginRoute(newRoute, 1);
     }
-    _replacePageRoute(newRoute: newRoute, oldRoute: oldRoute);
+    _replacePageRoute(newRoute, oldRoute);
     if (newRoute != null) {
       _recordRoute(newRoute);
     }

@@ -26,6 +26,7 @@ class GlobalPetView extends StatefulWidget {
     required this.size,
     this.opacity = 1.0,
     this.active = true,
+    this.onManifestResolved,
   });
 
   /// 已解析的模型定义（存档 → Live2DModelDefinition）
@@ -40,6 +41,11 @@ class GlobalPetView extends StatefulWidget {
 
   /// 视频桌宠播放开关（Live2D 恒为渲染态）
   final bool active;
+
+  /// 视频清单解析完成回调（含 model.videoManifest 为空时的
+  /// loadDefault 兜底结果）；外层悬浮层用它做区域命中过滤。
+  /// 仅视频模型触发；Live2D 不调用。
+  final void Function(VideoPetManifest manifest)? onManifestResolved;
 
   /// Live2D 模型画布宽高比（与小屋舞台一致）
   static const double live2dViewportAspectRatio = 0.5;
@@ -111,6 +117,8 @@ class _GlobalPetViewState extends State<GlobalPetView> {
         );
         if (!mounted) return;
         setState(() => _videoPackage = package);
+        // 通知外层（区域命中过滤用）：含 loadDefault 兜底解析出的清单
+        widget.onManifestResolved?.call(package.manifest);
       } catch (error) {
         // 悬浮层不展示错误 UI：失败时保持空白并打日志
         debugPrint('[Live2D][GlobalPet] 视频桌宠加载失败: $error');

@@ -8,7 +8,10 @@ import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/route/route_history_manager.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/live2d/live2d_plugin.dart';
+import 'package:aboutme/plugins/live2d/video/video_pet_manifest.dart';
 import 'package:aboutme/plugins/live2d/widgets/global_pet_view.dart';
+import 'package:aboutme/plugins/live2d/widgets/video_pet_region_hit_box.dart';
+import 'package:aboutme/screens/jelly_home/live2d_online_models.dart';
 import 'package:aboutme/screens/jelly_home/widgets/jelly_live2d_models.dart';
 import 'package:aboutme/screens/jelly_home/widgets/jelly_speech_bubble.dart';
 
@@ -194,6 +197,12 @@ class _GlobalFloatingPetStageState extends State<_GlobalFloatingPetStage> {
   Offset? _dragStartGlobal;
   Offset? _dragOrigin;
 
+  /// 视频桌宠清单解析结果（loadDefault 兜底路径用）+ 所属模型。
+  /// 存档切换时按模型实例比对，避免旧清单串档；模型自带清单
+  /// （model.videoManifest）不经过这里，build 直接可用。
+  VideoPetManifest? _resolvedVideoManifest;
+  Live2DModelDefinition? _resolvedManifestFor;
+
   static const double _bubbleGap = 8.0;
 
   @override
@@ -306,6 +315,14 @@ class _GlobalFloatingPetStageState extends State<_GlobalFloatingPetStage> {
         final petSize = plugin.globalPetSize * fitScale;
         // 紧贴宠物内容的展示盒：无舞台空白，盒即命中范围
         final petBox = GlobalPetView.boxSizeFor(model, petSize);
+        // 视频桌宠的命中过滤清单：优先模型自带，兜底异步解析结果
+        // （按模型实例比对防存档切换串档）；Live2D 为 null → 整盒命中
+        final videoManifest = model.isVideo
+            ? (model.videoManifest ??
+                  (identical(_resolvedManifestFor, model)
+                      ? _resolvedVideoManifest
+                      : null))
+            : null;
         // 首次挂载默认停在右下角
         _petPosition ??= Offset(
           math.max(bounds.left, bounds.right - petBox.width),
@@ -374,6 +391,9 @@ class _GlobalFloatingPetStageState extends State<_GlobalFloatingPetStage> {
                 ),
               ),
             // 宠物命中盒=展示盒（紧贴内容，无舞台空白）：外层拖拽。
+            // 视频桌宠在 hit-test 阶段进一步限定在 manifest.regions 的
+            // enabled 归一化矩形内，区域外/letterbox 直接穿透到下层页面；
+            // Live2D（manifest=null）与未配置区域的视频保持整盒命中。
             // opaque 确保拖拽不被下层页面滚动抢走；盒外区域穿透到 App。
             // Listener 记录 Flutter 是否收到指针（平台视图吃事件时无此日志）
             Positioned(
@@ -381,57 +401,69 @@ class _GlobalFloatingPetStageState extends State<_GlobalFloatingPetStage> {
               top: petTop,
               width: petBox.width,
               height: petBox.height,
-              child: Listener(
-                onPointerDown: (event) => GlobalFloatingPetService._log(
-                  'pointer down local=${event.localPosition} '
-                  'global=${event.position} kind=${event.kind}',
-                ),
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onPanStart: (details) {
-                    _dragStartGlobal = details.globalPosition;
-                    _dragOrigin = Offset(petLeft, petTop);
-                    GlobalFloatingPetService._log(
-                      'drag start origin=$_dragOrigin '
-                      'global=$_dragStartGlobal',
-                    );
-                  },
-                  onPanUpdate: (details) {
-                    final start = _dragStartGlobal;
-                    final origin = _dragOrigin;
-                    if (start == null || origin == null) return;
-                    // 稳定起点 + 全局坐标换算：同帧多事件也不丢 delta
-                    final next = origin + (details.globalPosition - start);
-                    setState(() {
-                      _petPosition = Offset(
-                        next.dx.clamp(bounds.left, maxLeft).toDouble(),
-                        next.dy.clamp(bounds.top, maxTop).toDouble(),
+              child: VideoPetRegionHitBox(
+                manifest: videoManifest,
+                child: Listener(
+                  onPointerDown: (event) => GlobalFloatingPetService._log(
+                    'pointer down local=${event.localPosition} '
+                    'global=${event.position} kind=${event.kind}',
+                  ),
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onPanStart: (details) {
+                      _dragStartGlobal = details.globalPosition;
+                      _dragOrigin = Offset(petLeft, petTop);
+                      GlobalFloatingPetService._log(
+                        'drag start origin=$_dragOrigin '
+                        'global=$_dragStartGlobal',
                       );
-                    });
-                  },
-                  onPanEnd: (details) {
-                    GlobalFloatingPetService._log(
-                      'drag end pos=$_petPosition v=${details.velocity.pixelsPerSecond}',
-                    );
-                    _dragStartGlobal = null;
-                    _dragOrigin = null;
-                  },
-                  onPanCancel: () {
-                    GlobalFloatingPetService._log(
-                      'drag cancel pos=$_petPosition',
-                    );
-                    _dragStartGlobal = null;
-                    _dragOrigin = null;
-                  },
-                  // 独立全局宠物组件：无背景/无随机游走/无内部手势，
-                  // macOS 原生吃事件已在组件内通过 setInteractive 关闭
-                  child: GlobalPetView(
-                    key: ValueKey(
-                      'global-pet-${archive.id}-${model.modelDir}-${model.modelFile}',
+                    },
+                    onPanUpdate: (details) {
+                      final start = _dragStartGlobal;
+                      final origin = _dragOrigin;
+                      if (start == null || origin == null) return;
+                      // 稳定起点 + 全局坐标换算：同帧多事件也不丢 delta
+                      final next = origin + (details.globalPosition - start);
+                      setState(() {
+                        _petPosition = Offset(
+                          next.dx.clamp(bounds.left, maxLeft).toDouble(),
+                          next.dy.clamp(bounds.top, maxTop).toDouble(),
+                        );
+                      });
+                    },
+                    onPanEnd: (details) {
+                      GlobalFloatingPetService._log(
+                        'drag end pos=$_petPosition v=${details.velocity.pixelsPerSecond}',
+                      );
+                      _dragStartGlobal = null;
+                      _dragOrigin = null;
+                    },
+                    onPanCancel: () {
+                      GlobalFloatingPetService._log(
+                        'drag cancel pos=$_petPosition',
+                      );
+                      _dragStartGlobal = null;
+                      _dragOrigin = null;
+                    },
+                    // 独立全局宠物组件：无背景/无随机游走/无内部手势，
+                    // macOS 原生吃事件已在组件内通过 setInteractive 关闭
+                    child: GlobalPetView(
+                      key: ValueKey(
+                        'global-pet-${archive.id}-${model.modelDir}-${model.modelFile}',
+                      ),
+                      model: model,
+                      size: petSize,
+                      opacity: plugin.globalPetOpacity,
+                      // 异步解析的视频清单（loadDefault 兜底路径）回报，
+                      // 驱动区域命中过滤；切档由 ValueKey 重建重新解析
+                      onManifestResolved: (manifest) {
+                        if (!mounted) return;
+                        setState(() {
+                          _resolvedVideoManifest = manifest;
+                          _resolvedManifestFor = model;
+                        });
+                      },
                     ),
-                    model: model,
-                    size: petSize,
-                    opacity: plugin.globalPetOpacity,
                   ),
                 ),
               ),
