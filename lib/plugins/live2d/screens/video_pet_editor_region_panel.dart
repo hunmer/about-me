@@ -62,6 +62,7 @@ extension _VideoPetEditorRegionOps on _VideoPetEditorScreenState {
     double? height,
     bool? enabled,
     int? priority,
+    List<String>? messages,
     Object? hover = _unchanged,
     Object? click = _unchanged,
   }) {
@@ -75,6 +76,7 @@ extension _VideoPetEditorRegionOps on _VideoPetEditorScreenState {
       height: height,
       enabled: enabled,
       priority: priority,
+      messages: messages,
     );
     if (!identical(hover, _unchanged)) {
       updated = updated.copyWith(hover: hover as VideoPetBinding?);
@@ -101,6 +103,60 @@ extension _VideoPetEditorRegionOps on _VideoPetEditorScreenState {
               region.copyWith(click: binding)
             else
               region,
+        ],
+      ),
+    );
+  }
+
+  /// 测试模式点击：按草稿区域的台词随机挑一条即时提示（未配置台词
+  /// 或未命中区域给出明确反馈）；点击动画由播放器照常处理。
+  void _handleTestTap(String? regionId, String? regionName) {
+    setState(() => _lastHitRegion = regionName ?? regionId);
+    final region = _draft.regionFor(regionId, regionName);
+    if (region == null) {
+      _showMessage(videoPetText('未命中区域', 'No region hit'));
+      return;
+    }
+    final messages = region.effectiveMessages;
+    if (messages.isEmpty) {
+      _showMessage(
+        videoPetText(
+          '「${region.name}」未配置台词',
+          '"${region.name}" has no messages yet',
+        ),
+      );
+      return;
+    }
+    final message = messages[_messageRandom.nextInt(messages.length)];
+    _showMessage(videoPetText('台词 · $message', 'Message · $message'));
+  }
+
+  /// 选中区域的点击台词编辑：每行一条，运行时随机挑一条（空白行忽略）。
+  /// key 绑定区域 id：切换选中区域时重建输入框，内容不串区。
+  Widget _buildRegionMessagesEditor(VideoPetRegion region) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            _text('videoPet_regionMessages', '点击台词（每行一条，随机挑选）'),
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: 4),
+          TextFormField(
+            key: ValueKey('videoPetRegionMessages_${region.id}'),
+            initialValue: region.messages.join('\n'),
+            minLines: 2,
+            maxLines: 5,
+            style: Theme.of(context).textTheme.bodySmall,
+            decoration: const InputDecoration(
+              isDense: true,
+              border: OutlineInputBorder(),
+            ),
+            onChanged: (value) =>
+                _updateSelectedRegion(messages: value.split('\n')),
+          ),
         ],
       ),
     );
@@ -262,6 +318,9 @@ extension _VideoPetEditorRegionOps on _VideoPetEditorScreenState {
                     ),
                     if (!_draft.globalClickEnabled)
                       _buildRegionClickEditor(region),
+                    // 台词编辑只挂在选中区域下，避免列表每项都展开输入框
+                    if (region.id == _selectedRegionId)
+                      _buildRegionMessagesEditor(region),
                   ],
                 );
               },

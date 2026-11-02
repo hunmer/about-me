@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -62,10 +63,7 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen>
   final _searchController = TextEditingController();
   final _jsonController = TextEditingController();
   // 窄屏 Tab 的控制器：供「动作预设 → 编辑」等外部入口跳转指定 tab。
-  late final TabController _narrowTabs = TabController(
-    length: 4,
-    vsync: this,
-  );
+  late final TabController _narrowTabs = TabController(length: 4, vsync: this);
 
   String? _selectedRegionId;
   String? _selectedAnimationId;
@@ -77,6 +75,8 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen>
   double _narrowToolsHeight = 300;
   String? _lastHitRegion;
   String? _lastActionAnimation;
+  // 测试模式点击区域随机挑台词用（避免与走动等其它随机共用）
+  final math.Random _messageRandom = math.Random();
   Rect? _gestureRect;
   Offset? _gestureOrigin;
   Rect? _gestureInitialRect;
@@ -88,12 +88,16 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen>
   List<VideoPetAnimation> _serverAnimations = const [];
   bool _serverLoading = false;
   String? _serverError;
+
   /// 正在下载的动作 id 集合
   final Set<String> _downloadingIds = {};
+
   /// 下载失败待重试的动作 id 集合（按钮显示重试图标）
   final Set<String> _downloadFailedIds = {};
+
   /// 是否正在批量下载全部服务端动作
   bool _downloadingAll = false;
+
   /// 编辑器自建的商店服务（dispose 时释放；注入的由宿主管理）
   PetStoreService? _ownStoreService;
 
@@ -156,11 +160,12 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen>
 
   /// manifest metadata 携带商店动作地址时启用服务端动作区块
   bool get _serverActionsEnabled =>
-      (widget.manifest.metadata[kPetStoreMetadataActionsUrl] ?? '')
-          .isNotEmpty;
+      (widget.manifest.metadata[kPetStoreMetadataActionsUrl] ?? '').isNotEmpty;
 
   /// 商店服务：优先注入实例；未注入且区块启用时自建默认实例
-  PetStoreService? get _storeService => widget.petStoreService ?? (_serverActionsEnabled ? (_ownStoreService ??= PetStoreService()) : null);
+  PetStoreService? get _storeService =>
+      widget.petStoreService ??
+      (_serverActionsEnabled ? (_ownStoreService ??= PetStoreService()) : null);
 
   /// 拉取服务端动作列表；草稿中已有的动作不再展示
   Future<void> _loadServerActions() async {
@@ -175,9 +180,10 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen>
       if (!mounted) return;
       setState(() {
         _serverAnimations = actions
-            .where((action) => !_draft.animations.any(
-                  (owned) => owned.id == action.id,
-                ))
+            .where(
+              (action) =>
+                  !_draft.animations.any((owned) => owned.id == action.id),
+            )
             .toList();
         _serverLoading = false;
       });
@@ -225,9 +231,7 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen>
         throw FormatException('下载结果缺少动作 ${animation.id}');
       }
       if (!mounted) return;
-      _setDraft(
-        _draft.copyWith(animations: [..._draft.animations, resolved]),
-      );
+      _setDraft(_draft.copyWith(animations: [..._draft.animations, resolved]));
       setState(() {
         _serverAnimations = _serverAnimations
             .where((item) => item.id != animation.id)
@@ -341,6 +345,7 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen>
           _category == 'all' || animation.category == _category;
       return matchesQuery && matchesCategory;
     }
+
     return [
       // 本地动作在前（保持草稿顺序），未下载的服务端动作随后
       for (final animation in _draft.animations)
@@ -513,7 +518,6 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen>
       ),
     );
   }
-
 }
 
 /// 动画列表条目：[animation] 为动作数据，[isRemote] 标记是否为

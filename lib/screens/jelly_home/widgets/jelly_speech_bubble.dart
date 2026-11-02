@@ -7,9 +7,13 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 
-import 'jelly_configurable_image.dart';
-
-/// 每张气泡素材的文字安全区，坐标为原图归一化坐标（left/top/right/bottom）。
+/// 旧图片气泡素材的文字安全区（历史遗留模型）。
+///
+/// 图片气泡渲染已移除（统一为 design_system 手绘纸墨风），
+/// 此类仅为兼容保留：悬浮桌宠与区域编辑器仍在读写相关设置，
+/// 组件渲染不再消费这些坐标。
+///
+/// 坐标为原图归一化坐标（left/top/right/bottom）。
 class BubbleTextRegions {
   const BubbleTextRegions(this.modelName, this.message);
 
@@ -21,63 +25,7 @@ class BubbleTextRegions {
     Rect.fromLTRB(0.14, 0.30, 0.86, 0.86),
   );
 
-  static const Map<String, BubbleTextRegions> byAsset = {
-    'assets/bubbles/可拉伸兔子聊天气泡素材.webp': BubbleTextRegions(
-      Rect.fromLTRB(0.1902, 0.3068, 0.4701, 0.4179),
-      Rect.fromLTRB(0.1223, 0.3744, 0.8777, 0.6449),
-    ),
-    'assets/bubbles/小猫聊天气泡.webp': BubbleTextRegions(
-      Rect.fromLTRB(0.1168, 0.2440, 0.4620, 0.4034),
-      Rect.fromLTRB(0.0815, 0.3696, 0.9212, 0.7512),
-    ),
-    'assets/bubbles/月亮晚安气泡.webp': BubbleTextRegions(
-      Rect.fromLTRB(0.1223, 0.2826, 0.3451, 0.3792),
-      Rect.fromLTRB(0.0815, 0.3792, 0.8342, 0.7222),
-    ),
-    'assets/bubbles/星星聊天气泡.webp': BubbleTextRegions(
-      Rect.fromLTRB(0.2500, 0.2295, 0.4484, 0.3599),
-      Rect.fromLTRB(0.1141, 0.3696, 0.8859, 0.7174),
-    ),
-    'assets/bubbles/小恐龙侧边气泡.webp': BubbleTextRegions(
-      Rect.fromLTRB(0.1658, 0.3261, 0.3723, 0.4275),
-      Rect.fromLTRB(0.1549, 0.4275, 0.7038, 0.6546),
-    ),
-    'assets/bubbles/樱桃回形针气泡.webp': BubbleTextRegions(
-      Rect.fromLTRB(0.1685, 0.2874, 0.3995, 0.3744),
-      Rect.fromLTRB(0.1793, 0.3937, 0.7717, 0.6739),
-    ),
-    'assets/bubbles/甜点蛋糕气泡.webp': BubbleTextRegions(
-      Rect.fromLTRB(0.1522, 0.2681, 0.3315, 0.3744),
-      Rect.fromLTRB(0.1658, 0.3937, 0.7717, 0.6932),
-    ),
-    'assets/bubbles/游戏机像素气泡.webp': BubbleTextRegions(
-      Rect.fromLTRB(0.1467, 0.2198, 0.3587, 0.3406),
-      Rect.fromLTRB(0.1386, 0.3647, 0.7853, 0.6691),
-    ),
-    'assets/bubbles/小熊聊天气泡.webp': BubbleTextRegions(
-      Rect.fromLTRB(0.1630, 0.2150, 0.3342, 0.3164),
-      Rect.fromLTRB(0.0897, 0.3357, 0.9266, 0.7415),
-    ),
-    'assets/bubbles/甜酷翅膀深色气泡.webp': BubbleTextRegions(
-      Rect.fromLTRB(0.1957, 0.2440, 0.4375, 0.3647),
-      Rect.fromLTRB(0.1223, 0.3792, 0.8261, 0.6063),
-    ),
-    'assets/bubbles/彩虹渐变气泡.webp': BubbleTextRegions(
-      Rect.fromLTRB(0.1440, 0.2198, 0.3342, 0.3261),
-      Rect.fromLTRB(0.1440, 0.3647, 0.8505, 0.7222),
-    ),
-    'assets/bubbles/奶茶杯气泡.webp': BubbleTextRegions(
-      Rect.fromLTRB(0.1603, 0.2150, 0.3424, 0.3357),
-      Rect.fromLTRB(0.1250, 0.3406, 0.7717, 0.6546),
-    ),
-    'assets/bubbles/云朵天使气泡.webp': BubbleTextRegions(
-      Rect.fromLTRB(0.2663, 0.2585, 0.4538, 0.3792),
-      Rect.fromLTRB(0.2310, 0.3647, 0.7582, 0.6208),
-    ),
-  };
-
-  static BubbleTextRegions forAsset(String? asset) =>
-      byAsset[asset] ?? _default;
+  static BubbleTextRegions forAsset(String? _) => _default;
 
   static BubbleTextRegions fromSettings(
     String? asset,
@@ -105,10 +53,10 @@ class BubbleTextRegions {
   }
 }
 
-/// 角色头顶的对话气泡：白色胶囊 + 下垂小尾巴
+/// 角色头顶的对话气泡：使用 design_system 手绘纸墨风轮廓。
 ///
-/// 胶囊与尾巴合并为同一路径一次填充/描边（Path union），
-/// 不会有「底边描边穿过尾巴根部」的接缝横线。
+/// 由 [DsSpeechBubble] 绘制，外轮廓由 [DsSpeechBubbleShape] 选择；默认胶囊形状，
+/// 与全局手绘主题一致。
 ///
 /// 文本带打字机效果（逐字浮现），全部浮现后回调 [onTypingComplete]，
 /// 由宿主决定何时收起气泡。
@@ -121,9 +69,8 @@ class JellySpeechBubble extends StatelessWidget {
     this.typingInterval = const Duration(milliseconds: 110),
     this.streaming = false,
     this.onUserInteract,
-    this.bubbleAsset,
     this.modelName,
-    this.customRegions,
+    this.shape = DsSpeechBubbleShape.capsule,
   });
 
   final String text;
@@ -136,17 +83,19 @@ class JellySpeechBubble extends StatelessWidget {
   final Duration typingInterval;
   final bool streaming;
   final VoidCallback? onUserInteract;
-  final String? bubbleAsset;
-  final String? modelName;
-  final BubbleTextRegions? customRegions;
 
-  /// 尾巴高度（画在胶囊边界之外，下方 Padding 负责占位）
+  /// 顶部标题（角色名）
+  final String? modelName;
+
+  /// 手绘气泡轮廓；默认保持原有胶囊形状
+  final DsSpeechBubbleShape shape;
+
+  /// 尾巴高度（画在气泡边界之外，下方 Padding 负责占位）
   static const double tailHeight = 13;
 
   @override
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
-    final regions = customRegions ?? BubbleTextRegions.forAsset(bubbleAsset);
 
     final message = _ScrollableBubbleText(
       text: text,
@@ -159,79 +108,11 @@ class JellySpeechBubble extends StatelessWidget {
       streaming: streaming,
       onUserInteract: onUserInteract,
     );
-    final bubble = Padding(
-      padding: const EdgeInsets.only(bottom: tailHeight + 2),
-      child: CustomPaint(
-        painter: bubbleAsset == null
-            ? _BubblePainter(
-                fill: theme.surface,
-                line: theme.primary.withValues(alpha: 0.30),
-                shadows: theme.shadows.soft,
-                tailHeight: tailHeight,
-              )
-            : null,
-        child: bubbleAsset == null
-            ? Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: theme.spacing.xl,
-                  vertical: theme.spacing.md,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (modelName != null && modelName!.isNotEmpty)
-                      Text(
-                        modelName!,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    Expanded(child: message),
-                  ],
-                ),
-              )
-            : LayoutBuilder(
-                builder: (context, constraints) => Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    JellyConfigurableImage(
-                      path: bubbleAsset!,
-                      fit: BoxFit.fill,
-                    ),
-                    if (modelName != null && modelName!.isNotEmpty)
-                      Positioned.fromRect(
-                        rect: Rect.fromLTRB(
-                          constraints.maxWidth * regions.modelName.left,
-                          constraints.maxHeight * regions.modelName.top,
-                          constraints.maxWidth * regions.modelName.right,
-                          constraints.maxHeight * regions.modelName.bottom,
-                        ),
-                        child: Center(
-                          child: Text(
-                            modelName!,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: DsTypography.caption.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: theme.primaryText,
-                            ),
-                          ),
-                        ),
-                      ),
-                    Positioned(
-                      left: constraints.maxWidth * regions.message.left,
-                      top: constraints.maxHeight * regions.message.top,
-                      right: constraints.maxWidth * (1 - regions.message.right),
-                      bottom:
-                          constraints.maxHeight * (1 - regions.message.bottom),
-                      child: Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: message,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-      ),
+    final bubble = DsSpeechBubble(
+      header: modelName,
+      shape: shape,
+      tailHeight: tailHeight,
+      child: message,
     );
 
     if (onTap == null) return bubble;
@@ -379,50 +260,41 @@ class _ScrollableBubbleTextState extends State<_ScrollableBubbleText> {
           });
         },
         child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 24, maxHeight: 72),
-          child: NotificationListener<UserScrollNotification>(
-            onNotification: (notification) {
-              _userScrolling = notification.direction != ScrollDirection.idle;
-              widget.onUserInteract?.call();
-              return false;
-            },
-            child: Scrollbar(
-              controller: _scrollController,
-              thumbVisibility: true,
-              child: SingleChildScrollView(
+          constraints: const BoxConstraints(maxHeight: 72),
+          child: IntrinsicWidth(
+            child: NotificationListener<UserScrollNotification>(
+              onNotification: (notification) {
+                _userScrolling = notification.direction != ScrollDirection.idle;
+                widget.onUserInteract?.call();
+                return false;
+              },
+              child: Scrollbar(
                 controller: _scrollController,
-                physics: const AlwaysScrollableScrollPhysics(),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(minHeight: 44),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: widget.text == '...'
-                        ? const SizedBox(
-                            height: 24,
-                            child: Center(
-                              child: Text('...', textAlign: TextAlign.center),
-                            ),
-                          )
-                        : MarkdownBody(
-                            data: visibleText,
-                            shrinkWrap: true,
-                            styleSheet:
-                                MarkdownStyleSheet.fromTheme(
-                                  Theme.of(context),
-                                ).copyWith(
-                                  p: widget.style,
-                                  h1: widget.style.copyWith(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                  h2: widget.style.copyWith(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                  code: widget.style,
+                thumbVisibility: true,
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: widget.text == '...'
+                      ? const Text('...', textAlign: TextAlign.center)
+                      : MarkdownBody(
+                          data: visibleText,
+                          shrinkWrap: true,
+                          styleSheet:
+                              MarkdownStyleSheet.fromTheme(
+                                Theme.of(context),
+                              ).copyWith(
+                                p: widget.style,
+                                h1: widget.style.copyWith(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w700,
                                 ),
-                          ),
-                  ),
+                                h2: widget.style.copyWith(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                                code: widget.style,
+                              ),
+                        ),
                 ),
               ),
             ),
@@ -430,155 +302,5 @@ class _ScrollableBubbleTextState extends State<_ScrollableBubbleText> {
         ),
       ),
     );
-  }
-}
-
-/// 胶囊 + 尾巴一体绘制：
-/// 先 Path.union 合并两个子路径，再依次画阴影、填充、描边——
-/// 描边沿合并后的外轮廓走一圈，尾巴与胶囊天然无缝。
-class _BubblePainter extends CustomPainter {
-  const _BubblePainter({
-    required this.fill,
-    required this.line,
-    required this.shadows,
-    required this.tailHeight,
-  });
-
-  final Color fill;
-  final Color line;
-  final List<BoxShadow> shadows;
-  final double tailHeight;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final capsule = Path()
-      ..addRRect(
-        RRect.fromRectAndRadius(Offset.zero & size, const Radius.circular(18)),
-      );
-
-    // 尾巴根部往胶囊里压 2px，保证 union 后完全一体
-    final baseY = size.height - 2;
-    final tipX = size.width * 0.44;
-    final tipY = size.height + tailHeight;
-    const halfTail = 13.0;
-    final tail = Path()
-      ..moveTo(size.width / 2 - halfTail, baseY)
-      ..quadraticBezierTo(tipX - 4, baseY + tailHeight * 0.6, tipX, tipY)
-      ..quadraticBezierTo(
-        tipX + 8,
-        baseY + tailHeight * 0.5,
-        size.width / 2 + halfTail,
-        baseY,
-      )
-      ..close();
-
-    final shape = Path.combine(PathOperation.union, capsule, tail);
-
-    for (final shadow in shadows) {
-      canvas.drawPath(
-        shape.shift(shadow.offset),
-        Paint()
-          ..color = shadow.color
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, shadow.blurSigma),
-      );
-    }
-    canvas.drawPath(shape, Paint()..color = fill);
-    canvas.drawPath(
-      shape,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.4
-        ..strokeJoin = StrokeJoin.round
-        ..color = line,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_BubblePainter oldDelegate) =>
-      oldDelegate.fill != fill ||
-      oldDelegate.line != line ||
-      oldDelegate.tailHeight != tailHeight;
-}
-
-/// 逐字浮现的文本（打字机效果）
-class TypewriterText extends StatefulWidget {
-  const TypewriterText(
-    this.text, {
-    super.key,
-    this.style,
-    this.interval = const Duration(milliseconds: 110),
-    this.onComplete,
-  });
-
-  final String text;
-  final TextStyle? style;
-  final Duration interval;
-
-  /// 全部字符浮现完毕后回调一次
-  final VoidCallback? onComplete;
-
-  @override
-  State<TypewriterText> createState() => _TypewriterTextState();
-}
-
-class _TypewriterTextState extends State<TypewriterText> {
-  Timer? _timer;
-  int _shown = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _restart();
-  }
-
-  @override
-  void didUpdateWidget(TypewriterText oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.text != widget.text) {
-      if (widget.text.startsWith(oldWidget.text) &&
-          _shown <= oldWidget.text.length) {
-        _timer?.cancel();
-        _timer = Timer.periodic(widget.interval, _tick);
-      } else {
-        setState(_restart);
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-
-  void _restart() {
-    _timer?.cancel();
-    _shown = 0;
-    if (widget.text.isEmpty) {
-      widget.onComplete?.call();
-      return;
-    }
-    _timer = Timer.periodic(widget.interval, _tick);
-  }
-
-  void _tick(Timer timer) {
-    if (!mounted) {
-      timer.cancel();
-      return;
-    }
-    setState(() => _shown++);
-    if (_shown >= widget.text.length) {
-      timer.cancel();
-      widget.onComplete?.call();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final visible = widget.text.substring(
-      0,
-      _shown.clamp(0, widget.text.length),
-    );
-    return Text(visible, style: widget.style);
   }
 }

@@ -15,6 +15,7 @@ import 'package:aboutme/widgets/form_fields/image_picker_field.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 import '../video/video_pet_import.dart';
 import '../video/video_pet_manifest.dart';
+import 'live2d_region_editor.dart';
 import 'video_pet_editor_screen.dart';
 
 /// Live2D 存档编辑表单：封面、名称、模型、Agent
@@ -53,14 +54,13 @@ class _Live2DArchiveFormScreenState extends State<Live2DArchiveFormScreen> {
   final nameController = TextEditingController();
   final noteController = TextEditingController();
 
-  /// 点击台词按部位的输入控制器（部位 id -> 多行文本，每行一条）
-  final Map<String, TextEditingController> tapControllers = {
-    for (final part in live2DTapParts) part.id: TextEditingController(),
-  };
   List<AIAgent> agents = [];
   Live2DArchive? archive;
   String? _coverPath;
   bool _loadingVideo = false;
+
+  /// Live2D 模式的逐区域台词配置草稿（保存时回写 archive.tapRegions）
+  List<Live2DTapRegion> _regions = [];
 
   String _videoText(String zh, String en) =>
       (Get.locale?.languageCode ?? 'zh') == 'zh' ? zh : en;
@@ -150,9 +150,7 @@ class _Live2DArchiveFormScreenState extends State<Live2DArchiveFormScreen> {
     nameController.text = archive?.name ?? '';
     noteController.text = archive?.note ?? '';
     _coverPath = archive?.coverPath;
-    for (final entry in tapControllers.entries) {
-      entry.value.text = archive?.tapMessages[entry.key] ?? '';
-    }
+    _regions = List.of(archive?.tapRegions ?? const []);
     widget.onReady?.call(_save);
     widget.onDeleteReady?.call(_delete);
     AgentController().loadVisibleAgents().then((value) {
@@ -164,9 +162,6 @@ class _Live2DArchiveFormScreenState extends State<Live2DArchiveFormScreen> {
   void dispose() {
     nameController.dispose();
     noteController.dispose();
-    for (final controller in tapControllers.values) {
-      controller.dispose();
-    }
     super.dispose();
   }
 
@@ -266,9 +261,8 @@ class _Live2DArchiveFormScreenState extends State<Live2DArchiveFormScreen> {
         : nameController.text.trim();
     current.coverPath = _coverPath;
     current.note = noteController.text.trim();
-    current.tapMessages = {
-      for (final entry in tapControllers.entries) entry.key: entry.value.text,
-    };
+    // tapMessages 不再在此表单编辑：保留存档原值（视频运行时仍按部位消费）
+    current.tapRegions = List.of(_regions);
     await plugin.upsert(current);
     if (!mounted) return;
     ScaffoldMessenger.of(
@@ -529,7 +523,15 @@ class _Live2DArchiveFormScreenState extends State<Live2DArchiveFormScreen> {
         const SizedBox(height: 12),
         DSListItem(
           title: '点击台词',
-          subtitle: '开启后按部位随机显示自定义台词，未填写的部位使用默认文案',
+          subtitle: current.isVideo
+              ? _videoText(
+                  '开启后点击桌宠会随机显示已配置的台词',
+                  'Show configured messages at random when the pet is tapped',
+                )
+              : _videoText(
+                  '开启后点击模型区域显示自定义台词，按区域单独配置',
+                  'Show custom messages when the model is tapped, per region',
+                ),
           leading: DsIcon(DsIconKind.chat, color: theme.primary),
           trailing: DSSwitch(
             value: current.tapMessagesEnabled,
@@ -537,16 +539,10 @@ class _Live2DArchiveFormScreenState extends State<Live2DArchiveFormScreen> {
                 setState(() => current.tapMessagesEnabled = value),
           ),
         ),
-        if (current.tapMessagesEnabled) ...[
-          for (final part in live2DTapParts) ...[
-            const SizedBox(height: 12),
-            DSInput(
-              controller: tapControllers[part.id],
-              label: '${part.label}台词（每行一条，随机挑选）',
-              maxLines: 3,
-              minLines: 2,
-            ),
-          ],
+        // Live2D 模式：逐区域（HitArea/自定义矩形）台词编辑入口
+        if (current.tapMessagesEnabled && !current.isVideo) ...[
+          const SizedBox(height: 12),
+          _buildTapRegionSection(theme, current),
         ],
         if (!widget.embedInSheet) ...[
           const SizedBox(height: 32),
@@ -557,6 +553,38 @@ class _Live2DArchiveFormScreenState extends State<Live2DArchiveFormScreen> {
         ],
         const SizedBox(height: 24),
       ],
+    );
+  }
+
+  /// Live2D 模式逐区域台词区：仅保留区域编辑入口与摘要（模型预览在编辑器内）
+  Widget _buildTapRegionSection(AppThemeData theme, Live2DArchive current) {
+    final modelCount = _regions.where((r) => r.source == 'model').length;
+    final customCount = _regions.where((r) => r.source == 'custom').length;
+    final messageCount = _regions.fold<int>(
+      0,
+      (sum, region) => sum + region.effectiveMessages.length,
+    );
+    return DSListItem(
+      title: _videoText('点击区域与台词', 'Tap regions & messages'),
+      subtitle: _videoText(
+        '模型部位 $modelCount · 自定义矩形 $customCount · 台词 $messageCount 条，点击编辑',
+        'Model $modelCount · custom $customCount · $messageCount messages, tap to edit',
+      ),
+      leading: DsIcon(DsIconKind.layers, color: theme.primary),
+      showChevron: true,
+      onTap: () => _editRegions(current),
+    );
+  }
+
+  Future<void> _editRegions(Live2DArchive current) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => Live2DRegionEditorScreen(
+          archive: current,
+          initialRegions: _regions,
+          onChanged: (regions) => setState(() => _regions = regions),
+        ),
+      ),
     );
   }
 

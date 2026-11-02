@@ -24,16 +24,17 @@ import 'package:aboutme/widgets/picker/image_picker_dialog.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 import '../live2d_online_models.dart';
-import 'bubble_region_editor.dart';
 import 'jelly_configurable_image.dart';
 import 'jelly_live2d_crop_dialog.dart';
 import 'jelly_live2d_crop_region.dart';
 import 'jelly_live2d_interaction.dart';
 import 'jelly_live2d_layout.dart';
+import 'jelly_live2d_video.dart';
 import 'jelly_live2d_models.dart';
 import 'jelly_live2d_panel.dart';
 import 'jelly_video_pet_movement.dart';
 import 'jelly_speech_bubble.dart';
+import 'jelly_bubble_style_picker.dart';
 
 export 'jelly_live2d_models.dart';
 
@@ -129,6 +130,9 @@ class _JellyLive2DState extends State<JellyLive2D>
   late final ValueNotifier<Live2DVoiceFrame?> _voiceFrame =
       Live2DPlugin.instance.voiceFrame;
   final ValueNotifier<double> _size = ValueNotifier<double>(_defaultSize);
+
+  /// 精灵图舞台当前显示矩形（容器坐标系），供气泡跟随当前位置锚定。
+  final ValueNotifier<Rect?> _videoPetRect = ValueNotifier<Rect?>(null);
   final GlobalKey _modelCaptureKey = GlobalKey();
   late final AnimationController _tapSpringController = AnimationController(
     vsync: this,
@@ -150,6 +154,8 @@ class _JellyLive2DState extends State<JellyLive2D>
   Map<String, String> _videoResolvedSources = const {};
   String? _videoLoadError;
   int _modelLoadGeneration = 0;
+  Live2DModelDefinition? _lastLoadedModel;
+  bool _gazeUnsupported = false;
 
   bool get _isVideo => _selectedModel.isVideo;
 
@@ -173,7 +179,12 @@ class _JellyLive2DState extends State<JellyLive2D>
 
   void _handleVideoTap(String? id, String? name) {
     widget.onTap?.call(id, name);
-    // 视频桌宠：仅在该部位配置了自定义点击台词时才显示气泡
+    final regionMessage = _pickVideoRegionMessage(id, name);
+    if (regionMessage != null) {
+      _showBubble(regionMessage);
+      return;
+    }
+    // 区域没有台词时保留旧部位台词配置回退。
     if (!_hasCustomTapMessage(_tapPartId(id, name))) return;
     _showBubble(_pickBubbleMessage(id, name));
   }
@@ -212,6 +223,9 @@ class _JellyLive2DState extends State<JellyLive2D>
 
   double _bubbleOffsetX = 0;
   double _bubbleOffsetY = 0;
+  DsSpeechBubbleShape _bubbleShape = DsSpeechBubbleShape.capsule;
+  int _bubbleShapePreferenceRevision = 0;
+  Future<void> _bubbleShapeSaveQueue = Future<void>.value();
 
   bool get _hasAppearanceResources => _isVideo
       ? (_videoManifest ?? _selectedModel.videoManifest)
@@ -360,6 +374,7 @@ class _JellyLive2DState extends State<JellyLive2D>
   Future<void> _initialize() async {
     await _loadSavedSize();
     await _loadSavedBubblePosition();
+    await _loadSavedBubbleShape();
     if (!mounted || !_routeVisible) return;
     // Wait until the first finite layout is committed. The native view must
     // not be loaded against the temporary constraints from the first build.
@@ -398,6 +413,7 @@ class _JellyLive2DState extends State<JellyLive2D>
     _tapGazeResetTimer?.cancel();
     _tapSpringController.dispose();
     _size.dispose();
+    _videoPetRect.dispose();
     _hitAreasVisible.dispose();
     _borderVisible.dispose();
     _controller.dispose();
@@ -468,6 +484,24 @@ class _JellyLive2DState extends State<JellyLive2D>
     });
   }
 
+  Future<void> _setGaze(double x, double y) async {
+    if (_gazeUnsupported) return;
+    try {
+      await _controller.setDragging(x, y);
+    } on Live2DException catch (error) {
+      if (error.code == 'UNKNOWN' &&
+          error.message.contains('MissingPluginException') &&
+          error.message.contains('setDragging')) {
+        _gazeUnsupported = true;
+        debugPrint(
+          '[Live2D][Gaze] setDragging unavailable; gaze disabled until restart: $error',
+        );
+        return;
+      }
+      rethrow;
+    }
+  }
+
   Future<void> _sendVoiceGazeParameters(double x, double y) async {
     if (!mounted || !_controller.value.isLoaded) {
       return;
@@ -481,7 +515,7 @@ class _JellyLive2DState extends State<JellyLive2D>
     try {
       // Use Cubism's native drag input so the model's own look and physics
       // chain reproduces the same response as hovering the mouse over it.
-      await _controller.setDragging(x, y);
+      await _setGaze(x, y);
     } catch (error) {
       debugPrint('[Live2D][Voice] gaze update failed: $error');
     } finally {
@@ -692,6 +726,7 @@ class _JellyLive2DState extends State<JellyLive2D>
                                 // 并持久化到 jelly_live2d.size
                                 logicalSize: size,
                                 onResize: _setSize,
+                                geometry: _videoPetRect,
                                 builder: (context, playback) => VideoPetPlayer(
                                   key: ValueKey(
                                     '${_selectedModel.modelDir}:${jsonEncode(_videoManifest!.toJson())}',
@@ -809,9 +844,10 @@ class _JellyLive2DState extends State<JellyLive2D>
                       ValueListenableBuilder<Live2DViewState>(
                         valueListenable: _controller,
                         builder: (context, state, _) {
-                          final error = state.lastError;
+                          final error = state.modelLoadError;
                           final showPlaceholder =
-                              _isSwitchingModel || error != null;
+                              _isSwitchingModel ||
+                              (!state.isLoaded && error != null);
                           if (!showPlaceholder) {
                             return const SizedBox.shrink();
                           }

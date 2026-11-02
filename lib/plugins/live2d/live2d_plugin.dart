@@ -34,7 +34,6 @@ class Live2DPlugin extends BasePlugin {
       _instance ??= PluginManager.instance.getPlugin('live2d') as Live2DPlugin;
   static const fixedGroup = 'live2d';
   static const defaultTypingIntervalMs = 70;
-  static const defaultBubbleAsset = 'assets/bubbles/可拉伸兔子聊天气泡素材.webp';
   static const defaultBackgroundBlur = 0.0;
   static const defaultBackgroundOpacity = 1.0;
 
@@ -208,12 +207,6 @@ class Live2DPlugin extends BasePlugin {
         settings['typingIntervalMs'] as int? ?? defaultTypingIntervalMs,
   );
 
-  String get bubbleAsset =>
-      settings['bubbleAsset'] as String? ?? defaultBubbleAsset;
-  Future<void> setBubbleAsset(String asset) async {
-    await updateSettings({'bubbleAsset': asset});
-  }
-
   /// 小屋背景图；null 表示不显示背景
   String? get backgroundAsset => settings['backgroundAsset'] as String?;
 
@@ -249,8 +242,7 @@ class Live2DPlugin extends BasePlugin {
   }
 
   /// 悬浮宠物使用的存档 id；null 表示跟随当前选中存档
-  String? get globalPetArchiveId =>
-      settings['globalPetArchiveId'] as String?;
+  String? get globalPetArchiveId => settings['globalPetArchiveId'] as String?;
 
   Future<void> setGlobalPetArchiveId(String? value) async {
     await updateSettings({'globalPetArchiveId': value});
@@ -270,8 +262,7 @@ class Live2DPlugin extends BasePlugin {
 
   /// 悬浮宠物显示尺寸（逻辑像素，宽高一致）
   double get globalPetSize =>
-      (settings['globalPetSize'] as num?)?.toDouble() ??
-      defaultGlobalPetSize;
+      (settings['globalPetSize'] as num?)?.toDouble() ?? defaultGlobalPetSize;
 
   Future<void> setGlobalPetSize(double value) async {
     final clamped = value.clamp(minGlobalPetSize, maxGlobalPetSize).toDouble();
@@ -311,10 +302,6 @@ class Live2DPlugin extends BasePlugin {
       'backgroundAsset': asset,
     });
   }
-
-  List<String> get customBubbleAssets =>
-      (settings['customBubbleAssets'] as List?)?.whereType<String>().toList() ??
-      const [];
 
   /// 本地导入（zip）的模型库，经 settings.importedModels 持久化；
   /// 存档选中导入模型时据此找回完整定义（含动作列表）
@@ -393,28 +380,6 @@ class Live2DPlugin extends BasePlugin {
     for (final item in (settings['importedModels'] as List? ?? const []))
       if (item is Map) Map<String, dynamic>.from(item),
   ];
-
-  Future<void> addCustomBubbleAsset(String asset) async {
-    final next = [...customBubbleAssets];
-    if (!next.contains(asset)) next.add(asset);
-    await updateSettings({'customBubbleAssets': next, 'bubbleAsset': asset});
-  }
-
-  Map<String, dynamic> get bubbleRegions {
-    final value = settings['bubbleRegions'];
-    return value is Map
-        ? Map<String, dynamic>.from(value)
-        : <String, dynamic>{};
-  }
-
-  Future<void> setBubbleRegions(
-    String asset,
-    Map<String, double> regions,
-  ) async {
-    final next = bubbleRegions;
-    next[asset] = regions;
-    await updateSettings({'bubbleRegions': next});
-  }
 
   /// [onSpeechStart] TTS 真正开始朗读时触发（用于同步反应动画）；
   /// 未启用/不可用 TTS、朗读文本为空或 TTS 失败时立即回退触发，保证动画不丢。
@@ -559,13 +524,10 @@ class Live2DPlugin extends BasePlugin {
   Future<void> initialize() async {
     await loadSettings({
       'typingIntervalMs': defaultTypingIntervalMs,
-      'bubbleAsset': defaultBubbleAsset,
       'backgroundAsset': null,
       'backgroundBlur': defaultBackgroundBlur,
       'backgroundOpacity': defaultBackgroundOpacity,
       'customBackgroundAssets': <String>[],
-      'bubbleRegions': <String, dynamic>{},
-      'customBubbleAssets': <String>[],
       'importedModels': <Map<String, dynamic>>[],
       'globalPetEnabled': false,
       'globalPetArchiveId': null,

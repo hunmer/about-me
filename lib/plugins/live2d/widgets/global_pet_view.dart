@@ -29,6 +29,7 @@ class GlobalPetView extends StatefulWidget {
     this.videoInteractive = false,
     this.debugLogging = false,
     this.onManifestResolved,
+    this.onTap,
   });
 
   /// 已解析的模型定义（存档 → Live2DModelDefinition）
@@ -57,6 +58,11 @@ class GlobalPetView extends StatefulWidget {
   /// loadDefault 兜底结果）；外层悬浮层用它做区域命中过滤。
   /// 仅视频模型触发；Live2D 不调用。
   final void Function(VideoPetManifest manifest)? onManifestResolved;
+
+  /// 视频桌宠点击区域回调（透传 VideoPetPlayer.onTap：
+  /// regionId/regionName，未命中区域均为 null）；外层悬浮层用它
+  /// 做每区域随机台词气泡。仅视频模型触发；Live2D 不调用。
+  final void Function(String? regionId, String? regionName)? onTap;
 
   /// Live2D 模型画布宽高比（与小屋舞台一致）
   static const double live2dViewportAspectRatio = 0.5;
@@ -213,6 +219,7 @@ class _GlobalPetViewState extends State<GlobalPetView> {
       // interactive 只开内部点按（区域 click/manifest.click 兜底/回调）；
       // 不传 onDrag* 回调 → 不注册内部 pan，拖拽由外层悬浮层统一处理
       interactive: widget.videoInteractive,
+      onTap: widget.onTap,
       debugLogging: widget.debugLogging,
     );
   }

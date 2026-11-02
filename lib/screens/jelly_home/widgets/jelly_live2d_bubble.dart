@@ -1,32 +1,12 @@
 part of 'jelly_live2d.dart';
 
-/// 内置聊天气泡素材
-const List<String> _bubbleAssets = [
-  'assets/bubbles/可拉伸兔子聊天气泡素材.webp',
-  'assets/bubbles/小猫聊天气泡.webp',
-  'assets/bubbles/月亮晚安气泡.webp',
-  'assets/bubbles/星星聊天气泡.webp',
-  'assets/bubbles/小恐龙侧边气泡.webp',
-  'assets/bubbles/樱桃回形针气泡.webp',
-  'assets/bubbles/甜点蛋糕气泡.webp',
-  'assets/bubbles/游戏机像素气泡.webp',
-  'assets/bubbles/小熊聊天气泡.webp',
-  'assets/bubbles/甜酷翅膀深色气泡.webp',
-  'assets/bubbles/彩虹渐变气泡.webp',
-  'assets/bubbles/奶茶杯气泡.webp',
-  'assets/bubbles/云朵天使气泡.webp',
-];
-
 const String _bubbleOffsetXPrefKey = 'jelly_live2d.bubbleOffsetX';
 const String _bubbleOffsetYPrefKey = 'jelly_live2d.bubbleOffsetY';
+const String _bubbleShapePrefKey = 'jelly_live2d.bubbleShape';
 
 /// 气泡展示时长
 const Duration _minimumBubbleDuration = Duration(seconds: 6);
 const Duration _maximumBubbleDuration = Duration(seconds: 30);
-
-/// 气泡最小显示尺寸（逻辑像素）：320×100 的 1.3 倍
-const double _bubbleMinWidth = 416.0;
-const double _bubbleMinHeight = 130.0;
 
 /// 随机台词池：命中头部 / 命中身体 / 点空（未命中任何区域）。
 /// 翻译需运行时解析，用 getter 每次取当前语言
@@ -50,7 +30,8 @@ List<String> get _missMessages => [
 ];
 
 /// 气泡功能：台词挑选、展示计时、气泡布局与位置设置、
-/// 气泡资源条（选择/上传/文字区域编辑）
+/// 气泡资源条（位置调整；气泡本身为 design_system 手绘样式，
+/// 图片气泡素材选择/上传/文字区域编辑已移除）
 extension _JellyLive2DBubble on _JellyLive2DState {
   Future<void> _loadSavedBubblePosition() async {
     final prefs = await SharedPreferences.getInstance();
@@ -69,6 +50,35 @@ extension _JellyLive2DBubble on _JellyLive2DState {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble(_bubbleOffsetXPrefKey, _bubbleOffsetX);
     await prefs.setDouble(_bubbleOffsetYPrefKey, _bubbleOffsetY);
+  }
+
+  Future<void> _loadSavedBubbleShape() async {
+    final revision = _bubbleShapePreferenceRevision;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (!mounted || revision != _bubbleShapePreferenceRevision) return;
+      final savedName = prefs.getString(_bubbleShapePrefKey);
+      final shape = DsSpeechBubbleShape.values.firstWhere(
+        (candidate) => candidate.name == savedName,
+        orElse: () => DsSpeechBubbleShape.capsule,
+      );
+      if (_bubbleShape != shape) setState(() => _bubbleShape = shape);
+    } catch (error) {
+      debugPrint('[Live2D] Failed to load bubble shape: $error');
+    }
+  }
+
+  void _selectBubbleShape(DsSpeechBubbleShape shape) {
+    _bubbleShapePreferenceRevision++;
+    if (_bubbleShape != shape) setState(() => _bubbleShape = shape);
+    _bubbleShapeSaveQueue = _bubbleShapeSaveQueue.then((_) async {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(_bubbleShapePrefKey, shape.name);
+      } catch (error) {
+        debugPrint('[Live2D] Failed to save bubble shape: $error');
+      }
+    });
   }
 
   /// 按命中区域挑一条随机台词，避免和上一条重复。
@@ -172,58 +182,124 @@ extension _JellyLive2DBubble on _JellyLive2DState {
     final previewing = _bubblePositionPreview;
     final message = _bubbleMessage ?? (previewing ? '气泡预览' : null);
     if (message == null) return const SizedBox.shrink();
+
+    // 精灵图模式：气泡不需要自定义位置——固定在视频上方居中、
+    // 与视频实际显示矩形同宽、高度随内容自然伸缩；忽略保存的
+    // bubbleOffsetX/Y（Live2D 模式仍用自定义位置，偏好不动）。
+    if (_isVideo) {
+      return _buildVideoBubbleAbove(
+        width: width,
+        height: height,
+        topInset: topInset,
+        message: message,
+      );
+    }
+
     const margin = 12.0;
-    const bubbleBaseWidth = 288.0;
-    const bubbleBaseHeight = 150.0;
+    const maxBubbleWidth = 360.0;
     final availableWidth = math.max(0.0, width - margin * 2);
-    final availableHeight = math.max(0.0, height);
-    // 基础宽度只由容器决定（不随模型显示尺寸变化），
-    // 保证 live2d 与 video-pet 两模式气泡同大小
-    final baseWidth = math.min(
-      availableWidth,
-      availableHeight * bubbleBaseWidth / bubbleBaseHeight,
-    );
-    if (baseWidth <= 0) return const SizedBox.shrink();
-    // 任一维不足最小尺寸时，整体锁定为最小宽高
-    final baseScale = baseWidth / bubbleBaseWidth;
-    final scaledHeight = bubbleBaseHeight * baseScale;
-    final atMinimum =
-        baseWidth < _bubbleMinWidth || scaledHeight < _bubbleMinHeight;
-    final bubbleWidth = atMinimum ? _bubbleMinWidth : baseWidth;
-    final bubbleHeight = atMinimum ? _bubbleMinHeight : scaledHeight;
-    final top =
-        ((height - bubbleHeight) / 2 + height * _bubbleOffsetY)
-            .clamp(0.0, math.max(0.0, height - bubbleHeight))
-            .toDouble() +
-        topInset;
-    // 最小宽度可能超出可用宽度，上限兜底避免 clamp 区间倒置
-    final left = (((width - bubbleWidth) / 2 + width * _bubbleOffsetX).clamp(
-      margin,
-      math.max(margin, width - margin - bubbleWidth),
-    )).toDouble();
+    final contentWidth = math.min(availableWidth, maxBubbleWidth);
+    if (contentWidth <= 0 || height <= 0) return const SizedBox.shrink();
 
     return Positioned(
-      left: left,
-      top: top,
-      width: bubbleWidth,
-      height: bubbleHeight,
-      child: AppTheme(
-        data: AppTheme.of(context),
-        child: JellySpeechBubble(
-          key: const ValueKey('live2d-speech-bubble'),
-          text: message,
-          modelName: _selectedModel.label,
-          bubbleAsset: Live2DPlugin.instance.bubbleAsset,
-          customRegions: BubbleTextRegions.fromSettings(
-            Live2DPlugin.instance.bubbleAsset,
-            Live2DPlugin.instance.bubbleRegions,
+      left: 0,
+      top: 0,
+      width: width,
+      height: height + topInset,
+      child: CustomSingleChildLayout(
+        delegate: _Live2DBubblePositionDelegate(
+          margin: margin,
+          offsetX: _bubbleOffsetX,
+          offsetY: _bubbleOffsetY,
+          topInset: topInset,
+          maxBubbleWidth: contentWidth,
+        ),
+        child: AppTheme(
+          data: AppTheme.of(context),
+          child: JellySpeechBubble(
+            key: const ValueKey('live2d-speech-bubble'),
+            text: message,
+            modelName: _selectedModel.label,
+            shape: _bubbleShape,
+            streaming: _bubbleStreaming,
+            typingInterval: widget.typingInterval,
+            onUserInteract: previewing ? null : _pauseBubbleHide,
+            onTypingComplete: previewing ? null : _onBubbleTyped,
           ),
-          streaming: _bubbleStreaming,
-          typingInterval: widget.typingInterval,
-          onUserInteract: previewing ? null : _pauseBubbleHide,
-          onTypingComplete: previewing ? null : _onBubbleTyped,
         ),
       ),
+    );
+  }
+
+  /// 精灵图（视频桌宠）气泡：固定在**当前**视频上方居中、与视频同宽。
+  ///
+  /// 优先消费舞台（JellyVideoPetStage.geometry → `_videoPetRect`）
+  /// 上报的当前显示矩形——宠物被拖拽/走动/缩放后气泡实时跟随；
+  /// 舞台尚未完成首次布局（null）时回退 [jellyVideoPetDefaultRect]
+  /// 镜像公式（默认落点）。气泡盒由 [jellyVideoBubbleBoxAboveVideo]
+  /// 给出（盒底贴视频顶 - gap），[JellyVideoBubbleAboveDelegate] 让
+  /// 气泡在盒内底部对齐、高度随内容自然伸缩。四形状（_bubbleShape）
+  /// 与文字安全内边距保留。
+  Widget _buildVideoBubbleAbove({
+    required double width,
+    required double height,
+    required double topInset,
+    required String message,
+  }) {
+    final manifest = _videoManifest;
+    if (manifest == null || width <= 0 || height <= 0) {
+      return const SizedBox.shrink();
+    }
+    // 舞台垂直预算的底边预留（与 build 内 modelBottomInset 同式）
+    final bottomInset = computeJellyLive2DModelBottomInset(
+      layoutHeight: height + topInset,
+      navigationPadding: MediaQuery.paddingOf(context).bottom,
+      fitContainer: widget.fitContainer,
+    );
+    // 兜底锚点：舞台还没上报（首次布局前）时的默认落点。
+    final fallbackRect = jellyVideoPetDefaultRect(
+      layoutWidth: width,
+      layoutHeight: height + topInset,
+      topInset: topInset,
+      bottomInset: bottomInset,
+      petWidth: _size.value,
+      canvasAspectRatio: manifest.canvasHeight / manifest.canvasWidth,
+      bodySpan: jellyVideoPetBodySpan(manifest.regions),
+    );
+    // 跟随舞台当前矩形（拖拽/走动/缩放实时刷新）。
+    return ValueListenableBuilder<Rect?>(
+      valueListenable: _videoPetRect,
+      builder: (context, liveRect, _) {
+        final videoRect = liveRect ?? fallbackRect;
+        final box = jellyVideoBubbleBoxAboveVideo(
+          containerWidth: width,
+          containerTop: topInset,
+          videoRect: videoRect,
+        );
+        if (box.width <= 0 || box.height <= 0) return const SizedBox.shrink();
+        return Positioned(
+          left: box.left,
+          top: box.top,
+          width: box.width,
+          height: box.height,
+          child: CustomSingleChildLayout(
+            delegate: const JellyVideoBubbleAboveDelegate(),
+            child: AppTheme(
+              data: AppTheme.of(context),
+              child: JellySpeechBubble(
+                key: const ValueKey('live2d-speech-bubble'),
+                text: message,
+                modelName: _selectedModel.label,
+                shape: _bubbleShape,
+                streaming: _bubbleStreaming,
+                typingInterval: widget.typingInterval,
+                onUserInteract: _pauseBubbleHide,
+                onTypingComplete: _onBubbleTyped,
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -234,39 +310,27 @@ extension _JellyLive2DBubble on _JellyLive2DState {
     _bubbleResumeTimer = Timer(const Duration(seconds: 2), _onBubbleTyped);
   }
 
+  /// radial 底栏气泡面板：展示可即时应用的轮廓预览。
+  ///
+  /// 位置设置仅 Live2D 模式提供（精灵图气泡固定在视频上方居中，
+  /// 不支持/不需要自定义偏移）。
   Widget _buildBubbleStrip(AppThemeData theme) {
-    return Row(
-      children: [
-        Expanded(
-          child: SizedBox(
-            height: 48,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              children: [
-                for (final asset in [
-                  ..._bubbleAssets,
-                  ...Live2DPlugin.instance.customBubbleAssets,
-                ])
-                  Padding(
-                    padding: EdgeInsets.only(right: theme.spacing.sm),
-                    child: _bubbleTile(theme, asset),
-                  ),
-                _addTile(
-                  theme,
-                  width: 72,
-                  height: 48,
-                  iconSize: 22,
-                  onTap: () => _uploadCustomBubble(context),
-                ),
-              ],
+    return SizedBox(
+      height: 76,
+      child: Row(
+        children: [
+          Expanded(
+            child: JellyBubbleStylePicker(
+              selectedShape: _bubbleShape,
+              onSelected: _selectBubbleShape,
             ),
           ),
-        ),
-        SizedBox(width: theme.spacing.md),
-        Container(width: 1, height: 36, color: theme.stroke),
-        SizedBox(width: theme.spacing.md),
-        _bubblePositionButton(theme),
-      ],
+          if (!_isVideo) ...[
+            SizedBox(width: theme.spacing.sm),
+            _bubblePositionButton(theme),
+          ],
+        ],
+      ),
     );
   }
 
@@ -361,89 +425,57 @@ extension _JellyLive2DBubble on _JellyLive2DState {
       if (mounted) setState(() => _bubblePositionPreview = false);
     }
   }
+}
 
-  Widget _bubbleTile(AppThemeData theme, String asset) {
-    return GestureDetector(
-      onTap: () async {
-        await Live2DPlugin.instance.setBubbleAsset(asset);
-        if (mounted) setState(() {});
-      },
-      child: Container(
-        width: 72,
-        height: 48,
-        padding: const EdgeInsets.all(3),
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: asset == Live2DPlugin.instance.bubbleAsset
-                ? theme.primary
-                : theme.surface.withValues(alpha: 0),
-            width: 2,
-          ),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            JellyConfigurableImage(path: asset, fit: BoxFit.contain),
-            Positioned(
-              right: 0,
-              top: 0,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => _editBubbleRegions(asset),
-                child: DsIcon(DsIconKind.image, size: 16, color: theme.primary),
-              ),
-            ),
-          ],
-        ),
+class _Live2DBubblePositionDelegate extends SingleChildLayoutDelegate {
+  const _Live2DBubblePositionDelegate({
+    required this.margin,
+    required this.offsetX,
+    required this.offsetY,
+    required this.topInset,
+    required this.maxBubbleWidth,
+  });
+
+  final double margin;
+  final double offsetX;
+  final double offsetY;
+  final double topInset;
+  final double maxBubbleWidth;
+
+  @override
+  BoxConstraints getConstraintsForChild(BoxConstraints constraints) {
+    final availableHeight = math.max(0.0, constraints.maxHeight - topInset);
+    return BoxConstraints(
+      maxWidth: math.min(
+        maxBubbleWidth,
+        math.max(0.0, constraints.maxWidth - margin * 2),
       ),
+      maxHeight: availableHeight,
     );
   }
 
-  Future<void> _uploadCustomBubble(BuildContext context) async {
-    final result = await ImagePickerDialog.show<Map<String, dynamic>>(context);
-    final asset = result?['url'] as String?;
-    if (asset == null || asset.isEmpty) return;
-    await Live2DPlugin.instance.addCustomBubbleAsset(asset);
-    if (!context.mounted) return;
-    final regions = await showBubbleRegionEditor(
-      context: context,
-      asset: asset,
-      initial: BubbleTextRegions.forAsset(asset),
-    );
-    if (regions != null) {
-      await _applyBubbleRegions(asset, regions);
-    }
-    if (mounted) setState(() {});
+  @override
+  Offset getPositionForChild(Size size, Size childSize) {
+    final availableHeight = math.max(0.0, size.height - topInset);
+    final maxLeft = math.max(margin, size.width - margin - childSize.width);
+    final maxTop = math.max(topInset, size.height - childSize.height);
+    final left = ((size.width - childSize.width) / 2 + size.width * offsetX)
+        .clamp(margin, maxLeft)
+        .toDouble();
+    final top =
+        (topInset +
+                (availableHeight - childSize.height) / 2 +
+                availableHeight * offsetY)
+            .clamp(topInset, maxTop)
+            .toDouble();
+    return Offset(left, top);
   }
 
-  Future<void> _editBubbleRegions(String asset) async {
-    final regions = await showBubbleRegionEditor(
-      context: context,
-      asset: asset,
-      initial: BubbleTextRegions.fromSettings(
-        asset,
-        Live2DPlugin.instance.bubbleRegions,
-      ),
-    );
-    if (regions == null) return;
-    await _applyBubbleRegions(asset, regions);
-  }
-
-  Future<void> _applyBubbleRegions(
-    String asset,
-    BubbleTextRegions regions,
-  ) async {
-    await Live2DPlugin.instance.setBubbleRegions(asset, {
-      'nameLeft': regions.modelName.left,
-      'nameTop': regions.modelName.top,
-      'nameRight': regions.modelName.right,
-      'nameBottom': regions.modelName.bottom,
-      'messageLeft': regions.message.left,
-      'messageTop': regions.message.top,
-      'messageRight': regions.message.right,
-      'messageBottom': regions.message.bottom,
-    });
-    if (mounted) setState(() {});
-  }
+  @override
+  bool shouldRelayout(covariant _Live2DBubblePositionDelegate oldDelegate) =>
+      margin != oldDelegate.margin ||
+      offsetX != oldDelegate.offsetX ||
+      offsetY != oldDelegate.offsetY ||
+      topInset != oldDelegate.topInset ||
+      maxBubbleWidth != oldDelegate.maxBubbleWidth;
 }

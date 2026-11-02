@@ -200,12 +200,11 @@ extension _VideoPetEditorLayout on _VideoPetEditorScreenState {
                                                       animationId;
                                                 });
                                               },
-                                          onTap: (regionId, regionName) {
-                                            setState(
-                                              () => _lastHitRegion =
-                                                  regionName ?? regionId,
-                                            );
-                                          },
+                                          onTap: (regionId, regionName) =>
+                                              _handleTestTap(
+                                                regionId,
+                                                regionName,
+                                              ),
                                           movementAnimationId:
                                               playback.animationId,
                                           dragAnimationId:
@@ -496,7 +495,8 @@ extension _VideoPetEditorLayout on _VideoPetEditorScreenState {
                   final downloading =
                       item.isRemote && _downloadingIds.contains(animation.id);
                   final failed =
-                      item.isRemote && _downloadFailedIds.contains(animation.id);
+                      item.isRemote &&
+                      _downloadFailedIds.contains(animation.id);
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 6),
                     child: Container(

@@ -15,6 +15,7 @@ import 'package:aboutme/plugins/live2d/widgets/global_pet_view.dart';
 import 'package:aboutme/plugins/live2d/widgets/video_pet_region_hit_box.dart';
 import 'package:aboutme/screens/jelly_home/live2d_online_models.dart';
 import 'package:aboutme/screens/jelly_home/widgets/jelly_live2d_models.dart';
+import 'package:aboutme/screens/jelly_home/widgets/jelly_live2d_video.dart';
 import 'package:aboutme/screens/jelly_home/widgets/jelly_speech_bubble.dart';
 
 /// 全局悬浮宠物服务：把 Live2D 伙伴挂到应用根 Overlay，
@@ -205,6 +206,9 @@ class _GlobalFloatingPetStageState extends State<_GlobalFloatingPetStage> {
   VideoPetManifest? _resolvedVideoManifest;
   Live2DModelDefinition? _resolvedManifestFor;
 
+  /// 区域随机台词抽取器（每次点击独立随机）
+  final math.Random _tapMessageRandom = math.Random();
+
   static const double _bubbleGap = 8.0;
 
   @override
@@ -264,6 +268,38 @@ class _GlobalFloatingPetStageState extends State<_GlobalFloatingPetStage> {
     _bubbleTimer?.cancel();
     _bubbleSafetyTimer?.cancel();
     _bubbleSafetyTimer = Timer(const Duration(seconds: 2), _onBubbleTyped);
+  }
+
+  /// 点击区域随机台词气泡：按命中清单（与拖拽命中过滤同一份
+  /// [VideoPetManifest]）查出区域 [VideoPetRegion.effectiveMessages]
+  /// 随机取一条展示；未命中区域/无台词保持静默，区域点击动画
+  /// 由播放器自理，互不影响。
+  void _showRegionTapBubble(
+    VideoPetManifest? manifest,
+    String? regionId,
+    String? regionName,
+  ) {
+    final messages = manifest
+        ?.regionFor(regionId, regionName)
+        ?.effectiveMessages;
+    if (messages == null || messages.isEmpty) return;
+    var text = messages[_tapMessageRandom.nextInt(messages.length)];
+    // 池内多于一条时避免与当前气泡重复（同 Home 侧随机语义）
+    if (messages.length > 1 && text == _bubbleText) {
+      final others = messages.where((m) => m != text).toList();
+      if (others.isNotEmpty) text = others.first;
+    }
+    if (!mounted) return;
+    // 与转发回复气泡同一条生命周期：先清旧定时器，展示后由
+    // 打字完成回调 _onBubbleTyped 按文本长度计时收起
+    _bubbleTimer?.cancel();
+    _bubbleSafetyTimer?.cancel();
+    setState(() => _bubbleText = text);
+    GlobalFloatingPetService._log(
+      '区域台词气泡 region=${regionId ?? regionName} ${text.length} 字',
+    );
+    // 兜底：打字回调异常时也按时收起
+    _bubbleSafetyTimer = Timer(const Duration(seconds: 90), _hideBubble);
   }
 
   /// 所有 enabled 区域的归一化并集外接矩形投影到展示盒坐标。
@@ -373,8 +409,16 @@ class _GlobalFloatingPetStageState extends State<_GlobalFloatingPetStage> {
         final petLeft = _petPosition!.dx.clamp(minLeft, maxLeft).toDouble();
         final petTop = _petPosition!.dy.clamp(minTop, maxTop).toDouble();
 
-        // 气泡尺寸与位置：跟随宠物且保持在屏幕内
-        final bubbleWidth = math.min(260.0, bounds.width).toDouble();
+        // 气泡尺寸与位置：跟随宠物且保持在屏幕内。
+        // 精灵图（视频）与视频显示宽精确同宽（仅屏幕安全宽度收窄，
+        // 不做 160/260 人为截断，见 jellyVideoBubbleWidthFor）；
+        // Live2D 维持 260 上限。
+        final bubbleWidth = model.isVideo
+            ? jellyVideoBubbleWidthFor(
+                videoWidth: petBox.width,
+                maxWidth: bounds.width,
+              )
+            : math.min(260.0, bounds.width);
         final bubbleHeight = math
             .min(140.0, math.max(0.0, bounds.height * 0.35))
             .toDouble();
@@ -417,11 +461,6 @@ class _GlobalFloatingPetStageState extends State<_GlobalFloatingPetStage> {
                     key: ValueKey('global-pet-bubble-$_bubbleText'),
                     text: _bubbleText!,
                     modelName: model.label,
-                    bubbleAsset: plugin.bubbleAsset,
-                    customRegions: BubbleTextRegions.fromSettings(
-                      plugin.bubbleAsset,
-                      plugin.bubbleRegions,
-                    ),
                     typingInterval: plugin.bubbleTypingInterval,
                     onTypingComplete: _onBubbleTyped,
                     onUserInteract: _onBubbleInteract,
@@ -527,6 +566,13 @@ class _GlobalFloatingPetStageState extends State<_GlobalFloatingPetStage> {
                           _resolvedManifestFor = model;
                         });
                       },
+                      // 点击区域随机台词（视频）：用与拖拽命中过滤同一份
+                      // 清单随机取一条气泡；未命中/无台词静默，动画照常
+                      onTap: (regionId, regionName) => _showRegionTapBubble(
+                        videoManifest,
+                        regionId,
+                        regionName,
+                      ),
                     ),
                   ),
                 ),

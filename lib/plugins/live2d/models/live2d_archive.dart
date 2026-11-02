@@ -1,6 +1,78 @@
 import 'package:uuid/uuid.dart';
 import '../video/video_pet_manifest.dart';
 
+/// 档案中的模型原生 HitArea 或手动定义矩形区域。
+class Live2DTapRegion {
+  const Live2DTapRegion({
+    required this.id,
+    required this.name,
+    this.source = 'model',
+    this.left,
+    this.top,
+    this.right,
+    this.bottom,
+    this.messages = const [],
+  });
+
+  final String id;
+  final String name;
+
+  /// `model` 由原生 Live2D HitArea 命中，`custom` 由归一化矩形命中。
+  final String source;
+  final double? left;
+  final double? top;
+  final double? right;
+  final double? bottom;
+  final List<String> messages;
+
+  bool get hasBounds =>
+      left != null && top != null && right != null && bottom != null;
+
+  /// 几何坐标使用 0..1，原点在模型视口左上角，右侧和下侧不含。
+  bool containsNormalizedPoint(double x, double y) =>
+      source == 'custom' &&
+      hasBounds &&
+      x >= left! &&
+      x < right! &&
+      y >= top! &&
+      y < bottom!;
+
+  List<String> get effectiveMessages => messages
+      .map((message) => message.trim())
+      .where((message) => message.isNotEmpty)
+      .toList();
+
+  factory Live2DTapRegion.fromJson(Map<String, dynamic> json) {
+    double? number(String key) => (json[key] as num?)?.toDouble();
+
+    return Live2DTapRegion(
+      id: json['id'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      source: json['source'] as String? ?? 'model',
+      left: number('left'),
+      top: number('top'),
+      right: number('right'),
+      bottom: number('bottom'),
+      messages:
+          (json['messages'] as List?)?.whereType<String>().toList(
+            growable: false,
+          ) ??
+          const [],
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'source': source,
+    'left': left,
+    'top': top,
+    'right': right,
+    'bottom': bottom,
+    'messages': messages,
+  };
+}
+
 /// 点击台词的常见部位：id 用于存档持久化，label 为表单展示文案，
 /// keywords 匹配模型 HitArea 的 Id/Name（转小写后包含匹配）；
 /// miss 为未命中任何区域的点空，不参与关键词匹配
@@ -49,6 +121,7 @@ class Live2DArchive {
     this.videoBaseUri = 'assets/live2d/video/dsh_pet/',
     this.videoResolvedSources = const {},
     Map<String, String>? tapMessages,
+    this.tapRegions = const [],
   }) : tapMessages = tapMessages ?? {};
   final String id;
   String name;
@@ -76,6 +149,32 @@ class Live2DArchive {
 
   /// 点击台词：部位 id（见 [live2DTapParts]）-> 多行文本，每行一条随机台词
   Map<String, String> tapMessages;
+
+  /// 档案级区域；旧版 [tapMessages] 继续保留作为兼容回退。
+  List<Live2DTapRegion> tapRegions;
+
+  Live2DTapRegion? tapRegionForHitArea(String? hitAreaId, String? hitAreaName) {
+    final id = hitAreaId?.trim().toLowerCase();
+    final name = hitAreaName?.trim().toLowerCase();
+    if ((id == null || id.isEmpty) && (name == null || name.isEmpty)) {
+      return null;
+    }
+    return tapRegions.where((region) {
+      if (region.source != 'model') return false;
+      return (id != null && id.isNotEmpty && region.id.toLowerCase() == id) ||
+          (name != null &&
+              name.isNotEmpty &&
+              region.name.trim().toLowerCase() == name);
+    }).firstOrNull;
+  }
+
+  Live2DTapRegion? tapRegionAt(double normalizedX, double normalizedY) =>
+      tapRegions
+          .where(
+            (region) =>
+                region.containsNormalizedPoint(normalizedX, normalizedY),
+          )
+          .firstOrNull;
 
   /// 解析 [partId] 部位的自定义台词（按行拆分并过滤空行）
   List<String> tapMessageList(String partId) => (tapMessages[partId] ?? '')
@@ -127,6 +226,15 @@ class Live2DArchive {
           (key, value) => MapEntry(key, value as String),
         ) ??
         {},
+    tapRegions:
+        (json['tapRegions'] as List?)
+            ?.whereType<Map>()
+            .map(
+              (region) =>
+                  Live2DTapRegion.fromJson(Map<String, dynamic>.from(region)),
+            )
+            .toList() ??
+        const [],
   );
   Map<String, dynamic> toJson() => {
     'id': id,
@@ -145,5 +253,6 @@ class Live2DArchive {
     'tapMessagesEnabled': tapMessagesEnabled,
     'randomWalkEnabled': randomWalkEnabled,
     'tapMessages': tapMessages,
+    'tapRegions': tapRegions.map((region) => region.toJson()).toList(),
   };
 }

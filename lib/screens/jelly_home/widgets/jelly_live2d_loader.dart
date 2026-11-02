@@ -3,6 +3,14 @@ part of 'jelly_live2d.dart';
 /// 模型加载功能：模型切换/重载、档案选择、动作播放请求、视线重置
 const _appearanceDuration = Duration(seconds: 8);
 
+/// 已成功加载的同模型请求可跳过；切换、失败和未加载状态必须继续。
+bool shouldSkipJellyLive2DModelLoad({
+  required bool sameModel,
+  required Live2DViewState state,
+  required bool switching,
+}) => sameModel && !switching && state.isLoaded &&
+    state.modelLoadError == null;
+
 extension _JellyLive2DLoader on _JellyLive2DState {
   void _scheduleAppearanceReset() {
     _appearanceResetTimer?.cancel();
@@ -65,8 +73,12 @@ extension _JellyLive2DLoader on _JellyLive2DState {
   }
 
   Future<void> _resetGaze() async {
-    if (_isVideo) return;
-    await _controller.setDragging(0, 0);
+    if (_isVideo || !_controller.value.isLoaded) return;
+    try {
+      await _setGaze(0, 0);
+    } on Live2DException catch (error) {
+      debugPrint('[Live2D][Gaze] reset failed: $error');
+    }
   }
 
   /// 模型身份按目录 + 文件名判定（在线模型每次都会生成新实例，不能比较引用）
@@ -79,8 +91,20 @@ extension _JellyLive2DLoader on _JellyLive2DState {
                   jsonEncode(b.videoManifest?.toJson()) &&
               mapEquals(a.videoResolvedSources, b.videoResolvedSources)));
 
-  Future<void> _loadModel(Live2DModelDefinition model) async {
+  Future<void> _loadModel(
+    Live2DModelDefinition model, {
+    String cause = 'selection',
+  }) async {
     if (!_routeVisible) return;
+    if (!model.isVideo &&
+        !_isSwitchingModel &&
+        _lastLoadedModel != null &&
+        _isSameModel(model, _lastLoadedModel!) &&
+        _controller.value.isLoaded &&
+        _controller.value.modelLoadError == null) {
+      debugPrint('[Live2D][Load] skip same loaded model cause=$cause');
+      return;
+    }
     final generation = ++_modelLoadGeneration;
     if (model.isVideo) {
       if (mounted) {
@@ -126,7 +150,12 @@ extension _JellyLive2DLoader on _JellyLive2DState {
       return;
     }
     _videoManifest = null;
-    debugPrint('[Live2D][Load] 请求加载模型: ${model.modelDir}/${model.modelFile}');
+    debugPrint(
+      '[Live2D][Load] cause=$cause generation=$generation '
+      'controller=${identityHashCode(_controller)} '
+      'attached=${_controller.value.isAttached} loaded=${_controller.value.isLoaded} '
+      'path=${model.modelDir.endsWith('/') ? model.modelDir : '${model.modelDir}/'}${model.modelFile}',
+    );
     if (mounted) {
       _bubbleTimer?.cancel();
       setState(() {
@@ -144,10 +173,16 @@ extension _JellyLive2DLoader on _JellyLive2DState {
       if (_controller.value.isLoaded) {
         await _controller.unloadModel();
       }
-      await _controller.loadModel(
+      final loaded = await _controller.loadModel(
         modelDir: localModel.modelDir,
         modelFileName: localModel.modelFile,
       );
+      if (generation == _modelLoadGeneration) {
+        _lastLoadedModel = loaded ? model : null;
+        debugPrint(
+          '[Live2D][Load] result=$loaded generation=$generation cause=$cause',
+        );
+      }
       if (!_routeVisible) await _unloadModel();
     } on Live2DException {
       // The controller exposes the detailed error through Live2DViewState.

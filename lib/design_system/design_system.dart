@@ -66,6 +66,7 @@ export 'components/select.dart';
 export 'components/sketch_fill_picker.dart';
 export 'components/skeleton.dart';
 export 'components/slider.dart';
+export 'components/speech_bubble.dart';
 export 'components/stepper.dart';
 export 'components/switch.dart';
 export 'components/tabs.dart';

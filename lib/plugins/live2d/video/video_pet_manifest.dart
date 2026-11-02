@@ -139,6 +139,22 @@ class VideoPetManifest {
   VideoPetBinding clickBindingFor(VideoPetRegion? region) =>
       globalClickEnabled ? click : region?.click ?? click;
 
+  /// 按 onTap 回传的区域 id 优先、名称兜底查区域；两者皆空返回 null。
+  /// 消费端（Home 气泡 / 编辑器测试 / 全局浮宠）统一用入口拿台词池。
+  VideoPetRegion? regionFor(String? regionId, String? regionName) {
+    if (regionId != null && regionId.isNotEmpty) {
+      for (final region in regions) {
+        if (region.id == regionId) return region;
+      }
+    }
+    if (regionName != null && regionName.trim().isNotEmpty) {
+      for (final region in regions) {
+        if (region.name == regionName) return region;
+      }
+    }
+    return null;
+  }
+
   void validate() {
     _require(schemaVersion == 1, 'Unsupported schemaVersion: $schemaVersion');
     _require(id.trim().isNotEmpty, 'Manifest id must not be empty');
@@ -691,6 +707,7 @@ class VideoPetRegion {
     required this.height,
     this.enabled = true,
     this.priority = 0,
+    this.messages = const [],
     this.hover,
     this.click,
   });
@@ -704,6 +721,17 @@ class VideoPetRegion {
   final bool enabled;
   final int priority;
 
+  /// 点击该区域时随机展示的台词（每行一条）；空白行在
+  /// [effectiveMessages] 与序列化时被过滤。旧 manifest 缺省为空。
+  final List<String> messages;
+
+  /// 过滤纯空白后的有效台词池（点击随机挑选的数据源）。
+  List<String> get effectiveMessages => List.unmodifiable(
+    messages
+        .map((message) => message.trim())
+        .where((message) => message.isNotEmpty),
+  );
+
   /// Null inherits the manifest binding; an empty binding disables this action.
   final VideoPetBinding? hover;
   final VideoPetBinding? click;
@@ -713,6 +741,11 @@ class VideoPetRegion {
     final priority = json['priority'] ?? 0;
     _require(enabled is bool, 'enabled must be a bool');
     _require(priority is int, 'priority must be an integer');
+    final messages = json['messages'] ?? const <String>[];
+    _require(
+      messages is List && messages.every((v) => v is String),
+      'messages must be strings',
+    );
     return VideoPetRegion(
       id: _string(json, 'id'),
       name: _string(json, 'name'),
@@ -722,6 +755,7 @@ class VideoPetRegion {
       height: _number(json, 'height', 0),
       enabled: enabled as bool,
       priority: priority as int,
+      messages: List.unmodifiable((messages as List).cast<String>()),
       hover: json['hover'] == null
           ? null
           : VideoPetBinding.fromJson(_object(json, 'hover')),
@@ -740,6 +774,9 @@ class VideoPetRegion {
     'height': height,
     'enabled': enabled,
     'priority': priority,
+    // 空台词不落盘：旧存档 JSON 完全不变，新档不出现空串
+    if (effectiveMessages.isNotEmpty)
+      'messages': List<String>.of(effectiveMessages),
     'hover': hover?.toJson(),
     'click': click?.toJson(),
   };
@@ -753,6 +790,7 @@ class VideoPetRegion {
     double? height,
     bool? enabled,
     int? priority,
+    List<String>? messages,
     Object? hover = _unset,
     Object? click = _unset,
   }) => VideoPetRegion(
@@ -764,6 +802,7 @@ class VideoPetRegion {
     height: height ?? this.height,
     enabled: enabled ?? this.enabled,
     priority: priority ?? this.priority,
+    messages: List.unmodifiable(messages ?? this.messages),
     hover: identical(hover, _unset) ? this.hover : hover as VideoPetBinding?,
     click: identical(click, _unset) ? this.click : click as VideoPetBinding?,
   );

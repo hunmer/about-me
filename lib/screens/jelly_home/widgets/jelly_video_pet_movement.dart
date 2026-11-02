@@ -36,6 +36,7 @@ class JellyVideoPetPlayback {
   /// 一次性点播请求（撞墙动画），由舞台发出、播放器消费。
   final ValueListenable<VideoPetManualAnimation?> frameRequest;
   final VoidCallback onComplete;
+
   /// busy 变化回调（附带 busy 原因列表，如 manual/click/hover/drag）：
   /// manual = 工具/外部点播动画，应暂停走动而不是被走动打断。
   final void Function(bool busy, List<String> reasons) onBusyChanged;
@@ -63,6 +64,7 @@ class JellyVideoPetStage extends StatefulWidget {
     this.random,
     this.logicalSize,
     this.onResize,
+    this.geometry,
   });
 
   final String modelId;
@@ -87,6 +89,12 @@ class JellyVideoPetStage extends StatefulWidget {
 
   /// 调整大小回调：接收新的逻辑尺寸（clamp 与持久化由外部负责）。
   final ValueChanged<double>? onResize;
+
+  /// 当前宠物显示矩形（容器坐标系）上报：由外部创建并传入，
+  /// 舞台在每次布局/拖拽/走动/缩放后把最终 Positioned 矩形写入；
+  /// 气泡等外层 UI 靠它跟随宠物的“当前位置”（而非默认落点）。
+  /// 值为 null 表示舞台尚未完成首次布局。
+  final ValueNotifier<Rect?>? geometry;
 
   static String preferenceKey(String modelId) =>
       'jelly_video_pet.${Uri.encodeComponent(modelId)}';
@@ -140,6 +148,16 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
   void _pointerAdded(int pointer, Offset position) {
     _activePointers[pointer] = position;
     _syncPinchBase();
+  }
+
+  /// 帧后把当前宠物显示矩形写入 [JellyVideoPetStage.geometry]；
+  /// ValueNotifier 对相等值不再通知，走动/拖拽每帧写入开销可忽略。
+  void _reportGeometry(Rect rect) {
+    final notifier = widget.geometry;
+    if (notifier == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) notifier.value = rect;
+    });
   }
 
   void _pointerMoved(int pointer, Offset position) {
@@ -714,6 +732,16 @@ class JellyVideoPetStageState extends State<JellyVideoPetStage>
               _normalized!.dy * range.height,
             );
       _schedule();
+      // 布局确定后上报当前显示矩形（含拖拽/走动/缩放/持久化位置），
+      // 帧后写入避免监听方在 build 期间 setState。
+      _reportGeometry(
+        Rect.fromLTWH(
+          _position.dx,
+          widget.topInset + _position.dy,
+          size.width,
+          size.height,
+        ),
+      );
       final movement = widget.movement;
       final animation = _movementAnimationId;
       final phase = _phase;
