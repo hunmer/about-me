@@ -41,27 +41,20 @@
 
 ## 重新生成
 
-要求 PowerShell 7、FFmpeg/ffprobe、官方 libwebp 的 `cwebp` 及本地转换输入。FFmpeg 用 `libvpx-vp9` 解码 WebM 以保留 Alpha，MOV/MP4 由 FFmpeg 自动选择解码器（ProRes 4444 的 `yuva444p12le` Alpha 由此保留）；临时 PNG 网格仅在转换目录中存在，最终只打包 WebP。
+要求 PowerShell 7、FFmpeg/ffprobe、官方 libwebp 的 `cwebp`。转换脚本已移至 `D:/aboutme-pets/convert_video_pet_spritesheet.ps1`。脚本只枚举 `-SourceDir` 下的 `*.webm`（文件名即动作 id），结果写回 `-JsonPath` 指定的 manifest；WebP 与音频分别落在 manifest 同目录的 `spritesheet/`、`audio/`。FFmpeg 固定用 `libvpx-vp9` 解码 WebM 以保留 Alpha；临时 PNG 网格仅在转换目录中存在，最终只打包 WebP。
 
 ```powershell
 # 工具路径可通过 -Ffmpeg、-Ffprobe、-Cwebp 指定
-pwsh -NoProfile -File "scripts/convert_video_pet_spritesheet.ps1" -All
+pwsh -NoProfile -File "D:/aboutme-pets/convert_video_pet_spritesheet.ps1" `
+  -SourceDir "assets/live2d/video/dsh_pet/webm" `
+  -JsonPath "assets/live2d/video/dsh_pet/manifest.json"
 
-# 中断后复用已完成且参数、体积一致的动作
-pwsh -NoProfile -File "scripts/convert_video_pet_spritesheet.ps1" -All -Resume
-
-# 单个动作
-pwsh -NoProfile -File "scripts/convert_video_pet_spritesheet.ps1" -Action "东张西望"
-
-# 新增透明重制版动作（4 MB 上限由用户放宽；源同名 .mp4 > .webm > .mov 优先，新导出可复现地遮蔽旧源）
-pwsh -NoProfile -File "scripts/convert_video_pet_spritesheet.ps1" -Action "工作加班" -MaxBytes 4000000
-
-# 注册并转换 manifest 中不存在的新动作（-Category 单值应用到全部，或数组与 -Action 对位）；
-# -Action 数组让整批在一个进程内跑完，manifest 与校验和只在末尾各写一次。
-# 注意：pwsh -File 的 "-Action a,b,c" 会绑定成单个字符串，请从 pwsh 会话/脚本传真实数组：
-& "scripts/convert_video_pet_spritesheet.ps1" -Action @("逗狗","逗猫") -Category "玩耍" -MaxBytes 4000000
+# 中断后复用参数、体积一致的动作
+pwsh -NoProfile -File "D:/aboutme-pets/convert_video_pet_spritesheet.ps1" `
+  -SourceDir "assets/live2d/video/dsh_pet/webm" `
+  -JsonPath "assets/live2d/video/dsh_pet/manifest.json" -Resume
 ```
 
-脚本读取 fps 过滤后的实际帧数，不根据视频时长估算。每张编码后校验尺寸、透明格式及实际字节数，再更新元数据；全量转换成功后更新 manifest、移除被替代的生成 PNG 并重算校验和。`-MaxBytes` 默认 1000000，采用严格小于判断。
+脚本读取 fps 过滤后的实际帧数，不根据视频时长估算。每张编码后校验尺寸、透明格式及实际字节数；只更新 manifest 中同名动作的 `sources.webp`、`spritesheet` 与 `audio`，其余字段（名称、分类、绑定等）原样保留，manifest 中不存在的 id 新建条目（分类为“未分类”），全部完成后一次性写回 manifest。`-MaxBytes` 默认 1500000，采用严格小于判断。
 
 颜色质量通过整数二分搜索；透明边缘从质量 50 开始，必要时逐级降至 25、10、1，优先为颜色细节保留空间。透明度量化会改变半透明边缘，不保证逐像素无损；无透明像素仍保持透明。
