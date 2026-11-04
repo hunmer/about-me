@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
@@ -35,6 +36,7 @@ class VideoPetEditorScreen extends StatefulWidget {
     required this.baseUri,
     this.resolvedSources = const {},
     this.petStoreService,
+    this.onActionInstalled,
   });
 
   final VideoPetManifest manifest;
@@ -44,6 +46,12 @@ class VideoPetEditorScreen extends StatefulWidget {
   /// 宠物商店服务（服务端动作下载）；null 时若 manifest 带商店标记
   /// 则按默认配置自建（测试可注入）
   final PetStoreService? petStoreService;
+
+  /// 动作下载成功（资源文件已落盘）后立即回调：参数是
+  /// 「进入编辑器时的 manifest + 迄今已下载的动作」，不含草稿中的
+  /// 其它编辑；调用方应把它写回存档，保证未点保存退出也不丢
+  /// 已下载的资源。下载 ≠ 启用：新动作 enabled 恒为 false。
+  final void Function(VideoPetManifest manifest)? onActionInstalled;
 
   @override
   State<VideoPetEditorScreen> createState() => _VideoPetEditorScreenState();
@@ -73,6 +81,9 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen>
   bool _isTestMode = true;
   bool _showRegions = true;
   double _narrowToolsHeight = 300;
+  // 窄屏工具区高度持久化 key（经 SharedPreferences 存取）
+  static const _narrowToolsHeightPrefKey =
+      'video_pet_editor.narrowToolsHeight';
   String? _lastHitRegion;
   String? _lastActionAnimation;
   // 测试模式点击区域随机挑台词用（避免与走动等其它随机共用）
@@ -101,12 +112,18 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen>
   /// 编辑器自建的商店服务（dispose 时释放；注入的由宿主管理）
   PetStoreService? _ownStoreService;
 
+  /// 已入档快照：进入编辑器时的 manifest + 迄今已下载的动作，
+  /// 经 [widget.onActionInstalled] 增量回传（不含草稿的其它编辑）
+  late VideoPetManifest _installedManifest;
+
   @override
   void initState() {
     super.initState();
     _draft = VideoPetManifest.fromJson(
       Map<String, dynamic>.from(widget.manifest.toJson()),
     );
+    _installedManifest = widget.manifest;
+    _loadNarrowToolsHeight();
     _selectedRegionId = _draft.regions.isEmpty ? null : _draft.regions.first.id;
     // manifest 带商店标记时自动拉取服务端动作列表
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -147,6 +164,33 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen>
     setState(() => _draft = value);
   }
 
+  // ===== 窄屏工具区高度持久化（拖完写盘，进入时恢复）=====
+
+  Future<void> _loadNarrowToolsHeight() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final saved = prefs.getDouble(_narrowToolsHeightPrefKey);
+      if (saved == null || saved < 140 || !mounted) return;
+      setState(() {
+        // 保存时已在合法区间；再 clamp 防跨设备屏高变化的布局溢出
+        _narrowToolsHeight = saved
+            .clamp(140.0, MediaQuery.sizeOf(context).height * .8)
+            .toDouble();
+      });
+    } catch (error) {
+      debugPrint('[VideoPetEditor] 恢复工具区高度失败：$error');
+    }
+  }
+
+  Future<void> _saveNarrowToolsHeight() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setDouble(_narrowToolsHeightPrefKey, _narrowToolsHeight);
+    } catch (error) {
+      debugPrint('[VideoPetEditor] 保存工具区高度失败：$error');
+    }
+  }
+
   /// 用编辑后的单动画替换草稿中的对应项（按 id 匹配）。
   void _updateAnimation(VideoPetAnimation next) => _setDraft(
     _draft.copyWith(
@@ -176,7 +220,8 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen>
       _serverError = null;
     });
     try {
-      final actions = await service.fetchActions(widget.manifest);
+      // 始终访问商店目录的最新动作地址（metadata 地址安装后可能过期）
+      final actions = await service.fetchLatestActions(widget.manifest);
       if (!mounted) return;
       setState(() {
         _serverAnimations = actions
@@ -232,6 +277,12 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen>
       }
       if (!mounted) return;
       _setDraft(_draft.copyWith(animations: [..._draft.animations, resolved]));
+      // 下载即入档：不等保存，把「进入时的 manifest + 已下载动作」
+      // 增量回传调用方写回存档（未保存退出也不丢已下载资源）
+      _installedManifest = _installedManifest.copyWith(
+        animations: [..._installedManifest.animations, resolved],
+      );
+      widget.onActionInstalled?.call(_installedManifest);
       setState(() {
         _serverAnimations = _serverAnimations
             .where((item) => item.id != animation.id)

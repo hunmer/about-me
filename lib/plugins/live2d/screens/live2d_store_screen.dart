@@ -191,6 +191,14 @@ class _Live2DStoreScreenState extends State<Live2DStoreScreen> {
             baseUri: package.baseUri,
             resolvedSources: package.resolvedSources,
             petStoreService: widget.service ?? _ownService,
+            // 下载即入档：编辑器内每下载一个动作就写回存档并持久化，
+            // 未点保存退出也不丢已下载资源
+            onActionInstalled: (manifest) {
+              archive.videoManifest = manifest;
+              archive.videoBaseUri = package.baseUri;
+              archive.videoResolvedSources = package.resolvedSources;
+              _persist(archive);
+            },
           ),
         ),
       );

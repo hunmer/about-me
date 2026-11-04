@@ -20,6 +20,8 @@ extension _VideoPetEditorLayout on _VideoPetEditorScreenState {
               MediaQuery.sizeOf(context).height * .8,
             );
           }),
+          // 拖完一次写盘（拖动中只改内存），下次进入自动恢复
+          onVerticalDragEnd: (_) => _saveNarrowToolsHeight(),
           child: MouseRegion(
             cursor: SystemMouseCursors.resizeRow,
             child: SizedBox(

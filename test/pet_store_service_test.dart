@@ -394,6 +394,60 @@ void main() {
       }
     });
 
+    test('fetchLatestActions 优先目录条目的最新动作地址', () async {
+      final service = serviceFor(store.root);
+      final pet = (await service.fetchPets()).single;
+      final package = await service.installPet(pet);
+      // 商店目录把动作列表挪到新地址（metadata 里仍是安装时的旧地址）。
+      store.files['/pets/dsh/actions-v2.json'] = _json({
+        'schemaVersion': 1,
+        'petId': 'dsh-pet',
+        'animations': [_animationJson('新动作', '扩展')],
+      });
+      store.files['/pets/dsh/新动作.webp'] = _webp('新动作');
+      store.files['/pets.json'] = _json({
+        'schemaVersion': 1,
+        'pets': [
+          {
+            'id': 'dsh-pet',
+            'name': '蓝毛小女仆',
+            'description': '测试用商店宠物',
+            'cover': 'pets/dsh/cover.webp',
+            'manifest': 'pets/dsh/manifest.json',
+            'actions': 'pets/dsh/actions-v2.json',
+          },
+        ],
+      });
+      try {
+        final actions = await service.fetchLatestActions(package.manifest);
+        expect(actions.map((a) => a.id), ['新动作']);
+        expect(
+          actions.single.imageSource,
+          store.root.resolve('pets/dsh/新动作.webp').toString(),
+        );
+      } finally {
+        store.files['/pets.json'] = _buildStoreFiles()['/pets.json']!;
+        store.files.remove('/pets/dsh/actions-v2.json');
+        store.files.remove('/pets/dsh/新动作.webp');
+      }
+      service.close();
+    });
+
+    test('目录不可用时 fetchLatestActions 回退 metadata 地址', () async {
+      final service = serviceFor(store.root);
+      final pet = (await service.fetchPets()).single;
+      final package = await service.installPet(pet);
+      final original = store.files['/pets.json']!;
+      store.files['/pets.json'] = _json({'schemaVersion': 2, 'pets': []});
+      try {
+        final actions = await service.fetchLatestActions(package.manifest);
+        expect(actions, hasLength(2));
+      } finally {
+        store.files['/pets.json'] = original;
+      }
+      service.close();
+    });
+
     test('downloadAction 落盘动作与音频并加入 manifest', () async {
       final service = serviceFor(store.root);
       final pet = (await service.fetchPets()).single;
@@ -409,6 +463,8 @@ void main() {
       );
       expect(added.imageSource, startsWith('file://'));
       expect(added.audio, startsWith('file://'));
+      // 下载 ≠ 启用：新动作默认不参与 Jev 自动动作决策
+      expect(added.enabled, isFalse);
       final storeDir = Directory.fromUri(
         Uri.parse(package.baseUri).resolve('store'),
       );

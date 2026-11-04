@@ -122,6 +122,16 @@ class _Live2DArchiveFormScreenState extends State<Live2DArchiveFormScreen> {
             manifest: package.manifest,
             baseUri: package.baseUri,
             resolvedSources: package.resolvedSources,
+            // 下载即入档：下载完成的动作立即合入表单草稿（表单本身
+            // 未保存，随表单保存落盘；取消编辑不再丢已下载动作）
+            onActionInstalled: (manifest) {
+              if (!mounted) return;
+              setState(() {
+                current.videoManifest = manifest;
+                current.videoBaseUri = package.baseUri;
+                current.videoResolvedSources = package.resolvedSources;
+              });
+            },
           ),
         ),
       );

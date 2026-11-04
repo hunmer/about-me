@@ -186,13 +186,41 @@ class PetStoreService {
   /// 获取动作列表（actions.json），返回源已解析为绝对 URL 的动画元数据。
   ///
   /// 动画不会被下载；配合 [downloadAction] 按需落单个动作。
-  Future<List<VideoPetAnimation>> fetchActions(
+  /// 地址取自 manifest metadata（安装时写入，商店侧调整后会过期）；
+  /// 要始终跟随商店目录的最新地址请用 [fetchLatestActions]。
+  Future<List<VideoPetAnimation>> fetchActions(VideoPetManifest manifest) =>
+      _fetchActionsFrom(
+        _effectiveActionsUri(manifest),
+        _storePetIdOf(manifest),
+      );
+
+  /// 始终访问最新远程动作列表：先拉商店目录，按宠物 id 匹配条目并使用
+  /// 条目**当前**的动作地址；目录拉取失败或条目缺失时回退 manifest
+  /// 自带的 metadata 地址（安装时写入）。
+  Future<List<VideoPetAnimation>> fetchLatestActions(
     VideoPetManifest manifest,
   ) async {
-    final actionsUri = _requireStoreHttp(
-      _effectiveActionsUri(manifest),
-      '动作列表',
-    );
+    final expected = _storePetIdOf(manifest);
+    try {
+      for (final entry in await fetchPets()) {
+        if (entry.id == expected) {
+          return await _fetchActionsFrom(
+            Uri.parse(entry.actionsUrl),
+            expected,
+          );
+        }
+      }
+    } on FormatException {
+      // 目录不可用时回退 manifest 自带地址。
+    }
+    return fetchActions(manifest);
+  }
+
+  Future<List<VideoPetAnimation>> _fetchActionsFrom(
+    Uri actionsUri,
+    String expected,
+  ) async {
+    actionsUri = _requireStoreHttp(actionsUri, '动作列表');
     final decoded = await _getJson(actionsUri);
     if (decoded is! Map<String, dynamic>) {
       throw const FormatException('商店动作列表必须是 JSON 对象');
@@ -202,9 +230,12 @@ class PetStoreService {
         '商店动作列表 schemaVersion 不支持：${decoded['schemaVersion']}',
       );
     }
-    final expected = _storePetIdOf(manifest);
-    if (decoded['petId'] != expected) {
-      throw FormatException('动作列表与当前宠物不匹配：期望 $expected，实际 ${decoded['petId']}');
+    // 兼容 manifest.json 直接作为动作列表（无 petId 字段，id 即宠物身份）。
+    final listedPetId = decoded['petId'] ?? decoded['id'];
+    if (listedPetId != expected) {
+      throw FormatException(
+        '动作列表与当前宠物不匹配：期望 $expected，实际 $listedPetId',
+      );
     }
     final animations = decoded['animations'];
     if (animations is! List) {
@@ -304,6 +335,9 @@ class PetStoreService {
           : (appendedBase == null
                 ? _dataUri(files[audioKey]!, audio!)
                 : Uri.parse(storeDirectory).resolve(audioKey).toString()),
+      // 下载 ≠ 启用：新动作默认不参与 Jev 自动动作决策，
+      // 是否启用由用户在编辑器里手动决定。
+      enabled: false,
     );
     final updated = manifest.copyWith(
       animations: [...manifest.animations, live],

@@ -88,6 +88,11 @@ class _FakePetStoreService extends PetStoreService {
   }
 
   @override
+  Future<List<VideoPetAnimation>> fetchLatestActions(
+    VideoPetManifest manifest,
+  ) => fetchActions(manifest);
+
+  @override
   Future<VideoPetPackage> downloadAction({
     required VideoPetPackage package,
     required VideoPetAnimation animation,
@@ -374,6 +379,7 @@ void main() {
       required PetStoreService service,
       required VideoPetManifest Function() manifestOf,
       required void Function(VideoPetManifest? result) onClosed,
+      void Function(VideoPetManifest manifest)? onActionInstalled,
     }) async {
       tester.view.physicalSize = const Size(1600, 1000);
       tester.view.devicePixelRatio = 1;
@@ -393,6 +399,7 @@ void main() {
                               manifest: manifestOf(),
                               baseUri: 'file:///pets/',
                               petStoreService: service,
+                              onActionInstalled: onActionInstalled,
                             ),
                           ),
                         );
@@ -616,15 +623,17 @@ void main() {
       );
     });
 
-    testWidgets('取消编辑不把未保存的下载动作写回 manifest', (tester) async {
+    testWidgets('取消编辑丢草稿，但已下载动作经回调增量入档', (tester) async {
       final fake = _FakePetStoreService(actions: serverActions);
       final original = buildManifest();
       VideoPetManifest? closedWith;
+      final installed = <VideoPetManifest>[];
       await pumpEditor(
         tester,
         service: fake,
         manifestOf: () => original,
         onClosed: (result) => closedWith = result,
+        onActionInstalled: installed.add,
       );
 
       // 下载一个服务端动作后直接返回（取消）
@@ -636,12 +645,16 @@ void main() {
       await tester.tap(find.byType(DSIconButton).first);
       await tester.pumpAndSettle();
 
-      // pop 无结果，原 manifest 不含下载动作（草稿隔离）
+      // pop 无结果：草稿（含未保存编辑）整体丢弃
       expect(closedWith, isNull);
       expect(
         original.animations.where((a) => a.id == 'srv1'),
         isEmpty,
       );
+      // 但下载完成的动作经 onActionInstalled 已增量入档：
+      // 回调 manifest = 进入时 manifest + 新动作（不含草稿其它编辑）
+      expect(installed, hasLength(1));
+      expect(installed.single.animations.map((a) => a.id), ['idle', 'srv1']);
     });
 
     testWidgets('一键下载全部服务端动作，全部变本地 switch', (tester) async {
