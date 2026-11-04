@@ -18,8 +18,6 @@ jobs:
         with:
           channel: stable
           
-      - name: Set up Live2D dependency
-        uses: ./.github/actions/setup-live2d
 
       - name: Install dependencies
         run: flutter pub get

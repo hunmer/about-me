@@ -1614,7 +1614,7 @@ packages:
   live2d_flutter:
     dependency: "direct main"
     description:
-      path: "../flutter_live2d-main"
+      path: "packages/flutter_live2d-main"
       relative: true
     source: path
     version: "1.0.4"

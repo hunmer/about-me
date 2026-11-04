@@ -1,0 +1,28 @@
+{
+  "commands": {
+    "web-example": {
+      "script": "flutter",
+      "args": [
+        "run",
+        "-d",
+        "web-server",
+        "--release",
+        "--web-hostname",
+        "127.0.0.1",
+        "--web-port",
+        "8765"
+      ],
+      "cwd": "example"
+    },
+    "windows-example": {
+      "script": "flutter",
+      "args": [
+        "run",
+        "-d",
+        "windows",
+        "--debug"
+      ],
+      "cwd": "example"
+    }
+  }
+}

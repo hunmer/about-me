@@ -1,0 +1,17 @@
+# Demo assets — only needed on GitHub for README images, not in the pub package.
+# NOTE: assets/web/ must stay — flutter_live2d_web.js and shaders/ are declared
+# in pubspec.yaml and required at runtime.
+assets/demo/
+
+# Build artifacts (a .pubignore replaces .gitignore, so these are listed here).
+.dart_tool/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+pubspec.lock
+
+# Local development and agent planning files.
+findings.md
+progress.md
+procm-commands.json
+task_plan.md

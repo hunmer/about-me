@@ -19,6 +19,8 @@ analyzer:
     - linux/**
     # vendored 上游包的示例代码，依赖未 vendored 的 example 辅助包
     - packages/dartantic_ai/example/**
+    # live2d 子包的 example（依赖未 pub get，且含上游自带断链测试）
+    - packages/flutter_live2d-main/example/**
   errors:
     avoid_print: ignore
     constant_identifier_names: ignore

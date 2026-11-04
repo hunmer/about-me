@@ -1,9 +1,0 @@
-name: Set up Live2D dependency
-description: Restore the private Live2D dependency from the vendored source snapshot.
-runs:
-  using: composite
-  steps:
-    - shell: bash
-      run: |
-        mkdir -p "../flutter_live2d-main"
-        tar -xzf "third_party/flutter_live2d-7e829b6.tar.gz" -C "../flutter_live2d-main"

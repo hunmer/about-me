@@ -30,7 +30,7 @@
 
 ### 路径依赖（workspace 内子包）
 
-`agentlib`、`dartantic_ai`、`super_cupertino_navigation_bar`、`radial_disc_bottom_bar`、`floating_ball_plugin`、`aboutme_widgets`、`aboutme_foreground_service`、`aboutme_notifications`、`aboutme_intent`、`aboutme_nfc`、`aboutme_data_sdk`（均位于 `packages/`）与 `shared_models`；另有仓外 path 依赖 `live2d_flutter`（`../flutter_live2d-main`）。
+`agentlib`、`dartantic_ai`、`super_cupertino_navigation_bar`、`radial_disc_bottom_bar`、`floating_ball_plugin`、`aboutme_widgets`、`aboutme_foreground_service`、`aboutme_notifications`、`aboutme_intent`、`aboutme_nfc`、`aboutme_data_sdk`、`live2d_flutter`（均位于 `packages/`）与 `shared_models`（2026-11-04 起 `live2d_flutter` 并入仓库 `packages/flutter_live2d-main`，不再依赖仓库外路径）。
 
 ### dependency_overrides
 
