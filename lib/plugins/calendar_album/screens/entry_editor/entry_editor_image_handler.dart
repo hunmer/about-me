@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/widgets/picker/image_picker_dialog.dart';
@@ -15,7 +16,12 @@ class EntryEditorImageHandler extends StatefulWidget {
 
   /// 只读模式（隐藏添加按钮与删除角标）
   final bool readOnly;
-  final Function(String url, String? thumbUrl, String? liveVideoUrl)
+  final Function(
+    String url,
+    String? thumbUrl,
+    String? liveVideoUrl,
+    DateTime? capturedAt,
+  )
   onImageAdded;
   final Function(int index) onImageRemoved;
 
@@ -166,12 +172,19 @@ class _EntryEditorImageHandlerState extends State<EntryEditorImageHandler> {
               );
           if (results != null && results.isNotEmpty) {
             setState(() {
-              for (final result in results) {
+              for (var index = 0; index < results.length; index++) {
+                final result = results[index];
+                if (kDebugMode) {
+                  debugPrint(
+                    '[PhotoDate][editor-handler] #$index returnedKeys=${result.keys.toList()} date=${result['date']} createdAt=${result['createdAt']} urlAvailable=${result['url'] != null}',
+                  );
+                }
                 if (result['url'] != null) {
                   widget.onImageAdded(
                     result['url'] as String,
                     result['thumbUrl'] as String?,
                     result['liveVideoUrl'] as String?,
+                    result['date'] as DateTime?,
                   );
                 }
               }

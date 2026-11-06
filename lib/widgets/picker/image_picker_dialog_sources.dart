@@ -2,9 +2,10 @@ part of 'image_picker_dialog.dart';
 
 /// 拾取的图片（含可选的实况照片视频轨道）
 class _PickedImage {
-  const _PickedImage(this.image, {this.liveVideo});
+  const _PickedImage(this.image, {this.capturedAt, this.liveVideo});
 
   final XFile image;
+  final DateTime? capturedAt;
   final XFile? liveVideo;
 }
 
@@ -36,8 +37,19 @@ extension _ImagePickerDialogSourcesExt on _ImagePickerDialogState {
       if (useLivePhotos == null) return;
 
       final images = <_PickedImage>[];
-      for (final entity in entities) {
+      for (var index = 0; index < entities.length; index++) {
+        final entity = entities[index];
+        if (kDebugMode) {
+          debugPrint(
+            '[PhotoDate][picker] #$index assetCreated=${entity.createDateTime.toIso8601String()} isLivePhoto=${entity.isLivePhoto}',
+          );
+        }
         final file = await entity.originFile ?? await entity.file;
+        if (kDebugMode) {
+          debugPrint(
+            '[PhotoDate][picker] #$index originFileAvailable=${file != null}; timestamp is not attached to XFile',
+          );
+        }
         if (file != null) {
           final liveVideo = useLivePhotos && entity.isLivePhoto
               ? await entity.originFileWithSubtype
@@ -45,6 +57,7 @@ extension _ImagePickerDialogSourcesExt on _ImagePickerDialogState {
           images.add(
             _PickedImage(
               XFile(file.path),
+              capturedAt: entity.createDateTime,
               liveVideo: liveVideo == null ? null : XFile(liveVideo.path),
             ),
           );
@@ -112,7 +125,8 @@ extension _ImagePickerDialogSourcesExt on _ImagePickerDialogState {
         for (final file in selected?.files ?? <PlatformFile>[])
           if (kIsWeb && file.bytes != null)
             _PickedImage(XFile.fromData(file.bytes!, name: file.name))
-          else if (file.path != null) _PickedImage(XFile(file.path!)),
+          else if (file.path != null)
+            _PickedImage(XFile(file.path!)),
       ];
 
       debugPrint('图片选择完成，数量: ${images.length}');

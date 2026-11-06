@@ -75,15 +75,15 @@ class SpeechRecognitionConfigService extends ChangeNotifier {
 
   /// 保存配置
   Future<void> saveConfig(TencentASRConfig config) async {
+    // 先更新内存缓存，避免弹窗关闭时的异步持久化尚未完成导致调用方读到旧状态。
+    _cachedConfig = config;
+    notifyListeners();
+
     try {
       await globalConfigManager.savePluginConfig(_configPluginId, {
         'asrConfig': config.toJson(),
         'correctionAgent': _correctionAgent?.toJson(),
       });
-
-      _cachedConfig = config;
-
-      notifyListeners();
     } catch (e) {
       rethrow;
     }

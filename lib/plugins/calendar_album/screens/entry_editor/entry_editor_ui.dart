@@ -49,11 +49,16 @@ class _EntryEditorFormState extends State<EntryEditorForm> {
           thumbUrls: controller.thumbUrls,
           liveVideoUrls: controller.liveVideoUrls,
           readOnly: readOnly,
-          onImageAdded: (url, thumbUrl, liveVideoUrl) {
+          onImageAdded: (url, thumbUrl, liveVideoUrl, capturedAt) {
             controller.imageUrls.add(url);
             controller.thumbUrls.add(thumbUrl ?? '');
             controller.liveVideoUrls.add(liveVideoUrl ?? '');
-            controller.imageDates.add(null);
+            controller.imageDates.add(capturedAt);
+            if (kDebugMode) {
+              debugPrint(
+                '[PhotoDate][editor-form] addedImageIndex=${controller.imageUrls.length - 1} imageDate=${capturedAt?.toIso8601String()} initialDate=${controller.initialDate?.toIso8601String()}',
+              );
+            }
           },
           onImageRemoved: (index) {
             // 列表变更必须触发重建，否则界面残留已删图片，再次点击会越界
@@ -106,8 +111,8 @@ class _EntryEditorFormState extends State<EntryEditorForm> {
               onDeleted: readOnly
                   ? null
                   : () => setState(() {
-                        controller.removeImagesOfDate(group.key);
-                      }),
+                      controller.removeImagesOfDate(group.key);
+                    }),
             ),
         ],
       ),

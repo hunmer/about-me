@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:aboutme/plugins/calendar_album/controllers/calendar_controller.dart';
@@ -56,8 +57,7 @@ class EntryEditorController {
         entry?.liveVideoUrls.toList() ?? initialLiveVideoUrls?.toList() ?? [];
     imageDates = List<DateTime?>.generate(
       imageUrls.length,
-      (i) =>
-          (initialImageDates != null && i < initialImageDates.length)
+      (i) => (initialImageDates != null && i < initialImageDates.length)
           ? initialImageDates[i]
           : null,
     );
@@ -134,6 +134,17 @@ class EntryEditorController {
       final saved = await calendarController.updateEntry(updatedEntry);
       return saved ? updatedEntry : null;
     } else {
+      if (kDebugMode) {
+        final groups = dateGroupCounts;
+        final source = groups.isNotEmpty
+            ? 'imageDateGroup'
+            : initialDate != null
+            ? 'initialDate'
+            : 'now';
+        debugPrint(
+          '[PhotoDate][save] imageDates=${imageDates.map((date) => date?.toIso8601String()).toList()} initialDate=${initialDate?.toIso8601String()} source=$source selected=${groups.isNotEmpty ? groups.first.key.toIso8601String() : initialDate?.toIso8601String() ?? DateTime.now().toIso8601String()}',
+        );
+      }
       final newEntry = CalendarEntry.create(
         title: title,
         content: contentController.text,

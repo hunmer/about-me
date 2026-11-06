@@ -26,9 +26,15 @@ extension _ImagePickerDialogProcessingExt on _ImagePickerDialogState {
           enableCompression: widget.enableCompression,
           quality: widget.compressionQuality,
         );
+        result['date'] = picked.capturedAt;
         if (picked.liveVideo != null) {
           final video = await SdkMediaService.importPicked(picked.liveVideo!);
           result['liveVideoUrl'] = video.reference;
+        }
+        if (kDebugMode) {
+          debugPrint(
+            '[PhotoDate][processing] #${results.length} returnedKeys=${result.keys.toList()} date=${result['date']} createdAt=${result['createdAt']}',
+          );
         }
         results.add(result);
       }
