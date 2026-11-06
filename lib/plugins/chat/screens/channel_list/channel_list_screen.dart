@@ -162,6 +162,12 @@ class _ChannelListScreenState extends State<ChannelListScreen> {
             isEditMode: true,
             asSheet: true,
             channel: channel,
+            existingGroups:
+                _controller.channels
+                    .expand((c) => c.groups)
+                    .toSet()
+                    .toList()
+                  ..sort(),
             onUpdateChannel: _controller.updateChannel,
           ),
     );

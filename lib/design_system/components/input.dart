@@ -195,7 +195,16 @@ class _DSInputState extends State<DSInput>
               show: _focused,
               radius: widget.pill ? theme.radii.pill : theme.radii.lg,
               gap: 3,
-              child: AnimatedContainer(
+                // 点击容器任意位置（含 padding/占位区）即聚焦输入框，
+              // 避免增大 padding 后空白区域点不进输入
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  if (widget.enabled && !_focused) {
+                    _effectiveFocus.requestFocus();
+                  }
+                },
+                child: AnimatedContainer(
                 duration: DsMotion.fast,
                 padding: EdgeInsets.symmetric(
                   horizontal: padH,
@@ -324,6 +333,7 @@ class _DSInputState extends State<DSInput>
                   ],
                 ),
               ),
+            ),
             ),
           ),
           if (hasError) ...[

@@ -19,6 +19,9 @@ class Subscription {
   final IconData icon;
   final Color iconColor;
 
+  /// 每月重置日期模式：null/'off'=关闭，'firstDay'=每月1号，'startDay'=随开通日期
+  final String? monthlyResetMode;
+
   Subscription({
     String? id,
     required this.name,
@@ -31,6 +34,7 @@ class Subscription {
     this.note,
     this.icon = Icons.subscriptions,
     this.iconColor = Colors.blue,
+    this.monthlyResetMode,
     DateTime? createdAt,
     this.terminatedAt,
   }) : id = id ?? const Uuid().v4(),
@@ -103,6 +107,7 @@ class Subscription {
     Color? iconColor,
     DateTime? createdAt,
     DateTime? terminatedAt,
+    String? monthlyResetMode,
   }) {
     return Subscription(
       id: id ?? this.id,
@@ -118,6 +123,7 @@ class Subscription {
       iconColor: iconColor ?? this.iconColor,
       createdAt: createdAt ?? this.createdAt,
       terminatedAt: terminatedAt ?? this.terminatedAt,
+      monthlyResetMode: monthlyResetMode ?? this.monthlyResetMode,
     );
   }
 
@@ -137,6 +143,7 @@ class Subscription {
       'note': note,
       'icon': icon.codePoint,
       'iconColor': iconColor.value,
+      'monthlyResetMode': monthlyResetMode,
     };
   }
 
@@ -166,6 +173,44 @@ class Subscription {
       terminatedAt: json['terminatedAt'] != null
           ? parseIsoDateTime(json['terminatedAt'] as String)
           : null,
+      monthlyResetMode: json['monthlyResetMode'] as String?,
     );
+  }
+
+  /// 是否开启了每月重置
+  bool get hasMonthlyReset =>
+      monthlyResetMode == 'firstDay' || monthlyResetMode == 'startDay';
+
+  /// 下次每月重置日期（开启时才有值）
+  ///
+  /// firstDay=每月1号；startDay=随开通日期的"日"（不足该日的月份取当月最后一天）
+  DateTime? get nextMonthlyResetDate {
+    if (!hasMonthlyReset) return null;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final day = monthlyResetMode == 'firstDay' ? 1 : startDate.day;
+
+    DateTime withDay(int y, int m) {
+      // 构造当月 day 日（超出当月天数时 Dart 会滚到下月，需手动钳制）
+      final lastDay = DateTime(y, m + 1, 0).day;
+      return DateTime(y, m, day < lastDay ? day : lastDay);
+    }
+
+    var candidate = withDay(now.year, now.month);
+    if (!candidate.isAfter(today)) {
+      // 今天已过重置日，取下个月
+      final next = DateTime(now.year, now.month + 1, 1);
+      candidate = withDay(next.year, next.month);
+    }
+    return candidate;
+  }
+
+  /// 距离下次每月重置的天数（未开启时为 null）
+  int? get daysUntilMonthlyReset {
+    final next = nextMonthlyResetDate;
+    if (next == null) return null;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    return next.difference(today).inDays;
   }
 }

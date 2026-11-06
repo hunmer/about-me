@@ -11,8 +11,6 @@
     "select": "选择",
     "save": "保存",
     "delete": "删除",
-    "switchedToDarkTheme": "已切换到深色主题",
-    "switchedToLightTheme": "已切换到浅色主题",
     "darkMode": "深色模式",
     "selectBackupMethod": "请选择备份方式",
     "ok": "确定",

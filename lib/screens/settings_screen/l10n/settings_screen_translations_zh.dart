@@ -8,8 +8,9 @@ const Map<String, String> settingsScreenTranslationsZh = {
   'settings_screen_languageSubtitle': '点击切换到英文',
 
   // 主题设置
+  'settings_screen_lightModeTitle': '浅色模式',
   'settings_screen_darkModeTitle': '深色模式',
-  'settings_screen_darkModeSubtitle': '切换应用主题',
+  'settings_screen_followSystemTitle': '跟随系统主题',
 
   // 数据管理
   'settings_screen_exportDataTitle': '导出应用数据',

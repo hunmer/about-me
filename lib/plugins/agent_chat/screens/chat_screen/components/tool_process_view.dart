@@ -207,14 +207,13 @@ class LiveProcessView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 思考内容不在过程视图展示，由消息气泡的「查看思考过程」入口弹出
     final thinking = message.resolvedThinkingContent;
     final turnTexts = message.processTexts;
     final steps = message.toolCall?.steps ?? const [];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (thinking != null && thinking.isNotEmpty)
-          ThinkingLiveView(thinking: thinking),
         if (turnTexts.isNotEmpty)
           TurnTextsView(texts: turnTexts, thinking: thinking),
         if (steps.isNotEmpty)
@@ -298,7 +297,7 @@ class _CollapsibleProcessSectionState extends State<CollapsibleProcessSection> {
   @override
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
-    final thinking = widget.message.resolvedThinkingContent;
+    // 思考内容不在过程区块展示，由消息气泡的「查看思考过程」入口弹出
     final turnTexts = widget.message.processTexts;
     final steps = widget.message.toolCall?.steps ?? [];
 
@@ -339,8 +338,7 @@ class _CollapsibleProcessSectionState extends State<CollapsibleProcessSection> {
                 const SizedBox(width: 4),
                 Text(
                   '(${steps.length} 个步骤'
-                  '${turnTexts.length > 1 ? ' · ${turnTexts.length} 轮回复' : ''}'
-                  '${thinking != null && thinking.isNotEmpty ? ' · 思考 ${thinking.length} 字' : ''})',
+                  '${turnTexts.length > 1 ? ' · ${turnTexts.length} 轮回复' : ''})',
                   style: DsTypography.caption.copyWith(
                     fontSize: 10,
                     color: theme.primaryText.withValues(alpha: 0.8),
@@ -366,50 +364,8 @@ class _CollapsibleProcessSectionState extends State<CollapsibleProcessSection> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (thinking != null && thinking.isNotEmpty) ...[
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: theme.surfaceAlt.withValues(alpha: 0.6),
-                            borderRadius: theme.radii.sm,
-                            border: Border(
-                              left: BorderSide(
-                                color: theme.primary.withValues(alpha: 0.5),
-                                width: 3,
-                              ),
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '思考过程',
-                                style: DsTypography.caption.copyWith(
-                                  fontStyle: FontStyle.italic,
-                                  color: theme.textSub,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                thinking,
-                                style: DsTypography.caption.copyWith(
-                                  color: theme.textSub,
-                                  height: 1.4,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        if (turnTexts.isNotEmpty || steps.isNotEmpty)
-                          const SizedBox(height: 8),
-                      ],
                       if (turnTexts.isNotEmpty) ...[
-                        TurnTextsView(texts: turnTexts, thinking: thinking),
+                        TurnTextsView(texts: turnTexts),
                         if (steps.isNotEmpty) const SizedBox(height: 8),
                       ],
                       if (steps.isNotEmpty)

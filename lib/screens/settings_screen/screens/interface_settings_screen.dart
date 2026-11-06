@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:aboutme/core/theme_controller.dart';
 import 'package:aboutme/core/services/app_background_controller.dart';
 import 'package:aboutme/core/navigation/navigation_helper.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
@@ -81,17 +80,7 @@ class _InterfaceSettingsScreenState extends State<InterfaceSettingsScreen> {
                   subtitle: 'settings_screen_languageSubtitle'.tr,
                   onTap: () => _controller.toggleLanguage(context),
                 ),
-                SettingsTile(
-                  icon: DsIconKind.moon,
-                  iconColor: DsAccentColors.indigo,
-                  title: 'settings_screen_darkModeTitle'.tr,
-                  subtitle: 'settings_screen_darkModeSubtitle'.tr,
-                  showChevron: false,
-                  trailing: DSSwitch(
-                    value: ThemeController.isDarkTheme(context),
-                    onChanged: (value) => _controller.setTheme(context, value),
-                  ),
-                ),
+                // 深色模式与跟随系统主题已移至主题背景设置页
                 // 主题设置：全局背景图，应用于所有界面
                 ListenableBuilder(
                   listenable: AppBackgroundController(),

@@ -14,6 +14,7 @@ import 'package:aboutme/plugins/agent_chat/screens/chat_screen/components/messag
 import 'package:aboutme/plugins/agent_chat/services/message_service.dart';
 import 'package:aboutme/screens/jelly_home/widgets/jelly_status_panel_settings.dart';
 import 'package:aboutme/widgets/adaptive_image.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 /// 消息流：头像在上、气泡在下的上下布局；最新 AI 消息的 bot 头像为
 /// grok 动态表情，随处理状态切换（thinking/happy/idle），历史 AI 消息为静态图标；
@@ -138,6 +139,10 @@ class AssistantMessageList extends StatelessWidget {
                             message,
                             maxWidth: bubbleMaxWidth,
                           ),
+                          if (_hasThinking(message)) ...[
+                            const SizedBox(height: 4),
+                            _buildThinkingEntry(context, message),
+                          ],
                         ],
                       ),
               );
@@ -283,6 +288,70 @@ class AssistantMessageList extends StatelessWidget {
             textColor: theme.text,
             messageService: messageService,
             getAgentName: (_) => controller.currentAgent?.name,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 消息是否带思考内容（左下角入口仅在存在思考时展示）
+  bool _hasThinking(ChatMessage message) {
+    final thinking = message.resolvedThinkingContent;
+    return thinking != null && thinking.isNotEmpty;
+  }
+
+  /// 气泡左下角「查看思考过程」入口：点击经 SmoothBottomSheet 在底部弹出思考全文
+  Widget _buildThinkingEntry(BuildContext context, ChatMessage message) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Pressable(
+        onPressed: () {
+          final thinking = message.resolvedThinkingContent;
+          if (thinking == null || thinking.isEmpty) return;
+          final sheetTheme = DSThemeBridge.resolve(context);
+          SmoothBottomSheet.showWithTitle(
+            context: context,
+            title: '思考过程',
+            showCloseButton: true,
+            child: SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+                child: SelectableText(
+                  thinking,
+                  style: DsTypography.caption.copyWith(
+                    color: sheetTheme.textSub,
+                    height: 1.5,
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+        builder: (context, states) => Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          decoration: BoxDecoration(
+            color: theme.primary.mixWhite(0.9),
+            borderRadius: theme.radii.sm,
+            border: Border.all(
+              color: theme.primary.withValues(
+                alpha: states.contains(WidgetState.pressed) ? 0.6 : 0.35,
+              ),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DsIcon(DsIconKind.sparkle, size: 13, color: theme.primaryText),
+              const SizedBox(width: 4),
+              Text(
+                '查看思考过程',
+                style: DsTypography.caption.copyWith(
+                  fontSize: 11,
+                  color: theme.primaryText,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
           ),
         ),
       ),

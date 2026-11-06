@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:skribble/skribble.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
@@ -1200,6 +1201,63 @@ class _ThemeBackgroundSettingsScreenState
                 : ListView(
                   padding: EdgeInsets.all(theme.spacing.lg),
                   children: [
+                    // 主题模式三选一：浅色 / 深色 / 跟随系统（从界面设置页迁移至此）
+                    Builder(
+                      builder: (context) {
+                        final themeMode = AdaptiveTheme.of(context).mode;
+                        Widget modeTile(
+                          DsIconKind icon,
+                          Color color,
+                          String title,
+                          AdaptiveThemeMode mode,
+                        ) {
+                          final selected = themeMode == mode;
+                          return SettingsTile(
+                            icon: icon,
+                            iconColor: color,
+                            title: title,
+                            showChevron: false,
+                            onTap: () => AdaptiveTheme.of(context).setThemeMode(
+                              mode,
+                            ),
+                            trailing: selected
+                                ? DsIcon(
+                                    DsIconKind.check,
+                                    color: DSThemeBridge.resolve(
+                                      context,
+                                    ).primary,
+                                  )
+                                : null,
+                          );
+                        }
+
+                        return SettingsGroup(
+                          children: [
+                            modeTile(
+                              DsIconKind.sun,
+                              DsAccentColors.amber,
+                              'settings_screen_lightModeTitle'.tr,
+                              AdaptiveThemeMode.light,
+                            ),
+                            modeTile(
+                              DsIconKind.moon,
+                              DsAccentColors.indigo,
+                              'settings_screen_darkModeTitle'.tr,
+                              AdaptiveThemeMode.dark,
+                            ),
+                            modeTile(
+                              DsIconKind.tune,
+                              DsAccentColors.sky,
+                              'settings_screen_followSystemTitle'.tr,
+                              AdaptiveThemeMode.system,
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+
+                    SizedBox(height: theme.spacing.lg),
+
                     // 主题风格：配色 × 墨线成套选择，点击全局即时生效
                     SettingsGroup(
                       title: 'screens_themeStyle'.tr,

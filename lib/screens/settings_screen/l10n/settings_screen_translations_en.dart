@@ -8,8 +8,9 @@ const Map<String, String> settingsScreenTranslationsEn = {
   'settings_screen_languageSubtitle': 'Tap to switch to Chinese',
 
   // Theme settings
+  'settings_screen_lightModeTitle': 'Light Mode',
   'settings_screen_darkModeTitle': 'Dark Mode',
-  'settings_screen_darkModeSubtitle': 'Toggle app theme',
+  'settings_screen_followSystemTitle': 'Follow System Theme',
 
   // Data management
   'settings_screen_exportDataTitle': 'Export App Data',

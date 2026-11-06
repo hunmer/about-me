@@ -116,6 +116,12 @@ class _ChatBottomBarState extends State<ChatBottomBar>
       builder:
           (context) => ChatChannelForm(
             asSheet: true,
+            existingGroups:
+                _channelListController.channels
+                    .expand((c) => c.groups)
+                    .toSet()
+                    .toList()
+                  ..sort(),
             onAddChannel: (channel) async {
               await _channelListController.addChannel(channel);
             },

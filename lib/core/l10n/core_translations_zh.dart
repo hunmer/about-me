@@ -117,4 +117,13 @@ const Map<String, String> coreTranslationsZh = {
   'core_noExtraConfig': '此动作无需额外配置',
   'core_selectTime': '选择时间',
   'core_selectDateTime': '选择日期时间',
+
+  // 设计系统 Combobox / MultiCombobox
+  'ds_selectHint': '请选择',
+  'ds_searchHint': '搜索...',
+  'ds_noMatch': '没有匹配的选项',
+  'ds_selectedCount': '已选 @1/@2',
+  'ds_selectAll': '全选',
+  'ds_clear': '清空',
+  'ds_createNew': '新建「@1」',
 };

@@ -93,6 +93,7 @@ class _SubscriptionEditScreenState extends State<SubscriptionEditScreen> {
         icon: icon,
         iconColor: iconColor,
         isActive: values['isActive'] as bool,
+        monthlyResetMode: values['monthlyResetMode'] as String? ?? 'off',
       );
 
       // 验证天数
@@ -277,6 +278,8 @@ class _SubscriptionEditScreenState extends State<SubscriptionEditScreen> {
 
                     // 周期按钮
                     fields[5], // 订阅周期
+                    const SizedBox(height: 12),
+                    fields[6], // 每月重置日期
                   ],
                 ),
               ),
@@ -287,7 +290,7 @@ class _SubscriptionEditScreenState extends State<SubscriptionEditScreen> {
                 showBackground: false,
                 showDividers: false,
                 children: [
-                  fields[6], // isActive
+                  fields[7], // isActive
                 ],
               ),
               const SizedBox(height: 24),
@@ -297,7 +300,7 @@ class _SubscriptionEditScreenState extends State<SubscriptionEditScreen> {
                 showBackground: false,
                 showDividers: false,
                 children: [
-                  fields[7], // 备注
+                  fields[8], // 备注
                 ],
               ),
             ],
@@ -387,6 +390,28 @@ class _SubscriptionEditScreenState extends State<SubscriptionEditScreen> {
                 'quarterlyLabel': 'bill_quarterly'.tr,
                 'yearlyLabel': 'bill_yearly'.tr,
               },
+            ),
+
+            // 每月重置日期
+            FormFieldConfig(
+              name: 'monthlyResetMode',
+              type: FormFieldType.select,
+              labelText: 'bill_monthlyResetDate'.tr,
+              initialValue: sub?.monthlyResetMode ?? 'off',
+              items: [
+                DropdownMenuItem(
+                  value: 'off',
+                  child: Text('bill_resetOff'.tr),
+                ),
+                DropdownMenuItem(
+                  value: 'firstDay',
+                  child: Text('bill_resetFirstDay'.tr),
+                ),
+                DropdownMenuItem(
+                  value: 'startDay',
+                  child: Text('bill_resetStartDay'.tr),
+                ),
+              ],
             ),
 
             // 自动订阅开关

@@ -117,4 +117,13 @@ const Map<String, String> coreTranslationsEn = {
   'core_noExtraConfig': 'No extra configuration needed',
   'core_selectTime': 'Select Time',
   'core_selectDateTime': 'Select Date & Time',
+
+  // Design system Combobox / MultiCombobox
+  'ds_selectHint': 'Select...',
+  'ds_searchHint': 'Search...',
+  'ds_noMatch': 'No matching options',
+  'ds_selectedCount': '@1/@2 selected',
+  'ds_selectAll': 'All',
+  'ds_clear': 'Clear',
+  'ds_createNew': 'Create "@1"',
 };

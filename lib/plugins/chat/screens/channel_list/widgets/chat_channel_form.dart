@@ -18,6 +18,8 @@ class ChatChannelForm extends StatefulWidget {
   final Function(Channel)? onUpdateChannel;
   // 默认的频道分组
   final String? defaultGroup;
+  // 已有的分组选项（供下拉搜索选择）
+  final List<String> existingGroups;
   // 是否作为底部弹层内容展示（去掉对话框卡片外壳，由 sheet 提供容器）
   final bool asSheet;
 
@@ -28,6 +30,7 @@ class ChatChannelForm extends StatefulWidget {
     this.onAddChannel,
     this.onUpdateChannel,
     this.defaultGroup,
+    this.existingGroups = const [],
     this.asSheet = false,
   }) : assert(
          (isEditMode && channel != null && onUpdateChannel != null) ||
@@ -41,8 +44,10 @@ class ChatChannelForm extends StatefulWidget {
 
 class _ChatChannelFormState extends State<ChatChannelForm> {
   late TextEditingController _titleController;
-  late TextEditingController _groupController;
   late IconData _selectedIcon;
+
+  /// 已选分组列表（经 DSMultiCombobox 选择或新建）
+  List<String> _groups = [];
 
   /// 用户选择的颜色；null 表示未设置，展示与保存时按标题自动计算
   Color? _selectedColor;
@@ -59,17 +64,16 @@ class _ChatChannelFormState extends State<ChatChannelForm> {
     if (widget.isEditMode && widget.channel != null) {
       // 编辑模式，初始化为现有频道数据
       _titleController = TextEditingController(text: widget.channel!.title);
-      _groupController = TextEditingController(
-        text: widget.channel!.groups.isNotEmpty
-            ? widget.channel!.groups.join(', ')
-            : '',
-      );
+      _groups = List.of(widget.channel!.groups);
       _selectedIcon = widget.channel!.icon;
       _selectedColor = widget.channel!.backgroundColor;
     } else {
       // 添加模式，使用默认值；颜色未设置，按标题自动计算
       _titleController = TextEditingController();
-      _groupController = TextEditingController(text: widget.defaultGroup ?? '');
+      _groups = [
+        if (widget.defaultGroup != null && widget.defaultGroup!.isNotEmpty)
+          widget.defaultGroup!,
+      ];
       _selectedIcon = Icons.chat;
       _selectedColor = null;
     }
@@ -78,7 +82,6 @@ class _ChatChannelFormState extends State<ChatChannelForm> {
   @override
   void dispose() {
     _titleController.dispose();
-    _groupController.dispose();
     super.dispose();
   }
 
@@ -95,14 +98,7 @@ class _ChatChannelFormState extends State<ChatChannelForm> {
       _isSubmitting = !widget.isEditMode;
     });
 
-    final List<String> groups = _groupController.text.isEmpty
-        ? []
-        : _groupController.text
-              .replaceAll('，', ',')
-              .split(',')
-              .map((e) => e.trim())
-              .where((e) => e.isNotEmpty)
-              .toList();
+    final List<String> groups = List.of(_groups);
 
     if (widget.isEditMode && widget.channel != null) {
       // 编辑模式
@@ -201,10 +197,28 @@ class _ChatChannelFormState extends State<ChatChannelForm> {
                   },
                 ),
                 SizedBox(height: theme.spacing.md),
-                DSInput(
-                  controller: _groupController,
-                  label: 'chat_channelGroupLabel'.tr,
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'chat_channelGroupLabel'.tr,
+                    style: DsTypography.caption.copyWith(
+                      color: theme.textSub,
+                    ),
+                  ),
+                ),
+                SizedBox(height: theme.spacing.xs),
+                DSMultiCombobox<String>(
+                  items:
+                      widget.existingGroups
+                          .map((g) => DSSelectItem(label: g, value: g))
+                          .toList(),
+                  values: _groups,
                   hint: 'chat_channelGroupHint'.tr,
+                  searchHint: '搜索分组...',
+                  allowCreate: true,
+                  maxLabels: 3,
+                  onChanged: (groups) =>
+                      setState(() => _groups = List.of(groups)),
                 ),
                 SizedBox(height: theme.spacing.lg),
                 Row(

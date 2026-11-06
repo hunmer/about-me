@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:get/get.dart';
 
 import '../primitives/haptics.dart';
 import '../primitives/pressable.dart';
@@ -18,8 +19,8 @@ class DSCombobox<T> extends StatefulWidget {
     required this.items,
     required this.onChanged,
     this.value,
-    this.hint = '请选择',
-    this.searchHint = '搜索...',
+    this.hint,
+    this.searchHint,
     this.enabled = true,
     this.width,
   });
@@ -27,8 +28,12 @@ class DSCombobox<T> extends StatefulWidget {
   final List<DSSelectItem<T>> items;
   final T? value;
   final ValueChanged<T>? onChanged;
-  final String hint;
-  final String searchHint;
+
+  /// 占位文案；null 时用 l10n 的 ds_selectHint
+  final String? hint;
+
+  /// 搜索框占位；null 时用 l10n 的 ds_searchHint
+  final String? searchHint;
   final bool enabled;
   final double? width;
 
@@ -91,7 +96,7 @@ class _DSComboboxState<T> extends State<DSCombobox<T>> {  final LayerLink _link 
                 child: _ComboPanel<T>(
                   items: widget.items,
                   value: widget.value,
-                  searchHint: widget.searchHint,
+                  searchHint: widget.searchHint ?? 'ds_searchHint'.tr,
                   alignTop: _openUpward,
                   closing: _closing,
                   onSelect: (item) {
@@ -137,6 +142,7 @@ class _DSComboboxState<T> extends State<DSCombobox<T>> {  final LayerLink _link 
   @override
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
+    final hint = widget.hint ?? 'ds_selectHint'.tr;
     final selected = widget.items
         .where((e) => e.value == widget.value)
         .firstOrNull;
@@ -145,7 +151,7 @@ class _DSComboboxState<T> extends State<DSCombobox<T>> {  final LayerLink _link 
       link: _link,
       child: Pressable(
         onPressed: widget.enabled ? _toggle : null,
-        semanticLabel: selected?.label ?? widget.hint,
+        semanticLabel: selected?.label ?? hint,
         builder: (context, states) {
           return SizedBox(
             width: widget.width,
@@ -165,7 +171,7 @@ class _DSComboboxState<T> extends State<DSCombobox<T>> {  final LayerLink _link 
                   SizedBox(width: theme.spacing.sm),
                   Expanded(
                     child: Text(
-                      selected?.label ?? widget.hint,
+                      selected?.label ?? hint,
                       style: DsTypography.body.copyWith(
                         color: selected != null
                             ? theme.text
@@ -278,7 +284,7 @@ class _ComboPanelState<T> extends State<_ComboPanel<T>> {
                               vertical: theme.spacing.md,
                             ),
                             child: Text(
-                              '没有匹配的选项',
+                              'ds_noMatch'.tr,
                               textAlign: TextAlign.center,
                               style: DsTypography.caption.copyWith(
                                 color: theme.textSub,
@@ -379,23 +385,32 @@ class DSMultiCombobox<T> extends StatefulWidget {
     required this.items,
     required this.values,
     required this.onChanged,
-    this.hint = '请选择',
-    this.searchHint = '搜索...',
+    this.hint,
+    this.searchHint,
     this.enabled = true,
     this.width,
     this.maxLabels = 2,
+    this.allowCreate = false,
   });
 
   final List<DSSelectItem<T>> items;
   final List<T> values;
   final ValueChanged<List<T>> onChanged;
-  final String hint;
-  final String searchHint;
+
+  /// 占位文案；null 时用 l10n 的 ds_selectHint
+  final String? hint;
+
+  /// 搜索框占位；null 时用 l10n 的 ds_searchHint
+  final String? searchHint;
   final bool enabled;
   final double? width;
 
   /// 触发器最多直接显示的已选标签数，其余折叠为「+n」
   final int maxLabels;
+
+  /// 允许在搜索框输入不存在的新选项（仅 T 为 String 时有意义），
+  /// 面板出现「新建「xxx」」行，点击后追加到已选值
+  final bool allowCreate;
 
   @override
   State<DSMultiCombobox<T>> createState() => _DSMultiComboboxState<T>();
@@ -455,9 +470,10 @@ class _DSMultiComboboxState<T> extends State<DSMultiCombobox<T>> {
                 child: _MultiComboPanel<T>(
                   items: widget.items,
                   values: widget.values,
-                  searchHint: widget.searchHint,
+                  searchHint: widget.searchHint ?? 'ds_searchHint'.tr,
                   alignTop: _openUpward,
                   closing: _closing,
+                  allowCreate: widget.allowCreate,
                   onToggle: (item) {
                     final next = [...widget.values];
                     next.contains(item.value)
@@ -469,6 +485,12 @@ class _DSMultiComboboxState<T> extends State<DSMultiCombobox<T>> {
                     widget.items.map((e) => e.value).toList(),
                   ),
                   onClear: () => widget.onChanged(const []),
+                  onCreate: widget.allowCreate
+                      ? (label) => widget.onChanged([
+                          ...widget.values,
+                          label as T,
+                        ])
+                      : null,
                 ),
               ),
             ),
@@ -502,14 +524,19 @@ class _DSMultiComboboxState<T> extends State<DSMultiCombobox<T>> {
   @override
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
-    final selected = widget.items
-        .where((e) => widget.values.contains(e.value))
-        .toList();
-    final shown = selected.take(widget.maxLabels).map((e) => e.label);
+    // 已选值优先用 items 的标签展示；不在 items 里的值（如用户新建的）
+    // 直接用 toString() 展示，避免下拉外选中的值在触发器上消失
+    final selected = widget.values.map((v) {
+      for (final item in widget.items) {
+        if (item.value == v) return item.label;
+      }
+      return v.toString();
+    }).toList();
+    final hint = widget.hint ?? 'ds_selectHint'.tr;
     final summary = selected.isEmpty
-        ? widget.hint
+        ? hint
         : [
-            ...shown,
+            ...selected.take(widget.maxLabels),
             if (selected.length > widget.maxLabels)
               '+${selected.length - widget.maxLabels}',
           ].join('、');
@@ -577,6 +604,8 @@ class _MultiComboPanel<T> extends StatefulWidget {
     required this.onToggle,
     required this.onSelectAll,
     required this.onClear,
+    this.allowCreate = false,
+    this.onCreate,
   });
 
   final List<DSSelectItem<T>> items;
@@ -587,6 +616,12 @@ class _MultiComboPanel<T> extends StatefulWidget {
   final ValueChanged<DSSelectItem<T>> onToggle;
   final VoidCallback onSelectAll;
   final VoidCallback onClear;
+
+  /// 是否展示「新建」行（搜索词不在选项中时）
+  final bool allowCreate;
+
+  /// 点击「新建「xxx」」时回调，由宿主把新值追加进已选
+  final ValueChanged<String>? onCreate;
 
   @override
   State<_MultiComboPanel<T>> createState() => _MultiComboPanelState<T>();
@@ -608,6 +643,15 @@ class _MultiComboPanelState<T> extends State<_MultiComboPanel<T>> {
     final filtered = q.isEmpty
         ? widget.items
         : widget.items.where((e) => e.label.toLowerCase().contains(q)).toList();
+    // 新建行：开启 allowCreate、有搜索词且无完全同名选项时展示
+    final queryText = _query.text.trim();
+    final canCreate =
+        widget.allowCreate &&
+        widget.onCreate != null &&
+        queryText.isNotEmpty &&
+        !widget.items.any(
+          (e) => e.label.toLowerCase() == queryText.toLowerCase(),
+        );
 
     return IgnorePointer(
       ignoring: widget.closing,
@@ -646,20 +690,23 @@ class _MultiComboPanelState<T> extends State<_MultiComboPanel<T>> {
                   children: [
                     Expanded(
                       child: Text(
-                        '已选 ${widget.values.length}/${widget.items.length}',
+                        'ds_selectedCount'.trArgs([
+                            widget.values.length.toString(),
+                            widget.items.length.toString(),
+                          ]),
                         style: DsTypography.caption.copyWith(
                           color: theme.textSub,
                         ),
                       ),
                     ),
                     DSButton(
-                      label: '全选',
+                      label: 'ds_selectAll'.tr,
                       variant: DSButtonVariant.ghost,
                       size: DSButtonSize.sm,
                       onPressed: widget.onSelectAll,
                     ),
                     DSButton(
-                      label: '清空',
+                      label: 'ds_clear'.tr,
                       variant: DSButtonVariant.ghost,
                       size: DSButtonSize.sm,
                       onPressed: widget.onClear,
@@ -679,12 +726,26 @@ class _MultiComboPanelState<T> extends State<_MultiComboPanel<T>> {
                               vertical: theme.spacing.md,
                             ),
                             child: Text(
-                              '没有匹配的选项',
+                              'ds_noMatch'.tr,
                               textAlign: TextAlign.center,
                               style: DsTypography.caption.copyWith(
                                 color: theme.textSub,
                               ),
                             ),
+                          ),
+                        if (canCreate)
+                          _ComboRow(
+                            item: DSSelectItem(
+                              label: 'ds_createNew'.trArgs([queryText]),
+                              value: queryText,
+                            ),
+                            selected: false,
+                            onTap: () {
+                              widget.onCreate!(queryText);
+                              // 新建后清空搜索词，避免重复创建同一项
+                              _query.clear();
+                              setState(() {});
+                            },
                           ),
                         for (final item in filtered)
                           _ComboRow(
