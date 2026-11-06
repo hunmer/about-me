@@ -311,6 +311,9 @@ class MediaLogPlugin extends BasePlugin with JSBridgePlugin {
       'addReview': _jsAddMediaReview, // 别名
       'deleteMediaReview': _jsDeleteMediaReview,
       'deleteReview': _jsDeleteMediaReview, // 别名
+      // 统计
+      'getMediaStats': _jsGetMediaStats,
+      'getStats': _jsGetMediaStats, // 别名
     };
   }
 }

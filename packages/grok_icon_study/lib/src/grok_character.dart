@@ -592,7 +592,7 @@ class GrokCharacter extends ChangeNotifier {
       celebrateAt = now + 6200;
     }
 
-    if (now >= trickAt) {
+    if (mode != 'onboarding' && now >= trickAt) {
       if ((t.vT.contains(_state) || t.bT.contains(_state)) &&
           spinTurn == null &&
           hopAt < 0 &&

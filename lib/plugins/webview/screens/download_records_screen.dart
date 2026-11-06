@@ -7,7 +7,6 @@ import 'package:provider/provider.dart';
 
 import '../services/browser_download_manager.dart';
 import '../widgets/download_records_list.dart';
-import 'components/webview_add_download_form.dart';
 
 /// 下载管理页签：展示 WebView 触发与手动添加的下载记录
 ///
@@ -24,25 +23,13 @@ class DownloadRecordsScreen extends StatelessWidget {
     return DSThemeBridge(
       child: SuperCupertinoNavigationWrapper(
         title: Text('webview_download_manager_title'.tr),
+        largeTitle: 'webview_download_manager_title'.tr,
+        enableLargeTitle: true,
         transitionBetweenRoutes: false,
+        // 手动添加下载的入口在底部 FAB（按 tab 切换），顶栏不再重复放置。
         // SuperAppBar 的 actions 经 Overlay 渲染，脱离页面主题桥，
         // DS 按钮需自带 DSThemeBridge 提供 AppTheme
         actions: [
-          // 手动添加下载
-          DSThemeBridge(
-            child: Builder(
-              builder: (context) {
-                final theme = DSThemeBridge.resolve(context);
-                return DSIconButton(
-                  icon: DsIconKind.plus,
-                  size: 36,
-                  color: theme.primary,
-                  tooltip: 'webview_download_add'.tr,
-                  onPressed: () => showAddDownloadSheet(context),
-                );
-              },
-            ),
-          ),
           // 清空已结束记录（无已结束记录时隐藏）
           if (hasFinished)
             DSThemeBridge(

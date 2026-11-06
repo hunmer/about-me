@@ -49,7 +49,8 @@ part 'jelly_live2d_tap.dart';
 /// 人物显示尺寸（逻辑像素，宽高一致），经 SharedPreferences 持久化
 const double _defaultSize = 360;
 const double _minSize = 200;
-const double _maxSize = 560;
+/// 上限为默认尺寸的 200%
+const double _maxSize = _defaultSize * 2;
 const double _sizeStep = 40;
 const double _modelViewportAspectRatio = 0.5;
 const double _fillBottomReserve = 92;

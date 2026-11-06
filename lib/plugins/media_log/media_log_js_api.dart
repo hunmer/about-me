@@ -144,3 +144,78 @@ Future<String> _jsDeleteMediaReview(Map<String, dynamic> params) async {
     return jsonEncode({'success': false, 'error': '删除点评失败: ${e.toString()}'});
   }
 }
+
+/// 统计媒体记录（总览）
+/// 可选参数: kind（'reading' / 'watching'）
+/// 返回: 总数/分类计数/均分/最高分条目/点评数/月度分布/标签 Top5
+Future<String> _jsGetMediaStats(Map<String, dynamic> params) async {
+  try {
+    final kind = params['kind'] as String?;
+    final items = MediaLogPlugin.instance.items
+        .where((item) => kind == null || item.kind.name == kind)
+        .toList();
+
+    final byKind = <String, int>{};
+    for (final item in items) {
+      byKind[item.kind.name] = (byKind[item.kind.name] ?? 0) + 1;
+    }
+
+    final rated = items.where((i) => i.rating != null).toList();
+    MediaItem? best;
+    for (final item in rated) {
+      if (best == null || (item.rating ?? 0) > (best.rating ?? 0)) best = item;
+    }
+
+    // 月度分布按完成时间分组；finishedAt 为空计入总数但不进月度
+    final monthly = <String, Map<String, dynamic>>{};
+    for (final item in items) {
+      final finished = item.finishedAt;
+      if (finished == null) continue;
+      final key =
+          '${finished.year.toString().padLeft(4, '0')}-${finished.month.toString().padLeft(2, '0')}';
+      final bucket = monthly.putIfAbsent(key, () => {
+        'month': key,
+        'count': 0,
+        'reading': 0,
+        'watching': 0,
+      });
+      bucket['count'] = (bucket['count'] as int) + 1;
+      bucket[item.kind.name] = (bucket[item.kind.name] as int) + 1;
+    }
+
+    final tagCount = <String, int>{};
+    for (final item in items) {
+      for (final tag in item.tags) {
+        tagCount[tag] = (tagCount[tag] ?? 0) + 1;
+      }
+    }
+    final topTags = tagCount.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    return jsonEncode({
+      'total': items.length,
+      'byKind': byKind,
+      'ratedCount': rated.length,
+      if (rated.isNotEmpty)
+        'averageRating': double.parse(
+          (rated.map((i) => i.rating!).reduce((a, b) => a + b) / rated.length)
+              .toStringAsFixed(2),
+        ),
+      if (best != null)
+        'best': {
+          'id': best.id,
+          'title': best.title,
+          'kind': best.kind.name,
+          'rating': best.rating,
+        },
+      'reviewCount': items.fold<int>(0, (sum, i) => sum + i.reviews.length),
+      'monthly': monthly.values.toList()
+        ..sort((a, b) => (b['month'] as String).compareTo(a['month'] as String)),
+      'topTags': [
+        for (final e in topTags.take(5)) {'tag': e.key, 'count': e.value},
+      ],
+    });
+  } catch (e) {
+    return jsonEncode({'error': '统计媒体记录失败: ${e.toString()}'});
+  }
+}
