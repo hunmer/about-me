@@ -335,6 +335,33 @@ class _Live2DArchiveFormScreenState extends State<Live2DArchiveFormScreen> {
     );
   }
 
+  /// 顶栏尾部菜单按钮（原 DSTopBar 内置菜单位移除后由本页自建，
+  /// 样式与顶栏返回钮一致：36px 圆形按压钮 + more 图标）
+  Widget _buildMenuButton() {
+    final theme = DSThemeBridge.resolve(context);
+    return Pressable(
+      onPressed: _showMenu,
+      builder: (context, states) {
+        final pressed = states.contains(WidgetState.pressed);
+        final hovered = states.contains(WidgetState.hovered);
+        return Container(
+          width: 36,
+          height: 36,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: pressed
+                ? theme.surfaceAlt
+                : hovered
+                ? theme.surfaceAlt.withValues(alpha: 0.6)
+                : null,
+          ),
+          child: DsIcon(DsIconKind.more, size: 20, color: theme.text),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = DSThemeBridge.resolve(context);
@@ -368,7 +395,8 @@ class _Live2DArchiveFormScreenState extends State<Live2DArchiveFormScreen> {
                 child: DSTopBar(
                   title: 'live2d_editArchiveTitle'.tr,
                   onBack: () => Navigator.maybePop(context),
-                  onMenu: _showMenu,
+                  // DSTopBar 已移除内置菜单按钮，删除入口由本页自行传入
+                  actions: [_buildMenuButton()],
                 ),
               ),
               Expanded(child: scrollForm),

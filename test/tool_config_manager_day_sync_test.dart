@@ -88,17 +88,17 @@ void main() {
         },
     };
     await AboutmeDataService.instance.initialize();
-    await AboutmeDataService.instance.writePath(
-      'agent_chat/tools/day.json',
-      jsonEncode(legacy),
-    );
+    // 原始文件写已封闭（agent_chat 为迁移域），走域命令写工具配置
+    await AboutmeDataService.instance.call('agent_chat', 'saveToolPlugin', {
+      'pluginId': 'day',
+      'tools': legacy,
+    });
     // index 存在即视为老安装，跳过首装全量拷贝
-    await AboutmeDataService.instance.writePath(
-      'agent_chat/tools/index.json',
-      jsonEncode([
+    await AboutmeDataService.instance.call('agent_chat', 'saveToolIndexFile', {
+      'index': [
         for (final method in legacyMethods) ['day_$method', method],
-      ]),
-    );
+      ],
+    });
   });
 
   test('老安装启动后 day 工具配置对齐为新命名', () async {

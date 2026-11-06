@@ -1,0 +1,316 @@
+{
+  "getMediaItems": {
+    "title": "获取媒体记录列表",
+    "description": "获取全部媒体记录（阅读/观影），可选按类型过滤，返回 JSON 数组（含点评）",
+    "parameters": [
+      {
+        "name": "kind",
+        "type": "string",
+        "required": false,
+        "description": "类型过滤：reading(阅读) / watching(观影)；不传返回全部"
+      }
+    ],
+    "returns": {
+      "type": "Promise<string>",
+      "description": "JSON 数组 [{id, kind, title, author, rating, overview, tags, finishedAt, cover, coverImage, reviews}] 或 {error}"
+    },
+    "examples": [
+      {
+        "title": "获取全部媒体记录",
+        "code": "const r = await Aboutme.plugins.media_log.getMediaItems();\\nsetResult(r);"
+      },
+      {
+        "title": "只看观影记录",
+        "code": "const r = await Aboutme.plugins.media_log.getMediaItems({kind: 'watching'});\\nsetResult(r);"
+      }
+    ],
+    "notes": "数据为本地记录的阅读/观影条目；如需统计请自行对返回数组汇总",
+    "enabled": true
+  },
+  "getMediaItem": {
+    "title": "获取单条媒体记录",
+    "description": "按 id 获取指定媒体记录（含全部点评）",
+    "parameters": [
+      {
+        "name": "id",
+        "type": "string",
+        "required": true,
+        "description": "条目 id，可先调 getMediaItems 查询"
+      }
+    ],
+    "returns": {
+      "type": "Promise<string>",
+      "description": "JSON 对象（含 reviews 点评数组）或 {error: '条目不存在'}"
+    },
+    "examples": [
+      {
+        "title": "按 id 查详情",
+        "code": "const items = JSON.parse(await Aboutme.plugins.media_log.getMediaItems({kind: 'reading'}));\\nconst item = items.find(i => i.title.includes('三体'));\\nconst detail = await Aboutme.plugins.media_log.getMediaItem({id: item.id});\\nsetResult(detail);"
+      }
+    ],
+    "notes": "id 不存在时返回 error 字段，注意判断",
+    "enabled": true
+  },
+  "createMediaItem": {
+    "title": "创建媒体记录",
+    "description": "新建一条阅读/观影记录，常用于用户说\"帮我记录看完的书/电影\"",
+    "parameters": [
+      {
+        "name": "kind",
+        "type": "string",
+        "required": false,
+        "description": "reading(阅读，默认) / watching(观影)"
+      },
+      {
+        "name": "title",
+        "type": "string",
+        "required": true,
+        "description": "书名/影视名，不能为空"
+      },
+      {
+        "name": "author",
+        "type": "string",
+        "required": false,
+        "description": "作者/导演"
+      },
+      {
+        "name": "rating",
+        "type": "number",
+        "required": false,
+        "description": "评分（如 9.5）"
+      },
+      {
+        "name": "overview",
+        "type": "string",
+        "required": false,
+        "description": "简介/感想"
+      },
+      {
+        "name": "tags",
+        "type": "array",
+        "required": false,
+        "description": "标签数组，如 ['科幻','小说']"
+      },
+      {
+        "name": "finishedAt",
+        "type": "string",
+        "required": false,
+        "description": "读完/看完时间，ISO8601 格式"
+      },
+      {
+        "name": "cover",
+        "type": "string",
+        "required": false,
+        "description": "封面风格（CoverStyle 名），默认 sheep"
+      },
+      {
+        "name": "coverImage",
+        "type": "string",
+        "required": false,
+        "description": "封面图片路径"
+      }
+    ],
+    "returns": {
+      "type": "Promise<string>",
+      "description": "JSON 对象（创建成功的条目）或 {error}"
+    },
+    "examples": [
+      {
+        "title": "记录一本读完的书",
+        "code": "const r = await Aboutme.plugins.media_log.createMediaItem({\\n  kind: 'reading',\\n  title: '三体',\\n  author: '刘慈欣',\\n  rating: 9.5,\\n  tags: ['科幻']\\n});\\nsetResult(r);"
+      },
+      {
+        "title": "记录一部看过的电影",
+        "code": "const r = await Aboutme.plugins.media_log.createMediaItem({\\n  kind: 'watching',\\n  title: '星际穿越',\\n  rating: 10,\\n  finishedAt: '2026-11-06T20:00:00'\\n});\\nsetResult(r);"
+      }
+    ],
+    "notes": "title 必填；kind 缺省按 reading 处理",
+    "enabled": true
+  },
+  "updateMediaItem": {
+    "title": "更新媒体记录",
+    "description": "按 id 合并更新媒体记录字段（改评分、补标签、标记读完等）",
+    "parameters": [
+      {
+        "name": "id",
+        "type": "string",
+        "required": true,
+        "description": "条目 id"
+      },
+      {
+        "name": "kind",
+        "type": "string",
+        "required": false,
+        "description": "reading / watching"
+      },
+      {
+        "name": "title",
+        "type": "string",
+        "required": false,
+        "description": "书名/影视名"
+      },
+      {
+        "name": "author",
+        "type": "string",
+        "required": false,
+        "description": "作者/导演"
+      },
+      {
+        "name": "rating",
+        "type": "number",
+        "required": false,
+        "description": "评分"
+      },
+      {
+        "name": "overview",
+        "type": "string",
+        "required": false,
+        "description": "简介/感想"
+      },
+      {
+        "name": "tags",
+        "type": "array",
+        "required": false,
+        "description": "标签数组（整体替换）"
+      },
+      {
+        "name": "finishedAt",
+        "type": "string",
+        "required": false,
+        "description": "读完/看完时间，ISO8601"
+      },
+      {
+        "name": "cover",
+        "type": "string",
+        "required": false,
+        "description": "封面风格（CoverStyle 名）"
+      },
+      {
+        "name": "coverImage",
+        "type": "string",
+        "required": false,
+        "description": "封面图片路径"
+      }
+    ],
+    "returns": {
+      "type": "Promise<string>",
+      "description": "JSON 对象（更新后的条目）或 {error: '条目不存在'}"
+    },
+    "examples": [
+      {
+        "title": "更新评分和标签",
+        "code": "const items = JSON.parse(await Aboutme.plugins.media_log.getMediaItems());\\nconst item = items.find(i => i.title.includes('三体'));\\nconst r = await Aboutme.plugins.media_log.updateMediaItem({id: item.id, rating: 9.8, tags: ['科幻','重读']});\\nsetResult(r);"
+      }
+    ],
+    "notes": "仅更新传入的字段；id 不存在时返回 error",
+    "enabled": true
+  },
+  "deleteMediaItem": {
+    "title": "删除媒体记录",
+    "description": "按 id 删除一条媒体记录（含其点评）",
+    "parameters": [
+      {
+        "name": "id",
+        "type": "string",
+        "required": true,
+        "description": "条目 id"
+      }
+    ],
+    "returns": {
+      "type": "Promise<string>",
+      "description": "JSON 对象 {success} 或 {success: false, error}"
+    },
+    "examples": [
+      {
+        "title": "删除指定条目",
+        "code": "const r = await Aboutme.plugins.media_log.deleteMediaItem({id: 'xxx'});\\nsetResult(r);"
+      }
+    ],
+    "notes": "删除不可恢复，执行前最好与用户确认",
+    "enabled": true
+  },
+  "addMediaReview": {
+    "title": "新增媒体点评",
+    "description": "给指定媒体记录追加一条点评（带时间戳），常用于记录读书/观影感想",
+    "parameters": [
+      {
+        "name": "itemId",
+        "type": "string",
+        "required": true,
+        "description": "条目 id"
+      },
+      {
+        "name": "text",
+        "type": "string",
+        "required": true,
+        "description": "点评内容，不能为空"
+      },
+      {
+        "name": "rating",
+        "type": "number",
+        "required": false,
+        "description": "本次点评评分"
+      },
+      {
+        "name": "timestamp",
+        "type": "string",
+        "required": false,
+        "description": "点评时间，ISO8601，默认当前时间"
+      },
+      {
+        "name": "author",
+        "type": "string",
+        "required": false,
+        "description": "点评者名称"
+      },
+      {
+        "name": "avatar",
+        "type": "string",
+        "required": false,
+        "description": "点评者头像路径"
+      }
+    ],
+    "returns": {
+      "type": "Promise<string>",
+      "description": "JSON 对象（创建成功的点评）或 {error}"
+    },
+    "examples": [
+      {
+        "title": "给《三体》写感想",
+        "code": "const items = JSON.parse(await Aboutme.plugins.media_log.getMediaItems({kind: 'reading'}));\\nconst item = items.find(i => i.title.includes('三体'));\\nconst r = await Aboutme.plugins.media_log.addMediaReview({\\n  itemId: item.id,\\n  text: '结局很震撼，黑暗森林法则细思极恐',\\n  rating: 9.5\\n});\\nsetResult(r);"
+      }
+    ],
+    "notes": "itemId 对应条目必须存在；text 必填",
+    "enabled": true
+  },
+  "deleteMediaReview": {
+    "title": "删除媒体点评",
+    "description": "删除指定条目下的一条点评",
+    "parameters": [
+      {
+        "name": "itemId",
+        "type": "string",
+        "required": true,
+        "description": "条目 id"
+      },
+      {
+        "name": "reviewId",
+        "type": "string",
+        "required": true,
+        "description": "点评 id"
+      }
+    ],
+    "returns": {
+      "type": "Promise<string>",
+      "description": "JSON 对象 {success} 或 {success: false, error}"
+    },
+    "examples": [
+      {
+        "title": "删除一条点评",
+        "code": "const r = await Aboutme.plugins.media_log.deleteMediaReview({itemId: 'xxx', reviewId: 'yyy'});\\nsetResult(r);"
+      }
+    ],
+    "notes": "删除不可恢复",
+    "enabled": true
+  }
+}

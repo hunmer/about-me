@@ -133,6 +133,15 @@ const Map<String, String> webviewTranslationsEn = {
   'webview_download_empty': 'No downloads yet',
   'webview_download_manager_title': 'Downloads',
   'webview_download_clear': 'Clear finished',
+  'webview_download_add': 'Add download',
+  'webview_download_url': 'Download URL',
+  'webview_download_invalid_url': 'Enter a valid http/https URL',
+  'webview_download_file_name_hint': 'Leave empty to extract from the URL',
+  'webview_download_save_dir': 'Save directory',
+  'webview_download_pick_dir': 'Choose directory',
+  'webview_download_dir_required': 'Please choose a save directory',
+  'webview_download_added': 'Download started',
+  'webview_download_delete': 'Delete record',
   'webview_tab_downloads': 'Downloads',
 
   // Widget Home Strings

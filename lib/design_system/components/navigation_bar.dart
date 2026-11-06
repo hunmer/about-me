@@ -37,6 +37,7 @@ class DSBottomNavigation extends StatelessWidget {
     required this.currentIndex,
     required this.onTap,
     this.floatingAction,
+    this.tabFloatingActions,
     this.frosted = true,
     this.subLabels,
     this.subActions,
@@ -57,6 +58,11 @@ class DSBottomNavigation extends StatelessWidget {
 
   /// 子栏右圆钮位置的常驻浮动操作钮（如添加按钮），自带手势与外观
   final Widget? floatingAction;
+
+  /// 按 tab 区分的浮动操作钮（下标与 [items] 对应），优先级高于
+  /// [floatingAction]。当前 tab 越界或该位置为 null 时回退到
+  /// [floatingAction]；传入后仍属纯展示参数，不产生任何内部状态
+  final List<Widget?>? tabFloatingActions;
 
   /// 底栏整域磨砂玻璃（背景模糊 + 顶部渐入）
   final bool frosted;
@@ -98,6 +104,15 @@ class DSBottomNavigation extends StatelessWidget {
   /// 磨砂面板高度：从 dock 顶延伸到屏幕底始终足够（dock 高 ≤146 +
   /// 底部偏移/安全区），超出屏幕的部分由 viewport 自然裁掉
   static const double _frostPanelHeight = 500;
+
+  /// 按当前 tab 解析浮动操作钮：越界或该位置为 null 时回退 [floatingAction]
+  Widget? _resolveFloatingAction() {
+    final actions = tabFloatingActions;
+    if (actions == null || currentIndex < 0 || currentIndex >= actions.length) {
+      return floatingAction;
+    }
+    return actions[currentIndex] ?? floatingAction;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -157,7 +172,7 @@ class DSBottomNavigation extends StatelessWidget {
       ],
       activeIndex: currentIndex.clamp(0, items.length - 1),
       onTabChange: onTap,
-      floatingAction: floatingAction,
+      floatingAction: _resolveFloatingAction(),
       // 整域磨砂改由外层 BackdropFilter 承担，扇环不再单独
       // 背景模糊，避免同区域双重 backdrop 采样
       frosted: false,

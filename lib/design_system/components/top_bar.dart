@@ -6,14 +6,13 @@ import '../tokens/typography.dart';
 import 'icons.dart';
 import 'jelly_box.dart';
 
-/// 手绘顶部导航栏：胶囊形，返回 + 标题 + 菜单
+/// 手绘顶部导航栏：胶囊形，返回 + 标题
 class DSTopBar extends StatelessWidget {
   const DSTopBar({
     super.key,
     required this.title,
     this.center,
     this.onBack,
-    this.onMenu,
     this.actions,
   });
 
@@ -24,9 +23,8 @@ class DSTopBar extends StatelessWidget {
 
   /// 为 null 时隐藏返回按钮
   final VoidCallback? onBack;
-  final VoidCallback? onMenu;
 
-  /// 尾部附加动作（跟随菜单按钮之后）
+  /// 尾部附加动作（菜单等入口由使用方在此传入自己的按钮）
   final List<Widget>? actions;
 
   @override
@@ -54,12 +52,10 @@ class DSTopBar extends StatelessWidget {
                   style: DsTypography.heading.copyWith(color: theme.text),
                 ),
           ),
-          // 尾部：菜单按钮（如有）+ 自定义 actions；
-          // 都没有时留与返回钮等宽的占位，保证标题恒居中
-          if (onMenu != null) _BarIcon(icon: DsIconKind.more, onTap: onMenu),
+          // 尾部：自定义 actions；为空时留与返回钮等宽的占位，保证标题恒居中
           if (actions != null && actions!.isNotEmpty)
             Row(mainAxisSize: MainAxisSize.min, children: actions!),
-          if (onMenu == null && (actions == null || actions!.isEmpty))
+          if (actions == null || actions!.isEmpty)
             const SizedBox(width: 36, height: 36),
         ],
       ),

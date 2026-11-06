@@ -117,6 +117,18 @@ class GrokBotInstanceService extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 删除指定实例并持久化；首个实例固定保留（沿用聊天助手既有会话，避免误删历史）
+  /// 返回是否删除成功（不存在或为首个实例时返回 false）
+  Future<bool> removeBot(String botId) async {
+    if (botId == firstBotId) return false;
+    final removed = _bots.where((bot) => bot.id == botId).toList();
+    if (removed.isEmpty) return false;
+    _bots = _bots.where((bot) => bot.id != botId).toList();
+    await _save();
+    notifyListeners();
+    return true;
+  }
+
   String _randomShapeId() {
     final keys = GrokGeometry.shapes.keys.toList(growable: false);
     return keys[_random.nextInt(keys.length)];

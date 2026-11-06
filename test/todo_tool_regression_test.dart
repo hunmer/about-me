@@ -170,9 +170,8 @@ void main() {
         DateTime.parse(result['dueDate'] as String),
         DateTime.utc(2026, 10, 22, 7),
       );
-      final saved = await AboutmeDataService.instance.readFile(
-        'todo',
-        'tasks.json',
+      final saved = await AboutmeDataService.instance.data.readPath(
+        'todo/tasks.json',
       );
       final tasks = (saved as Map)['tasks'] as List;
       expect(

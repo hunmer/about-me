@@ -1,7 +1,6 @@
 import 'dart:math';
 
 import 'package:aboutme/plugins/live2d/video/video_pet_manifest.dart';
-import 'package:aboutme/plugins/live2d/video/video_pet_preferences.dart';
 import 'package:aboutme/screens/jelly_home/widgets/jelly_video_pet_movement.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -84,7 +83,7 @@ void main() {
             ),
           );
           await tester.pump();
-          VideoPetPreferences.randomWalkEnabled.value = true;
+          enabled.value = true;
           await tester.pump(const Duration(seconds: 1));
           expect(playback.animationId, 'walk');
           final transform = tester.widget<Transform>(
@@ -117,7 +116,6 @@ void main() {
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
-    VideoPetPreferences.randomWalkEnabled.value = false;
     enabled = ValueNotifier(false);
   });
 
@@ -150,7 +148,7 @@ void main() {
         rightAnimationId: 'walk',
       ),
     );
-    VideoPetPreferences.randomWalkEnabled.value = true;
+    enabled.value = true;
     await tester.pump(const Duration(milliseconds: 9900));
     expect(playback.animationId, isNull);
     await tester.pump(const Duration(milliseconds: 100));
@@ -168,7 +166,7 @@ void main() {
         rightAnimationId: 'walk',
       ),
     );
-    VideoPetPreferences.randomWalkEnabled.value = true;
+    enabled.value = true;
     await tester.pump(const Duration(seconds: 9));
     playback.onBusyChanged(true, ['manual']);
     await tester.pump(const Duration(seconds: 30));
@@ -193,7 +191,7 @@ void main() {
         rightAnimationId: 'walk',
       ),
     );
-    VideoPetPreferences.randomWalkEnabled.value = true;
+    enabled.value = true;
     await tester.pump(const Duration(seconds: 9));
     playback.onDragStart(DragStartDetails());
     await tester.pump(const Duration(seconds: 30));
@@ -211,7 +209,7 @@ void main() {
       'near target $randomValue keeps this walk and travels visibly',
       (tester) async {
         await load(tester, randomValue: randomValue);
-        VideoPetPreferences.randomWalkEnabled.value = true;
+        enabled.value = true;
         await tester.pump(const Duration(seconds: 1));
         expect(playback.animationId, 'turn');
         playback.onComplete();
@@ -267,7 +265,7 @@ void main() {
     'global switch follows model changes while position persists per model',
     (tester) async {
       await load(tester);
-      VideoPetPreferences.randomWalkEnabled.value = true;
+      enabled.value = true;
       playback.onDragStart(DragStartDetails());
       playback.onDragUpdate(
         DragUpdateDetails(
@@ -297,7 +295,7 @@ void main() {
     'turn completes before motion, busy cancels and resumes after waiting',
     (tester) async {
       await load(tester);
-      VideoPetPreferences.randomWalkEnabled.value = true;
+      enabled.value = true;
       await tester.pump(const Duration(seconds: 1));
       expect(playback.animationId, 'turn');
       expect(playback.loop, false);
@@ -307,7 +305,8 @@ void main() {
       playback.onComplete();
       await tester.pump();
       expect(playback.animationId, 'walk');
-      expect(playback.loop, true);
+      // 19aeb630 起移动动画改为帧驱动单次播放，不再循环
+      expect(playback.loop, false);
       await tester.pump(const Duration(seconds: 1));
       expect(
         tester.getTopLeft(find.byKey(const ValueKey('pet'))).dx,
@@ -330,7 +329,7 @@ void main() {
     'route, controls active flag, drag and background cancel turning',
     (tester) async {
       await load(tester);
-      VideoPetPreferences.randomWalkEnabled.value = true;
+      enabled.value = true;
       await tester.pump(const Duration(seconds: 1));
       expect(playback.animationId, 'turn');
       await load(tester, active: false);
@@ -359,7 +358,7 @@ void main() {
     tester,
   ) async {
     await load(tester, config: const VideoPetMovement(), width: 100);
-    VideoPetPreferences.randomWalkEnabled.value = true;
+    enabled.value = true;
     await tester.pump(const Duration(seconds: 20));
     expect(playback.animationId, isNull);
     await tester.pumpWidget(const SizedBox());
@@ -419,7 +418,7 @@ void main() {
       };
       try {
         await load(tester, width: 100);
-        VideoPetPreferences.randomWalkEnabled.value = true;
+        enabled.value = true;
         await tester.pump(const Duration(seconds: 1));
         expect(playback.animationId, 'turn');
         playback.onComplete();
@@ -437,7 +436,7 @@ void main() {
           logs.any((line) => line.contains('blocked=[noHorizontalSpace]')),
           false,
         );
-        VideoPetPreferences.randomWalkEnabled.value = false;
+        enabled.value = false;
         await tester.pump();
         final before = tester.getRect(pet).left;
         await tester.dragFrom(const Offset(40, 210), const Offset(30, 0));
@@ -459,7 +458,7 @@ void main() {
     tester,
   ) async {
     await load(tester);
-    VideoPetPreferences.randomWalkEnabled.value = true;
+    enabled.value = true;
     await tester.pump(const Duration(seconds: 1));
     final staleComplete = playback.onComplete;
     playback.onBusyChanged(true, ['manual']);
@@ -492,7 +491,7 @@ void main() {
         ),
       );
       playback.onDragEnd(DragEndDetails());
-      VideoPetPreferences.randomWalkEnabled.value = true;
+      enabled.value = true;
       await tester.pump(const Duration(milliseconds: 100));
       expect(playback.animationId, 'walk');
       await tester.pump(const Duration(seconds: 2));
@@ -505,7 +504,7 @@ void main() {
   );
 
   testWidgets(
-    'global setting overrides legacy model switch and stops immediately',
+    'enabled notifier gates walking and keeps legacy prefs untouched',
     (tester) async {
       final key = JellyVideoPetStage.preferenceKey('a');
       SharedPreferences.setMockInitialValues({'$key.walk': true});
@@ -514,16 +513,14 @@ void main() {
       await tester.pump(const Duration(seconds: 2));
       expect(playback.animationId, isNull);
 
-      VideoPetPreferences.randomWalkEnabled.value = true;
-      expect(enabled.value, true);
+      enabled.value = true;
       await tester.pump(const Duration(seconds: 1));
       expect(playback.animationId, 'turn');
       playback.onComplete();
       await tester.pump();
       expect(playback.animationId, 'walk');
 
-      VideoPetPreferences.randomWalkEnabled.value = false;
-      expect(enabled.value, false);
+      enabled.value = false;
       await tester.pump();
       expect(playback.animationId, isNull);
       final position = tester.getTopLeft(find.byKey(const ValueKey('pet')));
@@ -532,26 +529,28 @@ void main() {
       final prefs = await SharedPreferences.getInstance();
       expect(prefs.getBool('$key.walk'), true);
       await tester.pumpWidget(const SizedBox());
-      VideoPetPreferences.randomWalkEnabled.value = true;
-      expect(enabled.value, false);
     },
   );
 
-  testWidgets('new stage and replacement notifier use current global setting', (
+  testWidgets('replacement notifier takes effect after widget update', (
     tester,
   ) async {
-    VideoPetPreferences.randomWalkEnabled.value = true;
+    enabled = ValueNotifier(false);
     await load(tester);
-    expect(enabled.value, true);
     final previous = enabled;
     enabled = ValueNotifier(false);
     await load(tester);
-    expect(enabled.value, true);
-    VideoPetPreferences.randomWalkEnabled.value = false;
-    expect(enabled.value, false);
-    expect(previous.value, true);
+    // 旧 notifier 已解绑：翻 true 不触发走动
+    previous.value = true;
+    await tester.pump(const Duration(seconds: 10));
+    expect(playback.animationId, isNull);
+    // 新 notifier 生效：翻 true 触发转身/走动
+    enabled.value = true;
+    await tester.pump(const Duration(seconds: 10));
+    expect(playback.animationId, isNotNull);
     await tester.pumpWidget(const SizedBox());
     previous.dispose();
+    enabled.dispose();
   });
 
   testWidgets('dispose before preferences resolve is safe', (tester) async {

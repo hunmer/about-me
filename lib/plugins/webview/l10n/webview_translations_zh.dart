@@ -133,6 +133,15 @@ const Map<String, String> webviewTranslationsZh = {
   'webview_download_empty': '暂无下载记录',
   'webview_download_manager_title': '下载管理',
   'webview_download_clear': '清空已结束记录',
+  'webview_download_add': '添加下载',
+  'webview_download_url': '下载链接',
+  'webview_download_invalid_url': '请输入合法的 http/https 链接',
+  'webview_download_file_name_hint': '留空则自动从链接提取',
+  'webview_download_save_dir': '保存目录',
+  'webview_download_pick_dir': '选择目录',
+  'webview_download_dir_required': '请选择保存目录',
+  'webview_download_added': '已开始下载',
+  'webview_download_delete': '删除记录',
   'webview_tab_downloads': '下载',
 
   // Widget Home Strings

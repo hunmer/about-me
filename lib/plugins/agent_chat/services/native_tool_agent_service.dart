@@ -222,7 +222,7 @@ class NativeToolAgentService {
   bool _hasImageGenerationTool = false;
 
   /// 单次循环工具调用上限：防止模型陷入无限调用
-  static const maxToolCallsPerLoop = 12;
+  static const maxToolCallsPerLoop = 200;
 
   /// 预筛时始终注入的插件（模糊请求也不丢失生图/记忆等核心能力）
   static const _alwaysIncludePlugins = {'moments', 'openai', 'memory'};

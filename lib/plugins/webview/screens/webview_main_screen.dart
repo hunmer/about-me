@@ -5,13 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'app_store/app_store_screen.dart';
+import 'components/webview_add_download_form.dart';
 import 'components/webview_add_card_form.dart';
 import 'download_records_screen.dart';
 import 'webview_cards_screen.dart';
 
-/// WebView 主界面 - 已安装 / 商店 双页签宿主页
+/// WebView 主界面 - 已安装 / 商店 / 下载管理 三页签宿主页
 ///
-/// 弧形圆盘底部导航（design.md §3，仅根级宿主页放置）切换两个页签，
+/// 弧形圆盘底部导航（design.md §3，仅根级宿主页放置）切换三个页签，
 /// 页签首次访问时构建，之后保留状态。两个页签各自持有
 /// SuperCupertinoNavigationWrapper，内层（商店）须传
 /// transitionBetweenRoutes:false，避免与外层导航栏 hero tag 冲突
@@ -28,6 +29,18 @@ class WebViewMainScreen extends StatefulWidget {
 
 class _WebViewMainScreenState extends State<WebViewMainScreen> {
   int _currentIndex = 0;
+
+  /// 停靠到子栏右圆钮位的浮动操作钮：等比缩到 35，与圆钮同尺寸
+  Widget _dockFab(VoidCallback onPressed) {
+    return SizedBox(
+      width: 35,
+      height: 35,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: DSFab(onPressed: onPressed),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +61,7 @@ class _WebViewMainScreenState extends State<WebViewMainScreen> {
               ],
             ),
 
-            // 底部弧形导航：已安装 / 商店
+            // 底部弧形导航：已安装 / 商店 / 下载管理
             bottomNavigationBar: SafeArea(
               top: false,
               child: Padding(
@@ -60,14 +73,14 @@ class _WebViewMainScreenState extends State<WebViewMainScreen> {
                       _currentIndex = index;
                     });
                   },
-                  // 子栏右侧圆钮：添加卡片/本地项目（无子栏胶囊，
-                  // 恒传 never 保持仅 dock 的紧凑占位）
-                  trailingAction: DsIcon(
-                    DsIconKind.plus,
-                    size: 16,
-                    color: theme.primary,
-                  ),
-                  onTrailingTap: () => showAddCardSheet(context),
+                  // 按 tab 停靠子栏右圆钮位的浮动操作钮：已安装/商店为
+                  // 「添加卡片」，下载管理为「手动添加下载」。
+                  // 本页无子栏胶囊，恒传 never 保持仅 dock 的紧凑占位
+                  tabFloatingActions: [
+                    _dockFab(() => showAddCardSheet(context)),
+                    _dockFab(() => showAddCardSheet(context)),
+                    _dockFab(() => showAddDownloadSheet(context)),
+                  ],
                   subBarBehavior: RadialSubBarBehavior.never,
                   items: [
                     DSNavItem(

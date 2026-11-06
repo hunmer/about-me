@@ -250,12 +250,22 @@ void main() {
   });
 
   test("首次种子完成记录写入 habits/records/<id>.json（无双重后缀）", () async {
-    // createDefaultHabits 仅在习惯列表为空时写入，先清掉前面用例的残留
-    await AboutmeDataService.instance.writePath('habits/habits.json', []);
+    // createDefaultHabits 仅在习惯列表为空时写入；habits 为迁移域，
+    // 原始文件写已封闭，经域命令清掉前面用例的残留
+    final snapshot = await AboutmeDataService.instance.call(
+      'habits',
+      'getSnapshot',
+    );
+    final habits = ((snapshot['data'] as Map)['habits'] as List)
+        .map((h) => (h as Map)['id'])
+        .toList();
+    for (final id in habits) {
+      await AboutmeDataService.instance.call('habits', 'delete', {'id': id});
+    }
     await plugin.getHabitController().createDefaultHabits();
 
     // 修复前写入 <id>.json.json，读取路径永远找不到种子记录
-    final raw = await AboutmeDataService.instance.readPath(
+    final raw = await AboutmeDataService.instance.data.readPath(
       'habits/records/habit-run-001.json',
     );
     expect(raw is List, isTrue, reason: '$raw');
