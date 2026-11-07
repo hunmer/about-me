@@ -369,10 +369,6 @@ class RouteHistoryManager extends RouteObserver<PageRoute<dynamic>> {
   void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
     if (route is PageRoute<dynamic> && route.opaque) {
       super.didPush(route, previousRoute);
-    } else {
-      debugPrint(
-        'RouteHistoryManager: 跳过弹层 didPushNext type=${route.runtimeType}',
-      );
     }
     debugPrint(
       'RouteHistoryManager: didPush name=${route.settings.name} '
@@ -388,10 +384,6 @@ class RouteHistoryManager extends RouteObserver<PageRoute<dynamic>> {
   void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
     if (route is PageRoute<dynamic> && route.opaque) {
       super.didPop(route, previousRoute);
-    } else {
-      debugPrint(
-        'RouteHistoryManager: 跳过弹层 didPopNext type=${route.runtimeType}',
-      );
     }
     _trackPluginRoute(route, -1, previousRoute);
     _removePageRoute(route);

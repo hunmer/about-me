@@ -147,28 +147,6 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
         : '${service.name} · $voice';
   }
 
-  Future<void> _editCurrentArchive() async {
-    final id = archive?.id;
-    if (id == null) return;
-    VoidCallback? saveArchive;
-    VoidCallback? deleteArchive;
-    await SmoothBottomSheet.showForm(
-      context: context,
-      title: 'live2d_editArchiveTitle'.tr,
-      child: Live2DArchiveFormScreen(
-        archiveId: id,
-        embedInSheet: true,
-        onReady: (save) => saveArchive = save,
-        onDeleteReady: (delete) => deleteArchive = delete,
-      ),
-      onSave: () => saveArchive?.call(),
-      onDelete: () => deleteArchive?.call(),
-    );
-    if (mounted) {
-      setState(() => archive = plugin.selected);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return DSThemeBridge(
@@ -178,25 +156,7 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
           return SuperCupertinoNavigationWrapper(
             title: Text('live2d_settingsTitle'.tr),
             enableLargeTitle: false,
-            actions: [
-              // actions 经 Overlay 渲染，DS 组件需自带 DSThemeBridge
-              if (archive != null)
-                DSThemeBridge(
-                  child: Builder(
-                    builder: (actionContext) {
-                      final actionTheme = DSThemeBridge.resolve(actionContext);
-                      return DSIconButton(
-                        icon: DsIconKind.edit,
-                        size: 38,
-                        color: actionTheme.surfaceAlt,
-                        iconColor: actionTheme.textSub,
-                        tooltip: 'live2d_editArchiveTitle'.tr,
-                        onPressed: _editCurrentArchive,
-                      );
-                    },
-                  ),
-                ),
-            ],
+            actions: [],
             body: _buildBody(builderContext, theme),
           );
         },

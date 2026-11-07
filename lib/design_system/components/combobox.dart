@@ -430,6 +430,14 @@ class _DSMultiComboboxState<T> extends State<DSMultiCombobox<T>> {
     super.dispose();
   }
 
+  @override
+  void didUpdateWidget(DSMultiCombobox<T> old) {
+    super.didUpdateWidget(old);
+    // 浮层开着时 values/items 被外部改变（如页面别处重置已选），
+    // 同样要标脏 entry 让面板同步刷新
+    if (_entry != null && !_closing) _entry?.markNeedsBuild();
+  }
+
   void _toggle() {
     _open ? _close() : _insertEntry();
     setState(() {});
@@ -474,22 +482,35 @@ class _DSMultiComboboxState<T> extends State<DSMultiCombobox<T>> {
                   alignTop: _openUpward,
                   closing: _closing,
                   allowCreate: widget.allowCreate,
+                  // 浮层挂在根 Overlay 上、不在本组件子树中：父级 setState 只
+                  // 会重建触发器，必须主动标脏 entry 才能让面板行内的选中
+                  // 态随最新 values 刷新
                   onToggle: (item) {
                     final next = [...widget.values];
                     next.contains(item.value)
                         ? next.remove(item.value)
                         : next.add(item.value);
                     widget.onChanged(next);
+                    _entry?.markNeedsBuild();
                   },
-                  onSelectAll: () => widget.onChanged(
-                    widget.items.map((e) => e.value).toList(),
-                  ),
-                  onClear: () => widget.onChanged(const []),
+                  onSelectAll: () {
+                    widget.onChanged(
+                      widget.items.map((e) => e.value).toList(),
+                    );
+                    _entry?.markNeedsBuild();
+                  },
+                  onClear: () {
+                    widget.onChanged(const []);
+                    _entry?.markNeedsBuild();
+                  },
                   onCreate: widget.allowCreate
-                      ? (label) => widget.onChanged([
-                          ...widget.values,
-                          label as T,
-                        ])
+                      ? (label) {
+                          widget.onChanged([
+                            ...widget.values,
+                            label as T,
+                          ]);
+                          _entry?.markNeedsBuild();
+                        }
                       : null,
                 ),
               ),
