@@ -24,6 +24,7 @@ import 'widgets/jelly_live2d.dart';
 import 'widgets/jelly_live2d_panel.dart';
 import 'widgets/jelly_status_panel.dart';
 import 'package:aboutme/plugins/live2d/live2d_plugin.dart';
+import 'package:aboutme/plugins/live2d/services/global_floating_pet_service.dart';
 import 'package:aboutme/plugins/agent_chat/controllers/chat_controller.dart';
 import 'package:aboutme/plugins/agent_chat/services/message_service.dart';
 import 'package:aboutme/plugins/agent_chat/services/message_detail_service.dart';
@@ -79,6 +80,8 @@ class _JellyHomeScreenState extends State<JellyHomeScreen> {
   void initState() {
     super.initState();
     _tabIndex = widget.initialIndex.clamp(0, JellyTab.values.length - 1);
+    // 同步当前页签给全局悬浮宠物：仅小屋页签（Live2D 舞台）隐藏悬浮宠物
+    GlobalFloatingPetService.instance.onJellyHomeTabChanged(_tabIndex);
     if (!kIsWeb &&
         (defaultTargetPlatform == TargetPlatform.android ||
             defaultTargetPlatform == TargetPlatform.iOS)) {
@@ -123,6 +126,7 @@ class _JellyHomeScreenState extends State<JellyHomeScreen> {
       current: JellyTab.values[_tabIndex],
       onTap: (index) {
         setState(() => _tabIndex = index);
+        GlobalFloatingPetService.instance.onJellyHomeTabChanged(index);
         // 离开小屋页签时收起资源面板（IndexedStack 保活，不会自动消失）
         if (index != 0) _live2dPanel.value = null;
         _saveTab(index);

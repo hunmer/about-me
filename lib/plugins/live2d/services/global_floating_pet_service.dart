@@ -24,8 +24,10 @@ import 'package:aboutme/screens/jelly_home/widgets/jelly_speech_bubble.dart';
 /// - 订阅 [AiAutoReplyEventArgs] 广播，转发开关开启且宠物确实可展示
 ///   （stage 已附着 + 模型可解析 + 不在首页路由）时，同步标记 handled
 ///   拦截默认 Toast，改为宠物气泡展示；否则不拦截，交由发射方默认展示；
-/// - 监听 [RouteHistoryManager.topRouteName]，首页（/jelly_home 及其
-///   子页签路由、旧首页 / 与 home）隐藏宠物且不拦截 AI 事件，离开恢复。
+/// - 监听 [RouteHistoryManager.topRouteName]，首页仅小屋页签（Live2D
+///   舞台，避免与舞台角色重复）隐藏宠物且不拦截 AI 事件，首页其余
+///   页签与离开首页均展示；页签切换不换路由，由
+///   [onJellyHomeTabChanged] 同步当前页签。
 class GlobalFloatingPetService {
   GlobalFloatingPetService._();
 
@@ -44,6 +46,11 @@ class GlobalFloatingPetService {
   bool _subscribed = false;
   bool _stageAttached = false;
   bool _onHomeRoute = false;
+
+  /// 首页当前是否停在 Live2D 页签（小屋/JellyTab.cottage，舞台已渲染
+  /// 角色）；页签切换不换路由，由 JellyHomeScreen 经
+  /// [onJellyHomeTabChanged] 同步。默认 true（保守隐藏，启动即小屋）
+  bool _onLive2dHomeTab = true;
   int _mountRetries = 0;
   static const int _maxMountRetries = 120;
 
@@ -65,8 +72,12 @@ class GlobalFloatingPetService {
         name == 'home';
   }
 
-  /// 当前是否应渲染悬浮宠物（首页隐藏）
-  bool get shouldRender => !_onHomeRoute;
+  /// 当前是否应渲染悬浮宠物（首页仅 Live2D 页签隐藏，其余页签展示）
+  bool get shouldRender => !_petHidden;
+
+  /// 首页 Live2D 页签（小屋）隐藏：舞台已渲染角色，悬浮层重复；
+  /// 离开首页或切到首页其余页签（助手/日程/看板/我的）均展示
+  bool get _petHidden => _onHomeRoute && _onLive2dHomeTab;
 
   /// 插件初始化时调用：订阅事件 + 路由 + 按设置挂载
   void ensureInitialized() {
@@ -81,7 +92,7 @@ class GlobalFloatingPetService {
         Live2DPlugin.archiveSelectedEvent,
         (_) => refresh(),
       );
-      // 真实路由跟踪：进首页隐藏（不拦截事件），离开恢复
+      // 真实路由跟踪：进出首页重算可见性（首页内由页签通知细分）
       RouteHistoryManager.instance.topRouteName.addListener(_onRouteChanged);
       _onRouteChanged();
     }
@@ -89,9 +100,10 @@ class GlobalFloatingPetService {
   }
 
   /// 悬浮宠物此刻是否真的能承接气泡展示：
-  /// entry 已插入、stage 已附着（气泡监听就位）、不在首页、模型可解析
+  /// entry 已插入、stage 已附着（气泡监听就位）、不在首页 Live2D
+  /// 页签、模型可解析
   bool get _canDisplay {
-    if (_entry == null || !_stageAttached || _onHomeRoute) return false;
+    if (_entry == null || !_stageAttached || _petHidden) return false;
     final plugin = Live2DPlugin.instance;
     final archive = plugin.globalPetArchive;
     if (archive == null) return false;
@@ -116,14 +128,30 @@ class GlobalFloatingPetService {
     pendingReply.value = Live2DPlugin.cleanReply(args.text);
   }
 
-  /// 路由变化：进首页隐藏并清气泡，离开恢复
+  /// 路由变化：进出首页时重算悬浮宠物可见性
   void _onRouteChanged() {
     final name = RouteHistoryManager.instance.currentTopRouteName;
     final onHome = _isHomeRoute(name);
     if (onHome == _onHomeRoute) return;
     _onHomeRoute = onHome;
-    _log('路由="$name" 首页=$onHome → ${onHome ? "隐藏" : "恢复"}');
-    if (onHome) pendingReply.value = null;
+    _log('路由="$name" 首页=$onHome');
+    _applyVisibility();
+  }
+
+  /// 首页页签切换（不换路由）：仅 Live2D 页签（小屋，下标 0）隐藏，
+  /// 其余页签展示。由 JellyHomeScreen 在 initState 与切页签时调用
+  void onJellyHomeTabChanged(int index) {
+    final onLive2dTab = index == 0; // JellyTab.cottage
+    if (onLive2dTab == _onLive2dHomeTab) return;
+    _onLive2dHomeTab = onLive2dTab;
+    _log('首页页签=$index 小屋=$onLive2dTab');
+    _applyVisibility();
+  }
+
+  /// 按当前隐藏状态刷新悬浮宠物：隐藏时清气泡，并重建宿主
+  void _applyVisibility() {
+    _log('悬浮宠物 ${_petHidden ? "隐藏" : "恢复"}');
+    if (_petHidden) pendingReply.value = null;
     _entry?.markNeedsBuild();
   }
 
@@ -161,7 +189,7 @@ class GlobalFloatingPetService {
     final entry = OverlayEntry(builder: (_) => _GlobalFloatingPetStage());
     overlay.insert(entry);
     _entry = entry;
-    _log('已挂载根 Overlay（首页隐藏中=$_onHomeRoute）');
+    _log('已挂载根 Overlay（隐藏中=$_petHidden）');
   }
 
   void _unmount() {
@@ -335,7 +363,7 @@ class _GlobalFloatingPetStageState extends State<_GlobalFloatingPetStage> {
 
   @override
   Widget build(BuildContext context) {
-    // 首页（果冻小屋及其子页签）隐藏：不渲染也不参与命中
+    // 首页 Live2D 页签（小屋）隐藏：不渲染也不参与命中，其余页签展示
     if (!GlobalFloatingPetService.instance.shouldRender) {
       return const SizedBox.shrink();
     }
@@ -453,8 +481,12 @@ class _GlobalFloatingPetStageState extends State<_GlobalFloatingPetStage> {
         return Stack(
           fit: StackFit.expand,
           children: [
+            // 两个槽位都带稳定 key：气泡按需插入/移除时，子元素按键
+            // 匹配而非按位置——否则宠物 Positioned 会被原位改建成气泡
+            // 再在尾部全新 inflate，_GlobalPetViewState 重建导致模型重载
             if (bubbleVisible)
               Positioned(
+                key: const ValueKey('global-pet-bubble-slot'),
                 left: bubbleLeft,
                 top: bubbleTop,
                 width: bubbleWidth,
@@ -479,6 +511,7 @@ class _GlobalFloatingPetStageState extends State<_GlobalFloatingPetStage> {
             // opaque 确保拖拽不被下层页面滚动抢走；盒外区域穿透到 App。
             // Listener 记录 Flutter 是否收到指针（平台视图吃事件时无此日志）
             Positioned(
+              key: const ValueKey('global-pet-slot'),
               left: petLeft,
               top: petTop,
               width: petBox.width,
