@@ -200,6 +200,8 @@ class _GlobalFloatingPetStageState extends State<_GlobalFloatingPetStage> {
   Offset? _dragOrigin;
   int? _dragPointer;
   bool _isDraggingPet = false;
+  int _snappedHorizontalEdge = 0;
+  int _snappedVerticalEdge = 0;
 
   /// 视频桌宠清单解析结果（loadDefault 兜底路径用）+ 所属模型。
   /// 存档切换时按模型实例比对，避免旧清单串档；模型自带清单
@@ -354,14 +356,15 @@ class _GlobalFloatingPetStageState extends State<_GlobalFloatingPetStage> {
         final safe = MediaQuery.paddingOf(context);
         // 键盘弹起时把宠物压回可视区（viewInsets.bottom）
         final keyboard = MediaQuery.viewInsetsOf(context).bottom;
-        // 可活动边界：安全区内收 8px，避免宠物贴死刘海/手势条/键盘
+        // Live2D 保留 8px 安全间距；视频宠物可贴齐可见窗口边缘。
+        final margin = model.isVideo ? 0.0 : 8.0;
         final bounds = Rect.fromLTRB(
-          safe.left + 8,
-          safe.top + 8,
-          math.max(safe.left + 8, screenW - safe.right - 8),
+          safe.left + margin,
+          safe.top + margin,
+          math.max(safe.left + margin, screenW - safe.right - margin),
           math.max(
-            safe.top + 8,
-            screenH - math.max(safe.bottom + 8, keyboard + 8),
+            safe.top + margin,
+            screenH - math.max(safe.bottom + margin, keyboard + margin),
           ),
         );
         if (bounds.width <= 0 || bounds.height <= 0) {
@@ -496,6 +499,8 @@ class _GlobalFloatingPetStageState extends State<_GlobalFloatingPetStage> {
                     _dragStartGlobal = event.position;
                     _dragOrigin = Offset(petLeft, petTop);
                     _isDraggingPet = false;
+                    _snappedHorizontalEdge = 0;
+                    _snappedVerticalEdge = 0;
                   },
                   onPointerMove: (event) {
                     if (event.pointer != _dragPointer) return;
@@ -514,11 +519,51 @@ class _GlobalFloatingPetStageState extends State<_GlobalFloatingPetStage> {
                     }
                     _isDraggingPet = true;
                     final next = origin + delta;
+                    var nextX = next.dx.clamp(minLeft, maxLeft).toDouble();
+                    var nextY = next.dy.clamp(minTop, maxTop).toDouble();
+                    // 鼠标到达窗口边缘前，抓取点的偏移可能使人物仍悬在半空。
+                    // 仅视频宠物在指针靠近四边时把交互区域吸附到边界。
+                    if (model.isVideo) {
+                      const edgeDistance = 24.0;
+                      final horizontalEdge =
+                          event.position.dx <= bounds.left + edgeDistance
+                          ? -1
+                          : event.position.dx >= bounds.right - edgeDistance
+                          ? 1
+                          : 0;
+                      final verticalEdge =
+                          event.position.dy <= bounds.top + edgeDistance
+                          ? -1
+                          : event.position.dy >= bounds.bottom - edgeDistance
+                          ? 1
+                          : 0;
+                      if (horizontalEdge < 0) {
+                        nextX = minLeft;
+                      } else if (horizontalEdge > 0) {
+                        nextX = maxLeft;
+                      }
+                      if (verticalEdge < 0) {
+                        nextY = minTop;
+                      } else if (verticalEdge > 0) {
+                        nextY = maxTop;
+                      }
+                      if ((horizontalEdge != 0 &&
+                              horizontalEdge != _snappedHorizontalEdge) ||
+                          (verticalEdge != 0 &&
+                              verticalEdge != _snappedVerticalEdge)) {
+                        GlobalFloatingPetService._log(
+                          'drag edge snap pointer=${event.position} '
+                          'next=$next bounds=$bounds union=$unionBox '
+                          'result=($nextX, $nextY) regions=${videoManifest?.regions.length}',
+                        );
+                        _dragOrigin = Offset(nextX, nextY);
+                        _dragStartGlobal = event.position;
+                      }
+                      _snappedHorizontalEdge = horizontalEdge;
+                      _snappedVerticalEdge = verticalEdge;
+                    }
                     setState(() {
-                      _petPosition = Offset(
-                        next.dx.clamp(minLeft, maxLeft).toDouble(),
-                        next.dy.clamp(minTop, maxTop).toDouble(),
-                      );
+                      _petPosition = Offset(nextX, nextY);
                     });
                   },
                   onPointerUp: (event) {
