@@ -16,6 +16,7 @@ import 'package:aboutme/screens/jelly_home/live2d_online_models.dart';
 import 'package:aboutme/screens/jelly_home/widgets/jelly_live2d_models.dart';
 import 'package:aboutme/screens/jelly_home/widgets/jelly_live2d_video.dart';
 import 'package:aboutme/screens/jelly_home/widgets/jelly_speech_bubble.dart';
+import 'package:aboutme/widgets/chat_thread_sheet.dart' show showChannelChatSheet;
 
 /// 全局悬浮宠物服务：把 Live2D 伙伴挂到应用根 Overlay，
 /// 在所有页面最上层展示（应用内悬浮，非系统级悬浮窗）。
@@ -651,6 +652,9 @@ class _GlobalFloatingPetStageState extends State<_GlobalFloatingPetStage> {
                       regionId,
                       regionName,
                     ),
+                    // 双击宠物：弹出频道聊天抽屉（完整频道聊天页，
+                    // 见 showChannelChatSheet）；视频区域过滤同样生效
+                    onDoubleTap: () => showChannelChatSheet(context),
                   ),
                 ),
               ),

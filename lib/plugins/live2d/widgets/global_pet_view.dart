@@ -18,7 +18,7 @@ import '../video/video_pet_player.dart';
 /// 视频桌宠走底层 [VideoPetPlayer]（关闭内部交互）。
 ///
 /// 组件盒即展示盒（紧贴可见内容，无舞台空白），由外层悬浮层提供
-/// 拖拽手势；组件自身不响应任何手势。
+/// 拖拽手势；组件自身不响应任何手势（[onDoubleTap] 双击入口除外）。
 class GlobalPetView extends StatefulWidget {
   const GlobalPetView({
     super.key,
@@ -30,6 +30,7 @@ class GlobalPetView extends StatefulWidget {
     this.debugLogging = false,
     this.onManifestResolved,
     this.onTap,
+    this.onDoubleTap,
   });
 
   /// 已解析的模型定义（存档 → Live2DModelDefinition）
@@ -63,6 +64,11 @@ class GlobalPetView extends StatefulWidget {
   /// regionId/regionName，未命中区域均为 null）；外层悬浮层用它
   /// 做每区域随机台词气泡。仅视频模型触发；Live2D 不调用。
   final void Function(String? regionId, String? regionName)? onTap;
+
+  /// 双击回调（组件内唯一手势入口，由外层注入，如全局悬浮层双击
+  /// 宠物弹出频道聊天抽屉）；null 时组件保持零手势、行为与原先一致。
+  /// 命中为整盒 opaque（子树 IgnorePointer 不影响本层判定）。
+  final VoidCallback? onDoubleTap;
 
   /// Live2D 模型画布宽高比（与小屋舞台一致）
   static const double live2dViewportAspectRatio = 0.5;
@@ -195,7 +201,7 @@ class _GlobalPetViewState extends State<GlobalPetView> {
     // 框架命中参与事件路由——统一屏蔽后，拖拽/点击完全由外层悬浮层接管；
     // macOS WKWebView 是原生 NSView 直接吃 AppKit 事件，靠上面
     // setInteractive(false) 的原生 hitTest 关闭兜底
-    return IgnorePointer(
+    final Widget content = IgnorePointer(
       ignoring: !(widget.model.isVideo && widget.videoInteractive),
       child: Opacity(
         opacity: widget.opacity,
@@ -205,6 +211,15 @@ class _GlobalPetViewState extends State<GlobalPetView> {
           child: widget.model.isVideo ? _buildVideo() : _buildLive2D(box),
         ),
       ),
+    );
+    // 双击入口（组件内唯一手势）：opaque 命中保证整盒可点，子树
+    // IgnorePointer 不影响本层判定；外层悬浮层的原始指针 Listener
+    // 位于祖先链仍照常收到事件，拖拽不受影响。未注册时零手势原样返回。
+    if (widget.onDoubleTap == null) return content;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onDoubleTap: widget.onDoubleTap,
+      child: content,
     );
   }
 
