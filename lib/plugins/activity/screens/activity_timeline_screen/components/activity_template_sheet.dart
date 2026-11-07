@@ -189,10 +189,13 @@ class _ActivityTemplateSheetState extends State<_ActivityTemplateSheet> {
   Future<void> _applyToSelectedDate() async {
     final target = _applyTarget;
     if (target == null) return;
+    final service = widget.service;
+    final selectedDate = widget.selectedDate;
+    final overwrite = _overwriteExisting;
     final base = DateTime(
-      widget.selectedDate.year,
-      widget.selectedDate.month,
-      widget.selectedDate.day,
+      selectedDate.year,
+      selectedDate.month,
+      selectedDate.day,
     );
     // 先收集待写入的时间段（分钟偏移可为负/跨天，DateTime 加减天然支持）
     final items = <ActivityTemplateItem>[];
@@ -201,32 +204,19 @@ class _ActivityTemplateSheetState extends State<_ActivityTemplateSheet> {
     for (var i = 0; i < target.items.length; i++) {
       final item = target.items[i];
       if (item.title.trim().isEmpty) continue;
-      final start = base.add(Duration(minutes: _applyMinutes[i]));
       items.add(item);
-      starts.add(start);
+      starts.add(base.add(Duration(minutes: _applyMinutes[i])));
       ends.add(base.add(Duration(minutes: _applyEnds[i])));
     }
-    // 覆盖模式：删除选中日期内与新时间段重叠的已有记录
-    if (_overwriteExisting && items.isNotEmpty) {
-      final existing =
-          await widget.service.getActivitiesForDate(widget.selectedDate);
-      for (final record in existing) {
-        final overlaps = List<bool>.generate(
-          items.length,
-          (i) =>
-              record.startTime.isBefore(ends[i]) &&
-              record.endTime.isAfter(starts[i]),
-        ).contains(true);
-        if (overlaps) {
-          await widget.service.deleteActivity(record);
-        }
-      }
+    if (items.isEmpty) {
+      Toast.show('没有可记录的时间点');
+      return;
     }
-    // 按开始时间排序后逐条写入：每条结束时刻收口到下一条开始，
-    // 跳过被压成零长度的记录，兜底避免重叠记录被 SDK「新裁旧」吞掉
+    // 按开始时间排序：每条结束时刻收口到下一条开始，跳过零长度记录，
+    // 避免重叠记录被 SDK「新裁旧」吞掉
     final order = List<int>.generate(starts.length, (i) => i)
       ..sort((a, b) => starts[a].compareTo(starts[b]));
-    var count = 0;
+    final writes = <({DateTime start, DateTime end, String title})>[];
     for (var k = 0; k < order.length; k++) {
       final i = order[k];
       var end = ends[i];
@@ -235,18 +225,36 @@ class _ActivityTemplateSheetState extends State<_ActivityTemplateSheet> {
         if (end.isAfter(nextStart)) end = nextStart;
       }
       if (!end.isAfter(starts[i])) continue;
-      await widget.service.saveActivity(
-        ActivityRecord(
-          startTime: starts[i],
-          endTime: end,
-          title: items[i].title.trim(),
-        ),
-      );
-      count++;
+      writes.add((start: starts[i], end: end, title: items[i].title.trim()));
     }
-    if (!mounted) return;
-    Toast.show('已记录 $count 个时间点到 ${DateFormat('M月d日').format(widget.selectedDate)}');
-    Navigator.of(context).pop();
+    // 先关闭弹层再执行写入：多次保存触发的 activity_added 事件广播
+    // 会刷新时间轴，与 sheet 路由的关闭动画互相干扰导致弹层关不掉
+    if (mounted) Navigator.of(context).pop();
+    try {
+      // 覆盖模式：删除选中日期内与新时间段重叠的已有记录
+      if (overwrite) {
+        final existing = await service.getActivitiesForDate(selectedDate);
+        for (final record in existing) {
+          final overlaps = writes.any(
+            (w) =>
+                record.startTime.isBefore(w.end) &&
+                record.endTime.isAfter(w.start),
+          );
+          if (overlaps) {
+            await service.deleteActivity(record);
+          }
+        }
+      }
+      for (final w in writes) {
+        await service.saveActivity(
+          ActivityRecord(startTime: w.start, endTime: w.end, title: w.title),
+        );
+      }
+      Toast.show('已记录 ${writes.length} 个时间点到 ${DateFormat('M月d日').format(selectedDate)}');
+    } catch (e) {
+      debugPrint('应用记录模版失败: $e');
+      Toast.show('部分记录写入失败，请重试');
+    }
   }
 
   // ──────────────────────────── 编辑：保存/删除 ────────────────────────────
