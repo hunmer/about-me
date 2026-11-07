@@ -619,8 +619,10 @@ class Live2DPlugin extends BasePlugin {
   /// 正式会话：携带存档绑定的 agentId 保存到频道数据，不在会话列表默认
   /// 展示（仅通过 Agent 过滤显示）；旧版临时会话（7 天过期）在此迁移为
   /// 正式会话，聊天记录保留
-  Future<Conversation> ensureConversation() async {
-    final archive = selected;
+  ///
+  /// [archive] 指定存档（如悬浮宠物展示的存档），缺省用当前选中存档
+  Future<Conversation> ensureConversation({Live2DArchive? archive}) async {
+    archive ??= selected;
     final agentId = archive?.agentId;
     final controller = AgentChatPlugin.instance.conversationController;
     if (archive == null || agentId == null || controller == null) {

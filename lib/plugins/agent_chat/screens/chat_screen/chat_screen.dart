@@ -77,6 +77,7 @@ class ChatScreen extends StatefulWidget {
   final bool autoSend; // 是否自动发送 initialMessage
   final List<String>? initialPrompts; // 初始开场白列表（优先于猜你想问，如路由上下文快捷提问）
   final String? initialContext; // 初始路由上下文（随首条用户消息注入，携带 channelId 等参数）
+  final bool autoScrollToBottom; // 初始化完成后自动定位到最新消息（抽屉等场景使用）
 
   const ChatScreen({
     super.key,
@@ -89,6 +90,7 @@ class ChatScreen extends StatefulWidget {
     this.autoSend = false,
     this.initialPrompts,
     this.initialContext,
+    this.autoScrollToBottom = false,
   });
 
   @override
@@ -265,6 +267,16 @@ class _ChatScreenState extends State<ChatScreen> {
     debugPrint(
       '✅ ChatController初始化完成, currentAgent=${_controller.currentAgent?.name}',
     );
+
+    // 朗读基线：进入会话时已存在的最新一条 AI 消息视为已读。
+    // 否则自动朗读（agent.ttsEnabled）会在每次打开会话时把历史最后
+    // 一条回复重播一遍；仅生成中的消息留给完成后正常朗读
+    for (final message in _controller.messages.reversed) {
+      if (!message.isUser && !message.isGenerating) {
+        _lastReadMessageId = message.id;
+        break;
+      }
+    }
     if (mounted) {
       RouteHistoryManager.updateCurrentContext(
         pageId: '/agent_chat/conversation',
@@ -308,6 +320,11 @@ class _ChatScreenState extends State<ChatScreen> {
           // 触发一次更新以显示初始化后的数据
           setState(() {});
 
+          // 抽屉等场景：打开即定位到最新消息
+          if (widget.autoScrollToBottom) {
+            _scheduleScrollToBottom();
+          }
+
           // 如果需要自动发送消息
           if (widget.autoSend &&
               widget.initialMessage != null &&
@@ -325,6 +342,22 @@ class _ChatScreenState extends State<ChatScreen> {
         }
       });
     }
+  }
+
+  /// 跳到最新消息（消息列表为 reverse 布局，offset 0 即视觉底部）。
+  /// 列表挂载/首帧布局完成前 hasClients 为 false，用 postFrame 重试，
+  /// 避免气泡高度未稳定时跳转失效。
+  void _scheduleScrollToBottom({int retries = 6}) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (!_scrollController.hasClients) {
+        if (retries > 0) {
+          _scheduleScrollToBottom(retries: retries - 1);
+        }
+        return;
+      }
+      _scrollController.jumpTo(0);
+    });
   }
 
   /// 从 controller 同步 agent 状态到本地

@@ -6,43 +6,52 @@ import 'package:skribble/skribble.dart' show WiredDraw, WiredDrawTransition;
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/plugins/agent_chat/agent_chat_plugin.dart';
 import 'package:aboutme/plugins/agent_chat/models/chat_message.dart';
+import 'package:aboutme/plugins/agent_chat/screens/chat_screen/chat_screen.dart';
 import 'package:aboutme/plugins/agent_chat/screens/chat_screen/components/markdown_content.dart';
-import 'package:aboutme/plugins/chat/chat_plugin.dart';
-import 'package:aboutme/plugins/chat/models/channel.dart';
-import 'package:aboutme/plugins/chat/screens/chat_screen/chat_screen.dart';
 import 'package:aboutme/plugins/chat/widgets/audio_player_widget.dart';
+import 'package:aboutme/plugins/live2d/live2d_plugin.dart';
 import 'package:aboutme/widgets/message_input/message_input.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
-/// 以底部抽屉完整展示频道聊天（chat 插件整屏聊天页塞入 90% 屏高抽屉）。
+/// 以底部抽屉完整展示当前宠物的聊天会话记录。
 ///
-/// 展示方式参照 action_executor 的抽屉模式（ContextQueryDrawer 把
-/// agent_chat ChatScreen 塞抽屉）：这里塞的是 chat 插件的频道
-/// [ChatScreen]，消息列表/输入/发送全部可用，非只读快照。
-/// 频道默认取当前频道，无当前频道时取第一个；无频道则提示。
-Future<void> showChannelChatSheet(
-  BuildContext context, {
-  Channel? channel,
-}) async {
-  final service = ChatPlugin.instance.channelService;
-  final target =
-      channel ??
-      service.currentChannel ??
-      (service.channels.isNotEmpty ? service.channels.first : null);
-  if (target == null) {
-    Toast.error('没有可打开的频道');
-    return;
+/// 会话按存档绑定（元数据 live2dArchiveId，见
+/// [Live2DPlugin.ensureConversation]）：悬浮宠物优先用它展示的存档，
+/// 未指定时回退当前选中存档；历史消息与继续聊天均由 agent_chat 的
+/// [ChatScreen] 承载（与 ContextQueryDrawer 把 ChatScreen 塞 90% 屏高
+/// 抽屉的展示方式一致），非只读快照。
+Future<void> showPetChatSheet(BuildContext context) async {
+  try {
+    final agentChatPlugin = AgentChatPlugin.instance;
+    final controller = agentChatPlugin.conversationController;
+    if (controller == null) {
+      Toast.error('Agent Chat 尚未初始化');
+      return;
+    }
+    final conversation = await Live2DPlugin.instance.ensureConversation(
+      archive: Live2DPlugin.instance.globalPetArchive,
+    );
+    if (!context.mounted) return;
+    await SmoothBottomSheet.show<void>(
+      context: context,
+      builder: (context) => SizedBox(
+        height: MediaQuery.of(context).size.height * 0.9,
+        child: ChatScreen(
+          conversation: conversation,
+          storage: controller.storage,
+          conversationService: controller.conversationService,
+          getSettings: () => agentChatPlugin.settings,
+          // 打开即定位到最新消息（reverse 列表 offset 0 = 视觉底部）
+          autoScrollToBottom: true,
+        ),
+      ),
+    );
+  } catch (error) {
+    // 典型场景：存档未绑定 Agent（StateError: 请先在 Live2D 存档中选择 Agent）
+    Toast.error('打开宠物会话失败: $error');
   }
-  // 与正常打开频道同语义（ChannelTile onBeforeOpen）：先进当前频道再进聊天页
-  service.setCurrentChannel(target);
-  await SmoothBottomSheet.show<void>(
-    context: context,
-    builder: (context) => SizedBox(
-      height: MediaQuery.of(context).size.height * 0.9,
-      child: ChatScreen(channel: target),
-    ),
-  );
 }
 
 /// 通用聊天记录气泡数据（各插件的消息模型映射成此结构后展示）

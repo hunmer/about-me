@@ -94,12 +94,6 @@ class _GlobalPetViewState extends State<GlobalPetView> {
   JellyLive2DCropRegion _cropRegion = const JellyLive2DCropRegion.full();
   VideoPetPackage? _videoPackage;
 
-  void _debugLog(String message) {
-    if (widget.debugLogging) {
-      debugPrint('[Live2D][GlobalPetView] $message');
-    }
-  }
-
   /// 与小屋舞台共用同一份用户裁剪偏好（jelly_live2d.crop.*），
   /// 小屋里裁剪过的模型在全局悬浮下呈现一致取景
   static const String _cropPrefKeyPrefix = 'jelly_live2d.crop.';
@@ -135,11 +129,6 @@ class _GlobalPetViewState extends State<GlobalPetView> {
   Future<void> _load() async {
     final model = widget.model;
     if (model.isVideo) {
-      _debugLog(
-        'video load start modelDir=${model.modelDir} modelFile=${model.modelFile} '
-        'source=${model.videoManifest == null ? "default" : "model"} '
-        'interactive=${widget.videoInteractive} active=${widget.active}',
-      );
       try {
         final manifest =
             model.videoManifest ??
@@ -150,12 +139,6 @@ class _GlobalPetViewState extends State<GlobalPetView> {
           resolvedSources: model.videoResolvedSources,
         );
         if (!mounted) return;
-        _debugLog(
-          'video package ready model=${model.label} manifest=${package.manifest.id} '
-          'regions=${package.manifest.regions.length} '
-          'manifestClickIds=${package.manifest.click.animationIds} '
-          'baseUri=${package.baseUri}',
-        );
         setState(() => _videoPackage = package);
         // 通知外层（区域命中过滤用）：含 loadDefault 兜底解析出的清单
         widget.onManifestResolved?.call(package.manifest);
@@ -177,8 +160,8 @@ class _GlobalPetViewState extends State<GlobalPetView> {
       // （其他平台未实现该命令时静默降级，不影响渲染与动画）
       try {
         await _controller.setInteractive(false);
-      } on Live2DException catch (error) {
-        debugPrint('[Live2D][GlobalPet] setInteractive 平台未支持: $error');
+      } on Live2DException {
+        // 平台未支持：静默降级
       }
       if (_controller.value.isLoaded) {
         await _controller.unloadModel();
