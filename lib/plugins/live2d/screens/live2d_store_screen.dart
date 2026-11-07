@@ -9,6 +9,7 @@ import 'package:aboutme/plugins/live2d/video/video_pet_manifest.dart';
 import 'package:aboutme/screens/jelly_home/live2d_online_model_page.dart';
 import 'package:aboutme/screens/jelly_home/live2d_online_models.dart';
 import 'package:aboutme/widgets/adaptive_image.dart';
+import 'pet_store_screen.dart';
 import 'video_pet_editor_screen.dart';
 
 /// Live2D 商店页：分「Live2D 模型 / 宠物」两个分区。
@@ -65,6 +66,14 @@ class _Live2DStoreScreenState extends State<Live2DStoreScreen> {
     final plugin = _plugin;
     if (plugin == null) return;
     await plugin.upsert(archive);
+  }
+
+  /// 空态直达宠物商店；返回后刷新本地宠物列表
+  Future<void> _openPetStore() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const PetStoreScreen()),
+    );
+    if (mounted) setState(() {});
   }
 
   /// 进入动画编辑器；先经 prepareForPlayback 解析出可预览的包
@@ -189,6 +198,9 @@ class _Live2DStoreScreenState extends State<Live2DStoreScreen> {
           emoji: '🐾',
           title: 'live2d_storeLocalPetsEmpty'.tr,
           message: 'live2d_storeLocalPetsEmptyHint'.tr,
+          // 空态直达宠物商店，缩短「去安装」路径
+          actionLabel: 'live2d_storeGoPetStore'.tr,
+          onAction: _openPetStore,
         ),
       );
     }

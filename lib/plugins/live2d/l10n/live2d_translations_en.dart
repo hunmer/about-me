@@ -70,6 +70,7 @@ const Map<String, String> live2dTranslationsEn = {
   'live2d_storeLocalPetsEmpty': 'No pets installed yet',
   'live2d_storeLocalPetsEmptyHint':
       'Open the pet store from the top-right store menu to install one',
+  'live2d_storeGoPetStore': 'Open pet store',
   'live2d_filterAllModels': 'All models',
   'live2d_noArchives': 'No Live2D profiles yet',
   'live2d_noArchivesHint': 'Create one to get started',

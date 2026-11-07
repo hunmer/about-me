@@ -63,6 +63,7 @@ const Map<String, String> live2dTranslationsZh = {
   'live2d_petStoreTitle': '宠物商店',
   'live2d_storeLocalPetsEmpty': '还没有安装宠物',
   'live2d_storeLocalPetsEmptyHint': '从右上角商店菜单进入宠物商店安装',
+  'live2d_storeGoPetStore': '去宠物商店',
   'live2d_filterAllModels': '全部模型',
   'live2d_noArchives': '还没有 Live2D 存档',
   'live2d_noArchivesHint': '创建一个存档开始使用吧',

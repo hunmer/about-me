@@ -169,6 +169,8 @@ class _Live2DMainScreenState extends State<Live2DMainScreen> {
                   DSMenuItem(
                     label: 'live2d_storeMenuLive2D'.tr,
                     icon: DsIconKind.store,
+                    // 已在商店 tab 时给出选中标记，避免「无变化」观感
+                    trailing: _currentTab == 1 ? '✓' : null,
                     onTap: () => setState(() => _currentTab = 1),
                   ),
                   DSMenuItem(
@@ -177,16 +179,15 @@ class _Live2DMainScreenState extends State<Live2DMainScreen> {
                     onTap: _openPetStore,
                   ),
                 ],
-                // 触发器为静态图标容器（点击由 DSMenu 的手势接管，
-                // 视觉与 DSIconButton 的 36px 圆形墨盒一致）
-                child: Container(
+                // 触发器用 JellyBox：与相邻 + 按钮同款墨线描边果冻质感
+                // （点击手势由 DSMenu 外层接管，无需自身 Pressable）
+                child: JellyBox(
                   width: 36,
                   height: 36,
+                  radius: theme.radii.circle,
+                  color: theme.surfaceAlt,
+                  raised: true,
                   alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: theme.surfaceAlt,
-                  ),
                   child: DsIcon(
                     DsIconKind.store,
                     size: 20,
