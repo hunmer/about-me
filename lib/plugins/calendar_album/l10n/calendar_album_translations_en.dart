@@ -114,8 +114,6 @@ class CalendarAlbumTranslationsEn {
     'calendar_album_no_matching_diaries': 'No matching diaries found',
     'calendar_album_try_other_keywords': 'Try other keywords',
     'calendar_album_tag': 'Tag',
-    'calendar_album_switch_photo_view': 'Photo view',
-    'calendar_album_switch_calendar_view': 'Calendar view',
     'calendar_album_diary_for_date': ' diary',
     'calendar_album_entry_cannot_be_empty': 'Diary content cannot be empty',
 

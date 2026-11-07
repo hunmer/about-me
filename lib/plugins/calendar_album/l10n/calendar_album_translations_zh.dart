@@ -108,8 +108,6 @@ class CalendarAlbumTranslationsZh {
     'calendar_album_no_matching_diaries': '没有找到匹配的日记',
     'calendar_album_try_other_keywords': '试试其他关键词',
     'calendar_album_tag': '标签',
-    'calendar_album_switch_photo_view': '照片视图',
-    'calendar_album_switch_calendar_view': '日历视图',
     'calendar_album_diary_for_date': '的日记',
     'calendar_album_entry_cannot_be_empty': '日记内容不能为空',
 
