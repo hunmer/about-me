@@ -65,24 +65,20 @@ class _Live2DArchiveFormScreenState extends State<Live2DArchiveFormScreen> {
   String _videoText(String zh, String en) =>
       (Get.locale?.languageCode ?? 'zh') == 'zh' ? zh : en;
 
-  Future<void> _setDisplayMode(String mode) async {
+  void _setDisplayMode(String mode) {
     final current = archive;
     if (current == null || _loadingVideo) return;
-    if (mode == 'video' && current.videoManifest == null) {
-      await _loadVideoPackage(useDefault: true);
-      return;
-    }
+    // 切到精灵图模式不再自动加载默认资源包：资源来源改为
+    // 下方 select 选择本地已安装宠物，或手动导入 JSON / ZIP
     setState(() => current.displayMode = mode);
   }
 
-  Future<void> _loadVideoPackage({bool useDefault = false}) async {
+  Future<void> _loadVideoPackage() async {
     if (_loadingVideo) return;
     setState(() => _loadingVideo = true);
     try {
       final service = VideoPetImportService();
-      final package = useDefault
-          ? await service.loadDefault()
-          : await service.importPackage();
+      final package = await service.importPackage();
       if (!mounted || package == null) return;
       setState(() {
         archive!.displayMode = 'video';
@@ -103,6 +99,41 @@ class _Live2DArchiveFormScreenState extends State<Live2DArchiveFormScreen> {
     } finally {
       if (mounted) setState(() => _loadingVideo = false);
     }
+  }
+
+  /// 本地已安装宠物候选（其他带精灵图 manifest 的存档）
+  List<Live2DArchive> get _localPetArchives {
+    final current = archive;
+    return [
+      for (final a in plugin.archives)
+        if (a.videoManifest != null && a.id != current?.id) a,
+    ];
+  }
+
+  /// 当前草稿资源包对应的本地宠物存档 id（按 manifest.id 匹配）
+  String? get _selectedLocalPetId {
+    final manifestId = archive?.videoManifest?.id;
+    if (manifestId == null) return null;
+    for (final a in _localPetArchives) {
+      if (a.videoManifest?.id == manifestId) return a.id;
+    }
+    return null;
+  }
+
+  /// 选中本地宠物：拷贝其资源包（manifest 与目录映射）到当前草稿
+  void _applyLocalPet(String archiveId) {
+    final current = archive;
+    if (current == null) return;
+    final source = _localPetArchives
+        .where((a) => a.id == archiveId)
+        .firstOrNull;
+    final manifest = source?.videoManifest;
+    if (source == null || manifest == null) return;
+    setState(() {
+      current.videoManifest = manifest;
+      current.videoBaseUri = source.videoBaseUri;
+      current.videoResolvedSources = source.videoResolvedSources;
+    });
   }
 
   Future<void> _editVideo() async {
@@ -459,16 +490,25 @@ class _Live2DArchiveFormScreenState extends State<Live2DArchiveFormScreen> {
               ),
             ),
           ),
+          // 本地已安装宠物选择：选中即拷贝其资源包到当前草稿
+          if (_localPetArchives.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            DSSelect<String>(
+              items: [
+                for (final a in _localPetArchives)
+                  DSSelectItem(label: a.name, value: a.id),
+              ],
+              value: _selectedLocalPetId,
+              hint: _videoText('选择已安装的宠物', 'Choose an installed pet'),
+              enabled: !_loadingVideo,
+              onChanged: _applyLocalPet,
+            ),
+          ],
+          const SizedBox(height: 8),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: [
-              OutlinedButton(
-                onPressed: _loadingVideo
-                    ? null
-                    : () => _loadVideoPackage(useDefault: true),
-                child: Text(_videoText('默认资源包', 'Default package')),
-              ),
               OutlinedButton(
                 onPressed: _loadingVideo ? null : () => _loadVideoPackage(),
                 child: Text(_videoText('导入 JSON / ZIP', 'Import JSON / ZIP')),

@@ -24,6 +24,8 @@ import 'widgets/jelly_live2d.dart';
 import 'widgets/jelly_live2d_panel.dart';
 import 'widgets/jelly_status_panel.dart';
 import 'package:aboutme/plugins/live2d/live2d_plugin.dart';
+import 'package:aboutme/plugins/live2d/models/live2d_archive.dart';
+import 'package:aboutme/plugins/live2d/screens/live2d_archive_form_screen.dart';
 import 'package:aboutme/plugins/live2d/services/global_floating_pet_service.dart';
 import 'package:aboutme/plugins/agent_chat/controllers/chat_controller.dart';
 import 'package:aboutme/plugins/agent_chat/services/message_service.dart';
@@ -118,6 +120,36 @@ class _JellyHomeScreenState extends State<JellyHomeScreen> {
     }
   }
 
+  /// 未配置 Agent 时弹出的存档编辑表单（封面/名称/模型/Agent）：
+  /// 已有选中存档则编辑它；没有存档时以默认模型草稿新建（保存时才入库）。
+  /// 保存经 upsert 会广播 archiveSelectedEvent，聊天输入框自动重建
+  Future<void> _showArchiveFormForAgent() async {
+    final archive = Live2DPlugin.instance.selected;
+    final draft =
+        archive ??
+        Live2DArchive.create(
+          modelLabel: 'Mao',
+          modelDir: 'assets/models/mao/',
+          modelFile: 'mao_pro.model3.json',
+        );
+    VoidCallback? saveArchive;
+    VoidCallback? deleteArchive;
+    await SmoothBottomSheet.showForm<void>(
+      context: context,
+      title: 'live2d_editArchiveTitle'.tr,
+      child: Live2DArchiveFormScreen(
+        archiveId: draft.id,
+        draftArchive: archive == null ? draft : null,
+        embedInSheet: true,
+        onReady: (save) => saveArchive = save,
+        onDeleteReady: (delete) => deleteArchive = delete,
+      ),
+      onSave: () => saveArchive?.call(),
+      // 草稿尚未入库，关闭即丢弃，无需删除按钮
+      onDelete: archive == null ? null : () => deleteArchive?.call(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // 页签首次访问时构建，之后保留滚动位置、编辑进度等状态；
@@ -133,6 +165,18 @@ class _JellyHomeScreenState extends State<JellyHomeScreen> {
       },
       chatActive: _chatVisible,
       onToggleChat: () {
+        // 聊天依赖存档绑定的 Agent：未配置时 toast 提示并弹出存档表单，
+        // 不展开聊天表单（展开也只有空白输入框）
+        final archive = Live2DPlugin.instance.selected;
+        if (archive == null || archive.agentId == null) {
+          showDSToast(
+            context,
+            message: 'live2d_chatNeedAgent'.tr,
+            type: DSToastType.warning,
+          );
+          unawaited(_showArchiveFormForAgent());
+          return;
+        }
         setState(() => _chatVisible = !_chatVisible);
         // 打开聊天表单时收起资源面板，两者都悬浮在页面底部
         if (_chatVisible) _live2dPanel.value = null;

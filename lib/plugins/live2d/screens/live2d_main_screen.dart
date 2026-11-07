@@ -16,6 +16,7 @@ import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'package:aboutme/screens/jelly_home/live2d_online_models.dart';
 import 'live2d_archive_form_screen.dart';
 import 'live2d_store_screen.dart';
+import 'pet_store_screen.dart';
 import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 /// Live2D 主界面：存档卡片列表，点击卡片进入存档设置
@@ -161,6 +162,45 @@ class _Live2DMainScreenState extends State<Live2DMainScreen> {
           child: Builder(
             builder: (context) {
               final theme = DSThemeBridge.resolve(context);
+              return DSMenu(
+                align: DSMenuAlign.end,
+                width: 190,
+                items: [
+                  DSMenuItem(
+                    label: 'live2d_storeMenuLive2D'.tr,
+                    icon: DsIconKind.store,
+                    onTap: () => setState(() => _currentTab = 1),
+                  ),
+                  DSMenuItem(
+                    label: 'live2d_storeMenuPets'.tr,
+                    icon: DsIconKind.mood,
+                    onTap: _openPetStore,
+                  ),
+                ],
+                // 触发器为静态图标容器（点击由 DSMenu 的手势接管，
+                // 视觉与 DSIconButton 的 36px 圆形墨盒一致）
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: theme.surfaceAlt,
+                  ),
+                  child: DsIcon(
+                    DsIconKind.store,
+                    size: 20,
+                    color: theme.textSub,
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        DSThemeBridge(
+          child: Builder(
+            builder: (context) {
+              final theme = DSThemeBridge.resolve(context);
               return DSIconButton(
                 icon: DsIconKind.plus,
                 size: 36,
@@ -237,6 +277,14 @@ class _Live2DMainScreenState extends State<Live2DMainScreen> {
       setState(() {});
       _loadAgents();
     }
+  }
+
+  /// 打开宠物商店（远端目录安装）；返回后刷新本地宠物列表
+  Future<void> _openPetStore() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const PetStoreScreen()),
+    );
+    if (mounted) setState(() {});
   }
 
   Widget _buildArchivesTab() {

@@ -107,6 +107,13 @@ class _ImagePickerFieldState extends State<ImagePickerField> {
     }
   }
 
+  /// 占位状态（未选择图片）时预览区域的最小尺寸
+  static const double _minPlaceholderSize = 80;
+
+  /// 占位尺寸兜底：未指定或小于最小值时撑到最小值
+  double _floorPlaceholderSize(double? size) =>
+      size == null || size < _minPlaceholderSize ? _minPlaceholderSize : size;
+
   /// 获取图片路径（从当前选择的图片中提取）
   ///
   /// svg 选择结果（ImagePickerDialog 表情包 SVG 贴纸）无 url 字段，
@@ -142,26 +149,59 @@ class _ImagePickerFieldState extends State<ImagePickerField> {
           flex: widget.flex,
           child: Builder(
             builder: (ctx) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 图片预览区域
-                  GestureDetector(
-                    onTap: widget.enabled ? () => _showPicker(ctx) : null,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(widget.borderRadius),
-                      child: AdaptiveImage(
-                        imagePath: imagePath,
-                        width: widget.previewWidth,
-                        height: widget.previewHeight,
-                        borderRadius: widget.borderRadius,
-                      ),
-                    ),
+              // 未选择图片时为占位状态：预览尺寸兜底到最小值，避免占位塌陷
+              final bool hasImage = imagePath != null;
+              final double? previewWidth =
+                  hasImage
+                      ? widget.previewWidth
+                      : _floorPlaceholderSize(widget.previewWidth);
+              final double? previewHeight =
+                  hasImage
+                      ? widget.previewHeight
+                      : _floorPlaceholderSize(widget.previewHeight);
+
+              // 图片预览区域
+              Widget preview = GestureDetector(
+                onTap: widget.enabled ? () => _showPicker(ctx) : null,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(widget.borderRadius),
+                  child: AdaptiveImage(
+                    imagePath: imagePath,
+                    width: previewWidth,
+                    height: previewHeight,
+                    borderRadius: widget.borderRadius,
+                    defaultImage:
+                        widget.defaultImage ??
+                        (widget.defaultImagePath != null
+                            ? Image.asset(
+                                widget.defaultImagePath!,
+                                width: previewWidth,
+                                height: previewHeight,
+                                fit: BoxFit.cover,
+                              )
+                            : null),
                   ),
-                  // 选择按钮
-                  if (widget.showSelectButton) ...[
-                    const SizedBox(height: 8),
-                    Center(
+                ),
+              );
+              if (!hasImage) {
+                // 占位状态至少撑到最小尺寸（defaultImage 自带尺寸时不生效）
+                preview = ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    minWidth: _minPlaceholderSize,
+                    minHeight: _minPlaceholderSize,
+                  ),
+                  child: preview,
+                );
+              }
+
+              return Stack(
+                children: [
+                  preview,
+                  // 上传按钮：叠加在图片右上角
+                  if (widget.showSelectButton)
+                    Positioned(
+                      top: 8,
+                      right: 8,
                       child: Pressable(
                         onPressed:
                             widget.enabled ? () => _showPicker(ctx) : null,
@@ -170,18 +210,18 @@ class _ImagePickerFieldState extends State<ImagePickerField> {
                           radius: theme.radii.pill,
                           color: theme.primary.mixWhite(0.9),
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 10,
+                            horizontal: 12,
+                            vertical: 6,
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               DsIcon(
                                 DsIconKind.image,
-                                size: 17,
+                                size: 14,
                                 color: theme.primary,
                               ),
-                              const SizedBox(width: 8),
+                              const SizedBox(width: 6),
                               Text(
                                 _getDisplayText(),
                                 style: DsTypography.caption.copyWith(
@@ -193,7 +233,6 @@ class _ImagePickerFieldState extends State<ImagePickerField> {
                         ),
                       ),
                     ),
-                  ],
                 ],
               );
             },

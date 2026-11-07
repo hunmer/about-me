@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/live2d/models/live2d_archive.dart';
-import 'package:aboutme/plugins/live2d/screens/live2d_store_screen.dart';
+import 'package:aboutme/plugins/live2d/screens/pet_store_screen.dart';
 import 'package:aboutme/plugins/live2d/screens/video_pet_editor_screen.dart';
 import 'package:aboutme/plugins/live2d/video/pet_store_catalog.dart';
 import 'package:aboutme/plugins/live2d/video/pet_store_service.dart';
@@ -148,10 +148,10 @@ const _sheet = VideoPetSpritesheet(
 );
 
 void main() {
-  group('Live2DStoreScreen 宠物商店', () {
+  group('PetStoreScreen 宠物商店', () {
     testWidgets('加载目录并展示宠物列表（名称/id/描述/封面）', (tester) async {
       final fake = _FakePetStoreService(pets: _testPets);
-      await tester.pumpWidget(_wrap(Live2DStoreScreen(service: fake)));
+      await tester.pumpWidget(_wrap(PetStoreScreen(service: fake)));
       await tester.pumpAndSettle();
 
       expect(fake.fetchPetsCalls, 1);
@@ -177,7 +177,7 @@ void main() {
       final installed = <String, Live2DArchive>{};
       await tester.pumpWidget(
         _wrap(
-          Live2DStoreScreen(
+          PetStoreScreen(
             service: fake,
             findInstalledArchive: (petId) => installed[petId],
             persistArchive: (archive) async {
@@ -241,7 +241,7 @@ void main() {
       };
       await tester.pumpWidget(
         _wrap(
-          Live2DStoreScreen(
+          PetStoreScreen(
             service: fake,
             findInstalledArchive: (petId) => installed[petId],
             persistArchive: (archive) async => installed[archive.id] = archive,
@@ -268,7 +268,7 @@ void main() {
 
     testWidgets('目录加载失败显示错误并可重试', (tester) async {
       final fake = _FakePetStoreService(pets: _testPets, failPetsCount: 1);
-      await tester.pumpWidget(_wrap(Live2DStoreScreen(service: fake)));
+      await tester.pumpWidget(_wrap(PetStoreScreen(service: fake)));
       await tester.pumpAndSettle();
 
       expect(
@@ -302,7 +302,7 @@ void main() {
 
       await tester.pumpWidget(
         _wrap(
-          Live2DStoreScreen(
+          PetStoreScreen(
             service: fake,
             findInstalledArchive: findInstalled,
             persistArchive: (archive) async => persisted.add(archive),

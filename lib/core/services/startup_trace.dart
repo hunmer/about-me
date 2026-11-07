@@ -4,7 +4,8 @@ import 'package:flutter/foundation.dart';
 class StartupTrace {
   static const enabled = bool.fromEnvironment(
     'STARTUP_TRACE',
-    defaultValue: !kReleaseMode,
+    defaultValue: false,
+    // defaultValue: !kReleaseMode,
   );
   static final _clock = Stopwatch();
 

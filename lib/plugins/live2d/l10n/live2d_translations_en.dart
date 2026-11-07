@@ -63,12 +63,21 @@ const Map<String, String> live2dTranslationsEn = {
   'live2d_storeEditAnimations': 'Edit animations',
   'live2d_storeInstallFailed': 'Install failed: @error',
   'live2d_storeInstalledToast': 'Installed “@name”',
+  // Top-right store menu and pet store
+  'live2d_storeMenuLive2D': 'Live2D Store',
+  'live2d_storeMenuPets': 'Pet Store',
+  'live2d_petStoreTitle': 'Pet Store',
+  'live2d_storeLocalPetsEmpty': 'No pets installed yet',
+  'live2d_storeLocalPetsEmptyHint':
+      'Open the pet store from the top-right store menu to install one',
   'live2d_filterAllModels': 'All models',
   'live2d_noArchives': 'No Live2D profiles yet',
   'live2d_noArchivesHint': 'Create one to get started',
   'live2d_noMatchArchives': 'No matching profiles',
   // Archive form
   'live2d_editArchiveTitle': 'Edit Profile',
+  'live2d_chatNeedAgent':
+      'No Agent bound to this profile yet — set one in the form first',
   'live2d_coverLabel': 'Cover',
   'live2d_chooseCoverHint': 'Choose a cover image',
   'live2d_saveButton': 'Save',
