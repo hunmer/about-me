@@ -216,11 +216,6 @@ class _Live2DSettingsScreenState extends State<Live2DSettingsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 当前存档（只读提示；选择已移到 Live2D 主界面）
-          if (current != null) ...[
-            _buildArchiveSummary(theme, current),
-            SizedBox(height: theme.spacing.xl),
-          ],
           _buildVoiceSection(theme),
           _buildDisplaySection(theme, current),
           _buildGlobalPetSection(theme),

@@ -2,8 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/gestures.dart'
-    show PanGestureRecognizer, PointerDeviceKind;
+import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:aboutme/core/app_initializer.dart';
 import 'package:aboutme/core/event/ai_auto_reply_event_args.dart';
 import 'package:aboutme/core/event/event_manager.dart';
@@ -199,6 +198,8 @@ class _GlobalFloatingPetStageState extends State<_GlobalFloatingPetStage> {
   /// 旧坐标在同帧多事件时丢 delta / 跳变 / 吸边。
   Offset? _dragStartGlobal;
   Offset? _dragOrigin;
+  int? _dragPointer;
+  bool _isDraggingPet = false;
 
   /// 视频桌宠清单解析结果（loadDefault 兜底路径用）+ 所属模型。
   /// 存档切换时按模型实例比对，避免旧清单串档；模型自带清单
@@ -482,97 +483,95 @@ class _GlobalFloatingPetStageState extends State<_GlobalFloatingPetStage> {
               child: VideoPetRegionHitBox(
                 manifest: videoManifest,
                 child: Listener(
-                  onPointerDown: (event) => GlobalFloatingPetService._log(
-                    'pointer down local=${event.localPosition} '
-                    'global=${event.position} kind=${event.kind}',
-                  ),
-                  child: RawGestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    // 鼠标点击的微抖动（1-2px）若走默认 pan 判定（鼠标
-                    // slop 仅 1px）会抢先竞技场、吃掉播放器的 tap，导致
-                    // 区域点击动画失效；改用自定识别器把鼠标接受阈值
-                    // 提高到 8px，让 tap 存活，拖拽行为不变。
-                    gestures: {
-                      _GlobalPetPanGestureRecognizer:
-                          GestureRecognizerFactoryWithHandlers<
-                            _GlobalPetPanGestureRecognizer
-                          >(
-                            () => _GlobalPetPanGestureRecognizer(
-                              debugOwner: this,
-                            ),
-                            (recognizer) {
-                              recognizer.onStart = (details) {
-                                _dragStartGlobal = details.globalPosition;
-                                _dragOrigin = Offset(petLeft, petTop);
-                                GlobalFloatingPetService._log(
-                                  'drag start origin=$_dragOrigin '
-                                  'global=$_dragStartGlobal',
-                                );
-                              };
-                              recognizer.onUpdate = (details) {
-                                final start = _dragStartGlobal;
-                                final origin = _dragOrigin;
-                                if (start == null || origin == null) return;
-                                // 稳定起点 + 全局坐标换算：同帧多事件也不丢
-                                // delta；夹在并集贴边范围内（非交互画布可
-                                // 局部出屏）
-                                final next =
-                                    origin + (details.globalPosition - start);
-                                setState(() {
-                                  _petPosition = Offset(
-                                    next.dx.clamp(minLeft, maxLeft).toDouble(),
-                                    next.dy.clamp(minTop, maxTop).toDouble(),
-                                  );
-                                });
-                              };
-                              recognizer.onEnd = (details) {
-                                GlobalFloatingPetService._log(
-                                  'drag end pos=$_petPosition '
-                                  'v=${details.velocity.pixelsPerSecond}',
-                                );
-                                _dragStartGlobal = null;
-                                _dragOrigin = null;
-                              };
-                              recognizer.onCancel = () {
-                                GlobalFloatingPetService._log(
-                                  'drag cancel pos=$_petPosition',
-                                );
-                                _dragStartGlobal = null;
-                                _dragOrigin = null;
-                              };
-                            },
-                          ),
+                  onPointerDown: (event) {
+                    GlobalFloatingPetService._log(
+                      'pointer down local=${event.localPosition} '
+                      'global=${event.position} kind=${event.kind}',
+                    );
+                    if (event.kind == PointerDeviceKind.mouse &&
+                        (event.buttons & 1) == 0) {
+                      return;
+                    }
+                    _dragPointer = event.pointer;
+                    _dragStartGlobal = event.position;
+                    _dragOrigin = Offset(petLeft, petTop);
+                    _isDraggingPet = false;
+                  },
+                  onPointerMove: (event) {
+                    if (event.pointer != _dragPointer) return;
+                    final start = _dragStartGlobal;
+                    final origin = _dragOrigin;
+                    if (start == null || origin == null) return;
+                    final delta = event.position - start;
+                    final threshold = event.kind == PointerDeviceKind.mouse
+                        ? 8.0
+                        : 18.0;
+                    if (!_isDraggingPet && delta.distance <= threshold) return;
+                    if (!_isDraggingPet) {
+                      GlobalFloatingPetService._log(
+                        'drag start global=$start delta=$delta',
+                      );
+                    }
+                    _isDraggingPet = true;
+                    final next = origin + delta;
+                    setState(() {
+                      _petPosition = Offset(
+                        next.dx.clamp(minLeft, maxLeft).toDouble(),
+                        next.dy.clamp(minTop, maxTop).toDouble(),
+                      );
+                    });
+                  },
+                  onPointerUp: (event) {
+                    if (event.pointer != _dragPointer) return;
+                    if (_isDraggingPet) {
+                      GlobalFloatingPetService._log(
+                        'drag end pos=$_petPosition',
+                      );
+                    }
+                    _dragPointer = null;
+                    _dragStartGlobal = null;
+                    _dragOrigin = null;
+                    _isDraggingPet = false;
+                  },
+                  onPointerCancel: (event) {
+                    if (event.pointer != _dragPointer) return;
+                    if (_isDraggingPet) {
+                      GlobalFloatingPetService._log(
+                        'drag cancel pos=$_petPosition',
+                      );
+                    }
+                    _dragPointer = null;
+                    _dragStartGlobal = null;
+                    _dragOrigin = null;
+                    _isDraggingPet = false;
+                  },
+                  child: GlobalPetView(
+                    key: ValueKey(
+                      'global-pet-${archive.id}-${model.modelDir}-${model.modelFile}',
+                    ),
+                    model: model,
+                    size: petSize,
+                    opacity: plugin.globalPetOpacity,
+                    debugLogging: GlobalFloatingPetService.debugLogging,
+                    // 视频恢复内部点按（区域 click/manifest.click 兜底），
+                    // 内部不注册 pan，外层原始指针监听负责拖拽；
+                    // 点击回调独立保留，不参与拖拽手势竞技场
+                    videoInteractive: model.isVideo,
+                    // 异步解析的视频清单（loadDefault 兜底路径）回报，
+                    // 驱动区域命中过滤；切档由 ValueKey 重建重新解析
+                    onManifestResolved: (manifest) {
+                      if (!mounted) return;
+                      setState(() {
+                        _resolvedVideoManifest = manifest;
+                        _resolvedManifestFor = model;
+                      });
                     },
-                    // 独立全局宠物组件：无背景/无随机游走/无内部手势，
-                    // macOS 原生吃事件已在组件内通过 setInteractive 关闭
-                    child: GlobalPetView(
-                      key: ValueKey(
-                        'global-pet-${archive.id}-${model.modelDir}-${model.modelFile}',
-                      ),
-                      model: model,
-                      size: petSize,
-                      opacity: plugin.globalPetOpacity,
-                      debugLogging: GlobalFloatingPetService.debugLogging,
-                      // 视频恢复内部点按（区域 click/manifest.click 兜底），
-                      // 内部不注册 pan，拖拽仍由本层 GestureDetector 处理；
-                      // tap 与 pan 手势竞技场互斥，拖动不会误触点击
-                      videoInteractive: model.isVideo,
-                      // 异步解析的视频清单（loadDefault 兜底路径）回报，
-                      // 驱动区域命中过滤；切档由 ValueKey 重建重新解析
-                      onManifestResolved: (manifest) {
-                        if (!mounted) return;
-                        setState(() {
-                          _resolvedVideoManifest = manifest;
-                          _resolvedManifestFor = model;
-                        });
-                      },
-                      // 点击区域随机台词（视频）：用与拖拽命中过滤同一份
-                      // 清单随机取一条气泡；未命中/无台词静默，动画照常
-                      onTap: (regionId, regionName) => _showRegionTapBubble(
-                        videoManifest,
-                        regionId,
-                        regionName,
-                      ),
+                    // 点击区域随机台词（视频）：用与拖拽命中过滤同一份
+                    // 清单随机取一条气泡；未命中/无台词静默，动画照常
+                    onTap: (regionId, regionName) => _showRegionTapBubble(
+                      videoManifest,
+                      regionId,
+                      regionName,
                     ),
                   ),
                 ),
@@ -581,33 +580,6 @@ class _GlobalFloatingPetStageState extends State<_GlobalFloatingPetStage> {
           ],
         );
       },
-    );
-  }
-}
-
-/// 悬浮宠物拖拽识别器：仅对鼠标（precise 指针）提高接受阈值。
-///
-/// Flutter 默认鼠标 pan slop 仅 1px（kPrecisePointerHitSlop），点击时的
-/// 微抖动会让本层 pan 在手势竞技场抢先胜出、拒绝播放器的 tap，区域点击
-/// 动画因此失效；要求移动 ≥8px 才接受 pan，tap 得以存活，触摸维持
-/// 默认 18px 判定，拖拽手感不受影响。
-class _GlobalPetPanGestureRecognizer extends PanGestureRecognizer {
-  _GlobalPetPanGestureRecognizer({super.debugOwner});
-
-  /// 鼠标指针的 pan 接受阈值（像素）
-  static const double _preciseAcceptSlop = 8.0;
-
-  @override
-  bool hasSufficientGlobalDistanceToAccept(
-    PointerDeviceKind pointerDeviceKind,
-    double? deviceTouchSlop,
-  ) {
-    if (pointerDeviceKind == PointerDeviceKind.mouse) {
-      return globalDistanceMoved.abs() > _preciseAcceptSlop;
-    }
-    return super.hasSufficientGlobalDistanceToAccept(
-      pointerDeviceKind,
-      deviceTouchSlop,
     );
   }
 }

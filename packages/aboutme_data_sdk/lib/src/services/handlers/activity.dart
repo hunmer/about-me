@@ -596,5 +596,48 @@ PluginHandlers createActivityHandlers(PluginData data) {
         return PluginResult.failure('更新 TTS 设置失败: $e');
       }
     },
+
+    // 读取记录模版（文件缺失返回空数组）
+    'getRecordTemplates': (data, params) async {
+      try {
+        final raw = await data.read('activity', 'record_templates.json');
+        if (raw == null) return PluginResult.success(<Map<String, dynamic>>[]);
+        if (raw is! List) {
+          return const PluginResult.failure('记录模版损坏', 'CORRUPT_DATA');
+        }
+        final rows = raw
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList();
+        return PluginResult.success(rows);
+      } on DomainFailure catch (e) {
+        return PluginResult.failure(e.message, e.code);
+      } catch (e) {
+        return PluginResult.failure('读取记录模版失败: $e');
+      }
+    },
+
+    // 整体更新记录模版
+    'updateRecordTemplates': (data, params) async {
+      try {
+        final templates = params['templates'];
+        if (templates is! List ||
+            templates.any((e) => e is! Map || e['name'] is! String)) {
+          return const PluginResult.failure(
+            'templates 必须为记录模版对象数组',
+            'INVALID_PARAMS',
+          );
+        }
+        final rows = templates
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
+        await data.write('activity', 'record_templates.json', rows);
+        return PluginResult.success({'count': rows.length});
+      } on DomainFailure catch (e) {
+        return PluginResult.failure(e.message, e.code);
+      } catch (e) {
+        return PluginResult.failure('更新记录模版失败: $e');
+      }
+    },
   };
 }

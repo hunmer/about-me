@@ -5,6 +5,7 @@ import 'package:aboutme/core/data/aboutme_data_service.dart';
 import 'package:aboutme_data_sdk/aboutme_data_sdk.dart';
 import 'package:aboutme/core/services/plugin_widget_sync_helper.dart';
 import 'package:aboutme/plugins/activity/models/activity_record.dart';
+import 'package:aboutme/plugins/activity/models/activity_record_template.dart';
 import 'package:aboutme/plugins/activity/sample_data.dart';
 import 'package:aboutme/widgets/tags_dialog/models/models.dart';
 
@@ -328,6 +329,35 @@ class ActivityService {
     } catch (e) {
       debugPrint('Error loading recent moods: $e');
       return [];
+    }
+  }
+
+  // 获取记录模版
+  Future<List<ActivityRecordTemplate>> getRecordTemplates() async {
+    try {
+      final response = await _query('getRecordTemplates');
+      final jsonList = (response['data'] as List)
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+      return jsonList.map(ActivityRecordTemplate.fromJson).toList();
+    } catch (e) {
+      debugPrint('Error loading record templates: $e');
+      return [];
+    }
+  }
+
+  // 整体更新记录模版
+  Future<void> saveRecordTemplates(
+    List<ActivityRecordTemplate> templates,
+  ) async {
+    try {
+      await _command('updateRecordTemplates', {
+        'templates': templates.map((t) => t.toJson()).toList(),
+      });
+    } catch (e) {
+      debugPrint('Error saving record templates: $e');
+      rethrow;
     }
   }
 

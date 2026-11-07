@@ -127,7 +127,18 @@
     "minIdleSeconds": 10,
     "maxIdleSeconds": 10
   },
-  "regions": [],
+  "regions": [
+    {
+      "id": "body",
+      "name": "人物身体",
+      "x": 0.28,
+      "y": 0.12,
+      "width": 0.44,
+      "height": 0.84,
+      "enabled": true,
+      "priority": 0
+    }
+  ],
   "metadata": {
     "repository": "https://github.com/PC2005-cloud/dsh-pet",
     "commit": "b78e3fcf92ac78cee569aed7cc27eeb2a8d51757",

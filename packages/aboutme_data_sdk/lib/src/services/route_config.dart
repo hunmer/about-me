@@ -112,6 +112,8 @@ final pluginRouteConfigs = <PluginRouteConfig>[
     PluginRouteDefinition(method: 'patch', path: '/notification-settings', handler: 'updateNotificationSettings', resourceName: 'settings'),
     PluginRouteDefinition(method: 'get', path: '/tts-settings', handler: 'getTtsSettings', resourceName: 'settings'),
     PluginRouteDefinition(method: 'patch', path: '/tts-settings', handler: 'updateTtsSettings', resourceName: 'settings'),
+    PluginRouteDefinition(method: 'get', path: '/record-templates', handler: 'getRecordTemplates', resourceName: 'recordTemplates'),
+    PluginRouteDefinition(method: 'put', path: '/record-templates', handler: 'updateRecordTemplates', resourceName: 'recordTemplates'),
   ]),
   // ==================== Goods ====================
   PluginRouteConfig(pluginId: 'goods', routes: [

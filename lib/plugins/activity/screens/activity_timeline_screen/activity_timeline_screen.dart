@@ -15,6 +15,7 @@ import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/filter_models.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
 import 'components/activity_grid_view.dart';
+import 'components/activity_template_sheet.dart';
 import 'components/activity_timeline_schedule_view.dart';
 import 'controllers/activity_controller.dart';
 import 'controllers/tag_controller.dart';
@@ -685,6 +686,26 @@ class _ActivityTimelineScreenState extends State<ActivityTimelineScreen> {
                       ? '切换到时间轴视图'
                       : '切换到网格视图',
                   onPressed: _viewModeController.toggleViewMode,
+                );
+              },
+            ),
+          ),
+        ),
+        // 记录模版入口：管理固定时间点模版，快速记录一天
+        Padding(
+          padding: const EdgeInsets.only(right: 8.0),
+          child: DSThemeBridge(
+            child: Builder(
+              builder: (context) {
+                return DSIconButton(
+                  icon: DsIconKind.layers,
+                  size: 36,
+                  tooltip: '记录模版',
+                  onPressed: () => showActivityTemplateSheet(
+                    context,
+                    service: _activityService,
+                    selectedDate: _selectedDate,
+                  ),
                 );
               },
             ),
