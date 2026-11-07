@@ -68,6 +68,14 @@ class _ActivityTemplateSheetState extends State<_ActivityTemplateSheet> {
   // 应用视图状态
   ActivityRecordTemplate? _applyTarget;
   List<int> _applyMinutes = [];
+
+  /// 各时间点记录的结束时刻（分钟偏移，默认=开始+模版时长）；
+  /// 滑条拖拽直接改此值，拉满=延长到下个时间点开始
+  List<int> _applyEnds = [];
+
+  /// 各时间点滑条范围快照：进入应用视图或时间选择器修改后重算，
+  /// 滑条拖动期间冻结，避免邻居范围实时联动导致其他滑条跳动
+  List<(int, int)?> _applyBounds = [];
   bool _linkAdjust = true;
   bool _overwriteExisting = false;
 
@@ -107,6 +115,10 @@ class _ActivityTemplateSheetState extends State<_ActivityTemplateSheet> {
     setState(() {
       _applyTarget = template.copyWith(items: items);
       _applyMinutes = items.map((e) => e.minutes).toList();
+      _applyEnds = [
+        for (final e in items) e.minutes + e.durationMinutes,
+      ];
+      _refreshApplyBounds();
       _linkAdjust = true;
       _overwriteExisting = false;
       _view = _SheetView.apply;
@@ -158,14 +170,19 @@ class _ActivityTemplateSheetState extends State<_ActivityTemplateSheet> {
     final next = oldMinutes + delta;
     if (delta == 0) return;
     setState(() {
+      // 改开始时间时结束同步平移（保持时长）
+      _applyEnds[index] += delta;
       if (_linkAdjust) {
-        // 联动：其余时间点按相同偏移平移，允许跨天（负数/超过 24 点）
+        // 联动：其余时间点的开始/结束按相同偏移平移，允许跨天
         for (var j = 0; j < _applyMinutes.length; j++) {
           if (j == index) continue;
           _applyMinutes[j] += delta;
+          _applyEnds[j] += delta;
         }
       }
       _applyMinutes[index] = next;
+      // 时间选择器修改后重算滑条范围快照
+      _refreshApplyBounds();
     });
   }
 
@@ -187,7 +204,7 @@ class _ActivityTemplateSheetState extends State<_ActivityTemplateSheet> {
       final start = base.add(Duration(minutes: _applyMinutes[i]));
       items.add(item);
       starts.add(start);
-      ends.add(start.add(Duration(minutes: item.durationMinutes)));
+      ends.add(base.add(Duration(minutes: _applyEnds[i])));
     }
     // 覆盖模式：删除选中日期内与新时间段重叠的已有记录
     if (_overwriteExisting && items.isNotEmpty) {
@@ -205,17 +222,30 @@ class _ActivityTemplateSheetState extends State<_ActivityTemplateSheet> {
         }
       }
     }
-    for (var i = 0; i < items.length; i++) {
+    // 按开始时间排序后逐条写入：每条结束时刻收口到下一条开始，
+    // 跳过被压成零长度的记录，兜底避免重叠记录被 SDK「新裁旧」吞掉
+    final order = List<int>.generate(starts.length, (i) => i)
+      ..sort((a, b) => starts[a].compareTo(starts[b]));
+    var count = 0;
+    for (var k = 0; k < order.length; k++) {
+      final i = order[k];
+      var end = ends[i];
+      if (k + 1 < order.length) {
+        final nextStart = starts[order[k + 1]];
+        if (end.isAfter(nextStart)) end = nextStart;
+      }
+      if (!end.isAfter(starts[i])) continue;
       await widget.service.saveActivity(
         ActivityRecord(
           startTime: starts[i],
-          endTime: ends[i],
+          endTime: end,
           title: items[i].title.trim(),
         ),
       );
+      count++;
     }
     if (!mounted) return;
-    Toast.show('已记录 ${items.length} 个时间点到 ${DateFormat('M月d日').format(widget.selectedDate)}');
+    Toast.show('已记录 $count 个时间点到 ${DateFormat('M月d日').format(widget.selectedDate)}');
     Navigator.of(context).pop();
   }
 
@@ -275,6 +305,49 @@ class _ActivityTemplateSheetState extends State<_ActivityTemplateSheet> {
     );
     if (picked == null) return;
     setState(() => _editItems[index].durationMinutes = picked);
+  }
+
+  /// 按开始时间排序后计算每个时间点滑条（=记录结束时刻）的可调范围：
+  /// 左界 = 自身开始时刻（结束不能早于开始）；
+  /// 右界 = 下个时间点的开始时刻（拉满=延长到下一条开始）；
+  /// 无下个时间点时空侧放开一整天；链冲突（左界 >= 右界）记 null 不显示滑条。
+  /// 结果存入 [_applyBounds] 快照，拖动滑条期间不重算
+  void _refreshApplyBounds() {
+    (int, int)? bounds(int index) {
+      final order = List<int>.generate(_applyMinutes.length, (i) => i)
+        ..sort((a, b) => _applyMinutes[a].compareTo(_applyMinutes[b]));
+      final pos = order.indexOf(index);
+      final nextStart =
+          pos < order.length - 1 ? _applyMinutes[order[pos + 1]] : null;
+      final min = _applyMinutes[index];
+      final max = nextStart ?? min + 24 * 60;
+      if (min >= max) return null;
+      return (min, max);
+    }
+
+    _applyBounds = [
+      for (var i = 0; i < _applyMinutes.length; i++) bounds(i),
+    ];
+  }
+
+  /// 滑条拖拽：仅更新当前记录的结束时刻，范围快照保持冻结
+  /// （其他滑条不随本滑条跳动；「联动」语义由时间选择器承担）
+  void _slideEnd(int index, int next) {
+    if (_applyEnds[index] == next) return;
+    setState(() => _applyEnds[index] = next);
+  }
+
+  /// 一键填满：把每条记录延长到其滑条最右界（下个时间点的开始时刻），
+  /// 相邻记录首尾相接铺满整段；直接使用冻结的范围快照，
+  /// 填满后各 thumb 恰好停在滑条最右端
+  void _fillAllSliders() {
+    setState(() {
+      for (var i = 0; i < _applyEnds.length; i++) {
+        final bounds = _applyBounds[i];
+        if (bounds == null) continue;
+        _applyEnds[i] = bounds.$2;
+      }
+    });
   }
 
   Future<void> _saveTemplate() async {
@@ -533,24 +606,38 @@ class _ActivityTemplateSheetState extends State<_ActivityTemplateSheet> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '点击时间可微调；$_linkTip',
+                '拖动滑条延长记录，点击时间改开始；$_linkTip',
                 style: DsTypography.caption.copyWith(color: theme.textSub),
               ),
               const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
+              Row(
                 children: [
-                  DSChip(
-                    label: '联动调整',
-                    selected: _linkAdjust,
-                    onSelected: (value) => setState(() => _linkAdjust = value),
+                  Expanded(
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        DSChip(
+                          label: '联动调整',
+                          selected: _linkAdjust,
+                          onSelected: (value) =>
+                              setState(() => _linkAdjust = value),
+                        ),
+                        DSChip(
+                          label: '覆盖已有记录',
+                          selected: _overwriteExisting,
+                          onSelected: (value) =>
+                              setState(() => _overwriteExisting = value),
+                        ),
+                      ],
+                    ),
                   ),
-                  DSChip(
-                    label: '覆盖已有记录',
-                    selected: _overwriteExisting,
-                    onSelected: (value) =>
-                        setState(() => _overwriteExisting = value),
+                  const SizedBox(width: 8),
+                  DSButton(
+                    label: '一键填满',
+                    variant: DSButtonVariant.ghost,
+                    size: DSButtonSize.sm,
+                    onPressed: _fillAllSliders,
                   ),
                 ],
               ),
@@ -565,13 +652,33 @@ class _ActivityTemplateSheetState extends State<_ActivityTemplateSheet> {
             separatorBuilder: (_, _) => const SizedBox(height: 6),
             itemBuilder: (context, index) {
               final item = target.items[index];
-              return Row(
+              final bounds =
+                  index < _applyBounds.length ? _applyBounds[index] : null;
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Expanded(child: Text(item.title, style: DsTypography.body)),
-                  _TimeChip(
-                    minutes: _applyMinutes[index],
-                    onTap: () => _pickTime(index),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(item.title, style: DsTypography.body),
+                      ),
+                      _TimeChip(
+                        minutes: _applyMinutes[index],
+                        onTap: () => _pickTime(index),
+                      ),
+                    ],
                   ),
+                  if (bounds != null)
+                    _ItemSlider(
+                      minutes: _applyEnds[index],
+                      min: bounds.$1,
+                      max: bounds.$2,
+                      centerLabel: _formatSpanMinutes(
+                        _applyEnds[index] - _applyMinutes[index],
+                      ),
+                      onChanged: (value) => _slideEnd(index, value),
+                    ),
                 ],
               );
             },
@@ -747,6 +854,69 @@ class _DurationChip extends StatelessWidget {
           style: DsTypography.caption.copyWith(color: theme.textSub),
         ),
       ),
+    );
+  }
+}
+
+/// 分钟跨度格式化为「X小时Y分」
+String _formatSpanMinutes(int minutes) {
+  if (minutes <= 0) return '0分钟';
+  final h = minutes ~/ 60;
+  final m = minutes % 60;
+  if (h == 0) return '$m分钟';
+  if (m == 0) return '$h小时';
+  return '$h小时$m分';
+}
+
+/// 记录结束时刻滑条：在 [min, max] 分钟区间内拖拽调节该记录的结束，
+/// 两端标注边界时刻（自身开始 / 下个时间点开始），中间显示当前时长
+class _ItemSlider extends StatelessWidget {
+  const _ItemSlider({
+    required this.minutes,
+    required this.min,
+    required this.max,
+    required this.onChanged,
+    this.centerLabel,
+  });
+
+  final int minutes;
+  final int min;
+  final int max;
+  final ValueChanged<int> onChanged;
+  final String? centerLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DSThemeBridge.resolve(context);
+    final span = (max - min).toDouble();
+    final value = ((minutes - min) / span).clamp(0.0, 1.0);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        DSSlider(
+          value: value,
+          onChanged: (v) => onChanged((min + v * span).round()),
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              ActivityTemplateItem.formatMinutes(min),
+              style: DsTypography.caption.copyWith(color: theme.textSub),
+            ),
+            if (centerLabel != null)
+              Text(
+                centerLabel!,
+                style: DsTypography.caption.copyWith(color: theme.text),
+              ),
+            Text(
+              ActivityTemplateItem.formatMinutes(max),
+              style: DsTypography.caption.copyWith(color: theme.textSub),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

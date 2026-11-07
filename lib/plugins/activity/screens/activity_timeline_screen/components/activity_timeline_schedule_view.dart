@@ -403,29 +403,38 @@ class ActivityTimelineScheduleView extends StatelessWidget {
           }
 
           const lineWidth = 2.0;
-          return Stack(
-            children: [
-              Positioned(
-                top: 24,
-                left: _listHPadding + _badgeWidth / 2 - lineWidth / 2,
-                bottom: 0,
-                child: CustomPaint(
-                  size: const Size(lineWidth, double.infinity),
-                  painter: _DashedTimelinePainter(color: theme.textSub),
+          // 与 ListView 底部 padding 一致：虚线止于最后一个条目底边，不伸进留白
+          final bottomInset = 16 + MediaQuery.paddingOf(context).bottom;
+          // 外层 AnimatedSwitcher 默认 layoutBuilder 会垂直居中不满高的子组件，
+          // 这里显式顶部对齐
+          return Align(
+            alignment: Alignment.topCenter,
+            child: Stack(
+              children: [
+                Positioned(
+                  top: 24,
+                  left: _listHPadding + _badgeWidth / 2 - lineWidth / 2,
+                  bottom: bottomInset,
+                  child: CustomPaint(
+                    size: const Size(lineWidth, double.infinity),
+                    painter: _DashedTimelinePainter(color: theme.textSub),
+                  ),
                 ),
-              ),
-              ListView(
-                shrinkWrap: nested,
-                physics: nested ? const NeverScrollableScrollPhysics() : null,
-                padding: EdgeInsets.fromLTRB(
-                  _listHPadding,
-                  8,
-                  _listHPadding,
-                  16 + MediaQuery.paddingOf(context).bottom,
+                ListView(
+                  // 始终按内容收高：条目不足一屏时 Stack（含虚线）随之收高，
+                  // 虚线不再占满视口；内容超出一屏时仍为满高可滚动
+                  shrinkWrap: true,
+                  physics: nested ? const NeverScrollableScrollPhysics() : null,
+                  padding: EdgeInsets.fromLTRB(
+                    _listHPadding,
+                    8,
+                    _listHPadding,
+                    bottomInset,
+                  ),
+                  children: slices,
                 ),
-                children: slices,
-              ),
-            ],
+              ],
+            ),
           );
         },
       ),
