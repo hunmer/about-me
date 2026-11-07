@@ -13,6 +13,7 @@ import 'package:aboutme/widgets/lazy_indexed_stack.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper.dart';
 import 'package:aboutme/widgets/super_cupertino_navigation_wrapper/index.dart';
 import 'package:aboutme/widgets/hand_drawn_list_view.dart';
+import 'package:aboutme/screens/jelly_home/live2d_online_model_page.dart';
 import 'package:aboutme/screens/jelly_home/live2d_online_models.dart';
 import 'live2d_archive_form_screen.dart';
 import 'live2d_store_screen.dart';
@@ -169,9 +170,7 @@ class _Live2DMainScreenState extends State<Live2DMainScreen> {
                   DSMenuItem(
                     label: 'live2d_storeMenuLive2D'.tr,
                     icon: DsIconKind.store,
-                    // 已在商店 tab 时给出选中标记，避免「无变化」观感
-                    trailing: _currentTab == 1 ? '✓' : null,
-                    onTap: () => setState(() => _currentTab = 1),
+                    onTap: _openLive2DStore,
                   ),
                   DSMenuItem(
                     label: 'live2d_storeMenuPets'.tr,
@@ -286,6 +285,16 @@ class _Live2DMainScreenState extends State<Live2DMainScreen> {
       MaterialPageRoute(builder: (_) => const PetStoreScreen()),
     );
     if (mounted) setState(() {});
+  }
+
+  /// 菜单打开 Live2D 商店：直接进在线模型仓库，
+  /// 选中模型返回后建档（行为与商店 tab 内入口一致）
+  Future<void> _openLive2DStore() async {
+    final model = await Navigator.of(context).push<Live2DModelDefinition>(
+      MaterialPageRoute(builder: (_) => Live2DOnlineModelPage()),
+    );
+    if (model == null || !mounted) return;
+    await _addArchiveFromModel(model);
   }
 
   Widget _buildArchivesTab() {

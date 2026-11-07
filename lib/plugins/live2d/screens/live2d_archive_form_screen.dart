@@ -483,16 +483,29 @@ class _Live2DArchiveFormScreenState extends State<Live2DArchiveFormScreen> {
               current.videoManifest?.name ??
                   _videoText('尚未加载资源包', 'No package loaded'),
             ),
-            subtitle: Text(
-              _videoText(
-                'JSON 资源包 · ${current.videoManifest?.animations.length ?? 0} 个动画',
-                'JSON package · ${current.videoManifest?.animations.length ?? 0} animations',
-              ),
+            // 版权说明并入 subtitle 内部下方，与包信息左对齐
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _videoText(
+                    'JSON 资源包 · ${current.videoManifest?.animations.length ?? 0} 个动画',
+                    'JSON package · ${current.videoManifest?.animations.length ?? 0} animations',
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _videoText(
+                    '默认素材来自 dsh-pet，禁止商用；来源和许可保存在资源包中。',
+                    'Default assets are from dsh-pet, for non-commercial use. Attribution and license are included in the package.',
+                  ),
+                ),
+              ],
             ),
           ),
           // 本地已安装宠物选择：选中即拷贝其资源包到当前草稿
           if (_localPetArchives.isNotEmpty) ...[
-            const SizedBox(height: 4),
+            const SizedBox(height: 8),
             DSSelect<String>(
               items: [
                 for (final a in _localPetArchives)
@@ -533,13 +546,6 @@ class _Live2DArchiveFormScreenState extends State<Live2DArchiveFormScreen> {
             trailing: DSSwitch(
               value: current.jevEnabled,
               onChanged: (value) => setState(() => current.jevEnabled = value),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            _videoText(
-              '默认素材来自 dsh-pet，禁止商用；来源和许可保存在资源包中。',
-              'Default assets are from dsh-pet, for non-commercial use. Attribution and license are included in the package.',
             ),
           ),
         ] else ...[
