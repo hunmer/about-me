@@ -183,7 +183,8 @@ final Map<String, String> openaiTranslationsEn = {
   'openai_aiAutoReplyAgentDescription': 'Agent used to generate replies',
   'openai_aiAutoReplyTemplate': 'Reply Prompt Template',
   'openai_aiAutoReplyTemplateHint':
-      'Use {eventDescription} as the event placeholder',
+      'Use {eventDescription} as the event placeholder, '
+      '{eventData} as the event JSON data placeholder',
   'openai_aiAutoReplyEventsTitle': 'Monitored Events',
   'openai_aiAutoReplyEventsDescription':
       'Toggle events individually; auto reply stays off when all are off',

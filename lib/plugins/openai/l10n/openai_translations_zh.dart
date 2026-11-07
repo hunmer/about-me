@@ -171,7 +171,8 @@ final Map<String, String> openaiTranslationsZh = {
   'openai_aiAutoReplyAgent': '自动回复 Agent',
   'openai_aiAutoReplyAgentDescription': '生成回复使用的 Agent',
   'openai_aiAutoReplyTemplate': '回复提示模板',
-  'openai_aiAutoReplyTemplateHint': '用 {eventDescription} 占位事件描述',
+  'openai_aiAutoReplyTemplateHint':
+      '用 {eventDescription} 占位事件描述，{eventData} 占位事件详细 JSON 数据',
   'openai_aiAutoReplyEventsTitle': '监听事件',
   'openai_aiAutoReplyEventsDescription': '逐个开关事件；全部关闭时不触发自动回复',
   'openai_aiAutoReplyNotSet': '未设置',

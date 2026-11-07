@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
@@ -8,7 +9,9 @@ import 'package:aboutme/core/event/event_args.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/event/item_event_args.dart';
 import 'package:aboutme/core/services/toast_service.dart';
+import 'package:aboutme/plugins/bill/controls/bill_controller.dart';
 import 'package:aboutme/plugins/chat/models/message.dart';
+import 'package:aboutme/plugins/diary/diary_plugin.dart';
 
 import '../openai_plugin.dart';
 import 'request_service.dart';
@@ -28,9 +31,9 @@ class AiAutoReplyEventInfo {
 
 /// AI 自动回复服务（迁自 online/scripts/ai_encouragement_bot，2026-11 原生化）
 ///
-/// 行为：订阅用户选定的业务事件 → 用事件描述填充提示模板 →
-/// 经 RequestService 调用指定 Agent 生成一句话回复 → 广播
-/// [AiAutoReplyEventArgs]（宠物等展示方可同步置 handled=true 拦截）→
+/// 行为：订阅用户选定的业务事件 → 用事件描述 + 事件详细数据（JSON）
+/// 填充提示模板 → 经 RequestService 调用指定 Agent 生成一句话回复 →
+/// 广播 [AiAutoReplyEventArgs]（宠物等展示方可同步置 handled=true 拦截）→
 /// 未被拦截时默认 Toast 展示。
 ///
 /// 防递归：永不订阅 [AiAutoReplyEventArgs.event] 自身；LLM 调用期间
@@ -48,9 +51,13 @@ class AiAutoReplyService {
   static const String kSettingEvents = 'aiAutoReplyEvents';
   static const String kSettingMinIntervalSec = 'aiAutoReplyMinIntervalSec';
 
-  /// 默认提示模板（与原在线脚本一致）
+  /// 默认提示模板（{eventDescription} 为事件描述，{eventData} 为事件详细 JSON）
   static const String defaultPromptTemplate =
-      '根据以下事件，用一句话鼓励用户：{eventDescription}';
+      '根据以下事件，用一句话鼓励用户：{eventDescription}\n'
+      '事件详细数据（JSON）：{eventData}';
+
+  /// 事件详细 JSON 附加到提示词的最大长度（超出截断，防止日记等长文撑爆 prompt）
+  static const int _eventDataMaxChars = 4000;
 
   /// 两次自动回复之间的默认最小间隔（秒）
   static const int defaultMinIntervalSec = 60;
@@ -271,10 +278,7 @@ class AiAutoReplyService {
         (settings[kSettingTemplate] as String?)?.trim().isNotEmpty == true
         ? settings[kSettingTemplate]! as String
         : defaultPromptTemplate;
-    final prompt = template.replaceAll(
-      '{eventDescription}',
-      describeEvent(eventName, args),
-    );
+    final prompt = buildPrompt(template, eventName, args);
 
     _lastReplyAt = now;
     unawaited(_generateReply(agentId, prompt, eventName, _generation));
@@ -331,5 +335,112 @@ class AiAutoReplyService {
       return '$base「${args.title.trim()}」';
     }
     return base;
+  }
+
+  /// 组装最终提示词：替换 {eventDescription}（事件描述）与 {eventData}
+  /// （事件详细 JSON）占位符；旧模板未引用 {eventData} 时自动在末尾
+  /// 追加事件详细 JSON，保证任何模板都携带详细数据。
+  static String buildPrompt(
+    String template,
+    String eventName,
+    EventArgs? args,
+  ) {
+    final eventDataJson = describeEventDataJson(eventName, args);
+    final prompt = template
+        .replaceAll('{eventDescription}', describeEvent(eventName, args))
+        .replaceAll('{eventData}', eventDataJson);
+    if (template.contains('{eventData}')) return prompt;
+    return '$prompt\n事件详细数据（JSON）：$eventDataJson';
+  }
+
+  /// 事件 → 详细信息 JSON 字符串（事件名 + 发生时间 + 载荷数据）
+  ///
+  /// 载荷提取见 [_extractPayload]；超长（日记等长文）按
+  /// [_eventDataMaxChars] 截断；序列化失败时降级为仅含事件名的错误 JSON。
+  static String describeEventDataJson(String eventName, EventArgs? args) {
+    final data = <String, dynamic>{
+      'event': eventName,
+      'time': args?.whenOccurred.toIso8601String(),
+      'data': _extractPayload(args),
+    };
+    try {
+      final json = jsonEncode(data);
+      if (json.length <= _eventDataMaxChars) return json;
+      return '${json.substring(0, _eventDataMaxChars)}…(已截断)';
+    } catch (e) {
+      return '{"event": "$eventName", "data": null, '
+          '"error": "事件数据序列化失败: $e"}';
+    }
+  }
+
+  /// 事件载荷 → JSON 兼容 Map
+  ///
+  /// 按已知 EventArgs 类型提取字段；带业务对象的专用事件参数
+  /// （账单/账户/日记）单独适配；其余子类尝试其自身 toJson；
+  /// 无法提取时返回 null（JSON 中 data 为 null，不携带垃圾信息）。
+  static Map<String, dynamic>? _extractPayload(EventArgs? args) {
+    if (args == null) return null;
+    if (args is ItemEventArgs) {
+      return {
+        'itemId': args.itemId,
+        'title': args.title,
+        'action': args.action,
+        if (args.data != null) ...args.data!,
+      };
+    }
+    if (args is Value) return {'value': _deepSerialize(args.value)};
+    if (args is Values) {
+      return {
+        'value1': _deepSerialize(args.value1),
+        'value2': _deepSerialize(args.value2),
+      };
+    }
+    // 带业务对象的专用事件参数（字段对象自身有 toJson）
+    if (args is BillAddedEventArgs) {
+      return {'bill': _deepSerialize(args.bill), 'accountId': args.accountId};
+    }
+    if (args is AccountAddedEventArgs) {
+      return {'account': _deepSerialize(args.account)};
+    }
+    if (args is DiaryEntryUpdatedEventArgs) {
+      return {'entry': _deepSerialize(args.entry)};
+    }
+    // 兜底：事件参数自身实现了 toJson 则直接使用
+    return _tryToJson(args);
+  }
+
+  /// 深度序列化任意对象为 JSON 兼容类型（null/String/num/bool/DateTime/
+  /// List/Map/toJson 递归；无 toJson 时 toString 兜底，默认
+  /// `Instance of ...` 形态视为无信息返回 null）
+  static dynamic _deepSerialize(dynamic value) {
+    if (value == null || value is String || value is num || value is bool) {
+      return value;
+    }
+    if (value is DateTime) return value.toIso8601String();
+    if (value is Duration) return value.inMilliseconds;
+    if (value is List) return value.map(_deepSerialize).toList();
+    if (value is Map) {
+      return {
+        for (final e in value.entries) e.key.toString(): _deepSerialize(e.value),
+      };
+    }
+    final json = _tryToJson(value);
+    if (json != null) return json;
+    final text = value.toString();
+    return text.startsWith('Instance of') ? null : text;
+  }
+
+  /// 尝试调用对象自身同步 toJson 并转为 `Map<String, dynamic>`；
+  /// 无 toJson / 抛异常 / 返回 Future 时返回 null
+  static Map<String, dynamic>? _tryToJson(dynamic obj) {
+    try {
+      final result = obj.toJson();
+      if (result is Map) {
+        return {
+          for (final e in result.entries) e.key.toString(): e.value,
+        };
+      }
+    } catch (_) {}
+    return null;
   }
 }

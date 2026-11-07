@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:aboutme/core/event/event_args.dart';
 import 'package:aboutme/core/event/event_manager.dart';
 import 'package:aboutme/core/event/item_event_args.dart';
 import 'package:aboutme/plugins/openai/services/ai_auto_reply_service.dart';
@@ -78,6 +81,83 @@ void main() {
         AiAutoReplyService.describeEvent('task_completed', args),
         '完成了一个待办任务',
       );
+    });
+  });
+
+  group('describeEventDataJson', () {
+    test('ItemEventArgs 提取 itemId/title/action 及附加数据', () {
+      final args = ItemEventArgs(
+        eventName: 'task_completed',
+        itemId: 't1',
+        title: '写周报',
+        action: 'completed',
+        data: {'extra': 1},
+      );
+      final decoded = jsonDecode(
+        AiAutoReplyService.describeEventDataJson('task_completed', args),
+      ) as Map<String, dynamic>;
+      expect(decoded['event'], 'task_completed');
+      expect(decoded['time'], isNotNull);
+      final data = decoded['data'] as Map<String, dynamic>;
+      expect(data['itemId'], 't1');
+      expect(data['title'], '写周报');
+      expect(data['action'], 'completed');
+      expect(data['extra'], 1);
+    });
+
+    test('Value<Map> 载荷递归序列化（habit_completion_record_saved 场景）', () {
+      final args = Value({'habitId': 'h1', 'count': 3});
+      final decoded = jsonDecode(
+        AiAutoReplyService.describeEventDataJson(
+          'habit_completion_record_saved',
+          args,
+        ),
+      ) as Map<String, dynamic>;
+      final data = decoded['data'] as Map<String, dynamic>;
+      final value = data['value'] as Map<String, dynamic>;
+      expect(value['habitId'], 'h1');
+      expect(value['count'], 3);
+    });
+
+    test('空载荷事件 data 为 null（不携带垃圾信息）', () {
+      final decoded = jsonDecode(
+        AiAutoReplyService.describeEventDataJson(
+          'agent_chat_user_message',
+          EventArgs('agent_chat_user_message'),
+        ),
+      ) as Map<String, dynamic>;
+      expect(decoded['event'], 'agent_chat_user_message');
+      expect(decoded['data'], isNull);
+    });
+  });
+
+  group('buildPrompt', () {
+    test('旧模板未引用 {eventData} 时自动追加事件详细 JSON', () {
+      final prompt = AiAutoReplyService.buildPrompt(
+        '根据以下事件鼓励用户：{eventDescription}',
+        'task_completed',
+        ItemEventArgs(
+          eventName: 'task_completed',
+          itemId: 't1',
+          title: '写周报',
+          action: 'completed',
+        ),
+      );
+      expect(prompt, contains('「写周报」'));
+      expect(prompt, contains('事件详细数据（JSON）'));
+      expect(prompt, contains('"task_completed"'));
+    });
+
+    test('模板引用 {eventData} 时原位替换且不重复追加', () {
+      final prompt = AiAutoReplyService.buildPrompt(
+        '事件：{eventDescription} 数据：{eventData}',
+        'task_completed',
+        null,
+      );
+      expect(prompt, startsWith('事件：完成了一个待办任务 数据：{'));
+      expect(prompt, isNot(contains('事件详细数据（JSON）')));
+      // 仅出现一次 JSON 块（无重复追加）
+      expect(prompt.split('"event"').length - 1, 1);
     });
   });
 

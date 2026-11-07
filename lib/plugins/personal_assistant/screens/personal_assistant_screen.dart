@@ -512,6 +512,7 @@ class _PersonalAssistantScreenState extends State<PersonalAssistantScreen> {
               ),
               child: MessageInput(
                 controller: controller,
+                bypassAliveness: true,
                 showPanelStroke: true,
                 dashedPanelStroke: true,
               ),

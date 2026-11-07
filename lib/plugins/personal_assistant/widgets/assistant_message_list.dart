@@ -53,10 +53,6 @@ class AssistantMessageList extends StatelessWidget {
     for (final message in messages) {
       if (!message.isUser && !message.isSessionDivider) lastAiId = message.id;
     }
-    // AI 尚未产出文本（发送中且最后一条是用户消息）时末尾显示占位气泡；
-    // 占位期间动态头像挂到占位行，上一条 AI 消息转静态图标
-    final showPlaceholder =
-        controller.isSending && (messages.isEmpty || messages.last.isUser);
     return LayoutBuilder(
       builder: (context, constraints) {
         // 气泡最大宽度：列表可视宽度的 80%，余量留作两侧留白
@@ -71,13 +67,9 @@ class AssistantMessageList extends StatelessWidget {
               theme.spacing.lg,
               theme.spacing.md,
             ),
-            itemCount: messages.length + (showPlaceholder ? 1 : 0),
+            itemCount: messages.length,
             itemBuilder: (context, index) {
-              final isLast =
-                  index == messages.length + (showPlaceholder ? 1 : 0) - 1;
-              if (showPlaceholder && index == messages.length) {
-                return _buildPlaceholderRow(isLast: isLast);
-              }
+              final isLast = index == messages.length - 1;
               final message = messages[index];
               if (message.isSessionDivider) {
                 return Padding(
@@ -125,10 +117,7 @@ class AssistantMessageList extends StatelessWidget {
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              _buildBotAvatar(
-                                live:
-                                    !showPlaceholder && message.id == lastAiId,
-                              ),
+                              _buildBotAvatar(live: message.id == lastAiId),
                               SizedBox(width: theme.spacing.sm),
                               _buildBubbleFooter(context, message),
                             ],
@@ -150,40 +139,6 @@ class AssistantMessageList extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-
-  /// AI 处理中的占位气泡：动态 grok 头像（thinking，置于气泡上方）+ 加载墨点
-  Widget _buildPlaceholderRow({required bool isLast}) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildBotAvatar(live: true),
-          SizedBox(height: theme.spacing.sm),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 520),
-              child: DsSketchPanel(
-                theme: theme,
-                hachure: false,
-                radius: BorderRadius.circular(18),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [DSLoadingDots(size: 6, color: theme.textSub)],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 

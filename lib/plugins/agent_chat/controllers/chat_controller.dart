@@ -193,10 +193,6 @@ class ChatController extends ChangeNotifier with WidgetsBindingObserver {
         .where((msg) => msg.parentId == null)
         .where(
           (msg) =>
-              !(!msg.isUser && msg.isGenerating && msg.content.trim().isEmpty),
-        )
-        .where(
-          (msg) =>
               !(_alivenessFlushActive &&
                   !msg.isUser &&
                   flushStart != null &&

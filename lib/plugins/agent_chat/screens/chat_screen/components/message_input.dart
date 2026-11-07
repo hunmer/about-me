@@ -60,6 +60,9 @@ class MessageInput extends StatefulWidget {
   /// 素描面板描边用虚线（透传；需 showPanelStroke 为 true）
   final bool dashedPanelStroke;
 
+  /// 跳过活人感延迟，直接流式生成回复。
+  final bool bypassAliveness;
+
   /// 选择模式工具栏动作（如消息多选的复制/删除）；非 null 时替换常规输入 UI
   final List<common.MessageInputQuickAction>? selectionActions;
 
@@ -71,6 +74,7 @@ class MessageInput extends StatefulWidget {
     this.trailingToolbarActions = const [],
     this.showPanelStroke = true,
     this.dashedPanelStroke = false,
+    this.bypassAliveness = false,
     this.selectionActions,
   });
 
@@ -1399,7 +1403,9 @@ class _MessageInputState extends State<MessageInput> {
 
     // 正常发送消息
     try {
-      await widget.controller.sendMessage();
+      await widget.controller.sendMessage(
+        bypassAliveness: widget.bypassAliveness,
+      );
       _focusNode.requestFocus();
     } catch (e) {
       if (mounted) {
