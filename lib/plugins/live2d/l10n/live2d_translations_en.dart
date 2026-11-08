@@ -106,6 +106,8 @@ const Map<String, String> live2dTranslationsEn = {
   'videoPet_edit': 'Edit',
   'videoPet_editHint':
       'Drag region to move, drag bottom-right corner to resize',
+  'videoPet_editRegionName': 'Edit region name',
+  'videoPet_regionNameHint': 'Enter region name',
   'videoPet_editPreview': 'Edit preview',
   'videoPet_editorTitle': 'Spritesheet pet editor',
   'videoPet_enableRegion': 'Enable region',

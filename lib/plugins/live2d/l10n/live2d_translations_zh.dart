@@ -95,6 +95,8 @@ const Map<String, String> live2dTranslationsZh = {
   'videoPet_drawHint': '在预览中拖动框选区域',
   'videoPet_edit': '编辑',
   'videoPet_editHint': '拖动区域移动，拖动右下角调整大小',
+  'videoPet_editRegionName': '编辑区域名称',
+  'videoPet_regionNameHint': '输入区域名称',
   'videoPet_editPreview': '编辑预览',
   'videoPet_editorTitle': '精灵图宠物编辑器',
   'videoPet_enableRegion': '启用区域',

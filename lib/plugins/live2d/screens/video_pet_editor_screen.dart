@@ -15,6 +15,7 @@ import 'package:aboutme/plugins/live2d/video/video_pet_import.dart';
 import 'package:aboutme/plugins/live2d/video/video_pet_manifest.dart';
 import 'package:aboutme/plugins/live2d/video/video_pet_player.dart';
 import 'package:aboutme/screens/jelly_home/widgets/jelly_video_pet_movement.dart';
+import 'package:aboutme/widgets/smooth_bottom_sheet.dart';
 
 import 'video_pet_animation_resource_editor.dart';
 part 'video_pet_editor_gestures.dart';

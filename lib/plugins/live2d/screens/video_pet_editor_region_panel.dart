@@ -131,6 +131,28 @@ extension _VideoPetEditorRegionOps on _VideoPetEditorScreenState {
     _showMessage(videoPetText('台词 · $message', 'Message · $message'));
   }
 
+  /// 区域名称编辑弹层（SmoothBottomSheet）：DSInput 输入 + 保存。
+  void _showRegionNameEditor(VideoPetRegion region) {
+    final controller = TextEditingController(text: region.name);
+    SmoothBottomSheet.showForm(
+      context: context,
+      title: _text('videoPet_editRegionName', '编辑区域名称'),
+      onSave: () {
+        _selectedRegionId = region.id;
+        _updateSelectedRegion(name: controller.text.trim());
+        Navigator.of(context).pop();
+      },
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        child: DSInput(
+          controller: controller,
+          hint: _text('videoPet_regionNameHint', '输入区域名称'),
+          textInputAction: TextInputAction.done,
+        ),
+      ),
+    ).whenComplete(controller.dispose);
+  }
+
   /// 选中区域的点击台词编辑：每行一条，运行时随机挑一条（空白行忽略）。
   /// key 绑定区域 id：切换选中区域时重建输入框，内容不串区。
   Widget _buildRegionMessagesEditor(VideoPetRegion region) {
@@ -144,16 +166,9 @@ extension _VideoPetEditorRegionOps on _VideoPetEditorScreenState {
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 4),
-          TextFormField(
+          _RegionMessagesField(
             key: ValueKey('videoPetRegionMessages_${region.id}'),
-            initialValue: region.messages.join('\n'),
-            minLines: 2,
-            maxLines: 5,
-            style: Theme.of(context).textTheme.bodySmall,
-            decoration: const InputDecoration(
-              isDense: true,
-              border: OutlineInputBorder(),
-            ),
+            initialText: region.messages.join('\n'),
             onChanged: (value) =>
                 _updateSelectedRegion(messages: value.split('\n')),
           ),
@@ -253,8 +268,11 @@ extension _VideoPetEditorRegionOps on _VideoPetEditorScreenState {
                 color: DSThemeBridge.resolve(context).surfaceAlt,
                 iconColor: DSThemeBridge.resolve(context).textSub,
                 tooltip: _text('videoPet_addRegion', '框选新增区域'),
-                onPressed: () =>
-                    setState(() => _isAddingRegion = !_isAddingRegion),
+                // 框选新增区域需在编辑模式拖动绘制：开启时自动切出测试模式
+                onPressed: () => setState(() {
+                  _isAddingRegion = !_isAddingRegion;
+                  if (_isAddingRegion) _isTestMode = false;
+                }),
               ),
               DSIconButton(
                 icon: DsIconKind.trash,
@@ -295,23 +313,40 @@ extension _VideoPetEditorRegionOps on _VideoPetEditorScreenState {
                       subtitle: Text(
                         '${region.priority} · ${region.enabled ? _text('videoPet_enabled', '启用') : _text('videoPet_disabled', '停用')}',
                       ),
-                      trailing: DSIconButton(
-                        icon: region.enabled
-                            ? DsIconKind.eye
-                            : DsIconKind.eyeOff,
-                        size: 32,
-                        color: DSThemeBridge.resolve(context).surfaceAlt,
-                        iconColor: region.enabled
-                            ? DSThemeBridge.resolve(context).text
-                            : DSThemeBridge.resolve(context).textSub,
-                        tooltip: region.enabled
-                            ? _text('videoPet_disableRegion', '停用区域')
-                            : _text('videoPet_enableRegion', '启用区域'),
-                        // 点击眼睛直接切换该区域启用状态（并选中该区域）。
-                        onPressed: () {
-                          _selectedRegionId = region.id;
-                          _updateSelectedRegion(enabled: !region.enabled);
-                        },
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // 编辑按钮：弹出 SmoothBottomSheet 修改区域名称
+                          DSIconButton(
+                            icon: DsIconKind.edit,
+                            size: 32,
+                            color: DSThemeBridge.resolve(context).surfaceAlt,
+                            iconColor: DSThemeBridge.resolve(context).textSub,
+                            tooltip: _text(
+                              'videoPet_editRegionName',
+                              '编辑区域名称',
+                            ),
+                            onPressed: () => _showRegionNameEditor(region),
+                          ),
+                          DSIconButton(
+                            icon: region.enabled
+                                ? DsIconKind.eye
+                                : DsIconKind.eyeOff,
+                            size: 32,
+                            color: DSThemeBridge.resolve(context).surfaceAlt,
+                            iconColor: region.enabled
+                                ? DSThemeBridge.resolve(context).text
+                                : DSThemeBridge.resolve(context).textSub,
+                            tooltip: region.enabled
+                                ? _text('videoPet_disableRegion', '停用区域')
+                                : _text('videoPet_enableRegion', '启用区域'),
+                            // 点击眼睛直接切换该区域启用状态（并选中该区域）。
+                            onPressed: () {
+                              _selectedRegionId = region.id;
+                              _updateSelectedRegion(enabled: !region.enabled);
+                            },
+                          ),
+                        ],
                       ),
                       onTap: () =>
                           setState(() => _selectedRegionId = region.id),
@@ -332,6 +367,42 @@ extension _VideoPetEditorRegionOps on _VideoPetEditorScreenState {
     return Material(
       color: DSThemeBridge.resolve(context).surface,
       child: panel,
+    );
+  }
+}
+
+/// 区域点击台词多行输入（DSInput）：自持 controller，初始值只在创建时
+/// 注入（与原 TextFormField initialValue 语义一致），切换区域靠外部 key 重建。
+class _RegionMessagesField extends StatefulWidget {
+  const _RegionMessagesField({
+    super.key,
+    required this.initialText,
+    this.onChanged,
+  });
+
+  final String initialText;
+  final ValueChanged<String>? onChanged;
+
+  @override
+  State<_RegionMessagesField> createState() => _RegionMessagesFieldState();
+}
+
+class _RegionMessagesFieldState extends State<_RegionMessagesField> {
+  late final _controller = TextEditingController(text: widget.initialText);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DSInput(
+      controller: _controller,
+      minLines: 2,
+      maxLines: 5,
+      onChanged: widget.onChanged,
     );
   }
 }

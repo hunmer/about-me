@@ -19,7 +19,6 @@ import 'package:aboutme/screens/profile_screen/profile_screen.dart';
 import 'companion_controller.dart';
 import 'widgets/jelly_bottom_nav.dart';
 import 'package:aboutme/plugins/personal_assistant/screens/personal_assistant_screen.dart';
-import 'widgets/jelly_companion_card.dart';
 import 'widgets/jelly_live2d.dart';
 import 'widgets/jelly_live2d_panel.dart';
 import 'widgets/jelly_status_panel.dart';
@@ -348,57 +347,6 @@ class _CottageTabState extends State<_CottageTab> {
                       ),
                     ),
                   ),
-                // 左右两侧悬浮图标按钮（assets/jelly_icons 素材）：
-                // 右列首项为陪伴状态入口，其余为玩法占位；
-                // 顶部避让系统状态栏
-                Align(
-                  alignment: Alignment.topLeft,
-                  child: _buildSideButtonColumn(
-                    theme,
-                    topOffset: topInset + theme.spacing.sm,
-                    buttons: const [
-                      (
-                        asset: 'assets/jelly_icons/envelope.webp',
-                        label: '信封（占位）',
-                        onTap: null,
-                      ),
-                      (
-                        asset: 'assets/jelly_icons/shop.webp',
-                        label: '商店（占位）',
-                        onTap: null,
-                      ),
-                      (
-                        asset: 'assets/jelly_icons/speech_bubble.webp',
-                        label: '气泡（占位）',
-                        onTap: null,
-                      ),
-                    ],
-                  ),
-                ),
-                Align(
-                  alignment: Alignment.topRight,
-                  child: _buildSideButtonColumn(
-                    theme,
-                    topOffset: topInset + theme.spacing.sm,
-                    buttons: [
-                      (
-                        asset: 'assets/jelly_icons/heart.webp',
-                        label: '查看陪伴状态',
-                        onTap: _showCompanionDialog,
-                      ),
-                      const (
-                        asset: 'assets/jelly_icons/gift.webp',
-                        label: '礼物（占位）',
-                        onTap: null,
-                      ),
-                      const (
-                        asset: 'assets/jelly_icons/trophy.webp',
-                        label: '奖杯（占位）',
-                        onTap: null,
-                      ),
-                    ],
-                  ),
-                ),
                 // 聊天表单（导航栏聊天按钮切换显示；保持挂载以维持会话监听）
                 Positioned(
                   left: theme.spacing.lg,
@@ -422,79 +370,6 @@ class _CottageTabState extends State<_CottageTab> {
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  /// 左右两侧悬浮图标按钮列（jelly_icons 素材），自上而下排列
-  Widget _buildSideButtonColumn(
-    AppThemeData theme, {
-    required double topOffset,
-    required List<({String asset, String label, VoidCallback? onTap})> buttons,
-  }) {
-    return Padding(
-      padding: EdgeInsets.only(top: topOffset),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        spacing: theme.spacing.sm,
-        children: [
-          for (final button in buttons)
-            _buildSideButton(
-              theme,
-              iconAsset: button.asset,
-              semanticLabel: button.label,
-              onTap: button.onTap ?? () {},
-            ),
-        ],
-      ),
-    );
-  }
-
-  /// 两侧悬浮信息按钮：圆形果冻质感小钮（jelly_icons 图片图标）
-  Widget _buildSideButton(
-    AppThemeData theme, {
-    required String iconAsset,
-    required String semanticLabel,
-    required VoidCallback onTap,
-  }) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: theme.spacing.sm),
-      child: Pressable(
-        onPressed: onTap,
-        semanticLabel: semanticLabel,
-        builder: (context, states) => Opacity(
-          opacity: states.contains(WidgetState.pressed) ? 0.85 : 1,
-          child: Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: theme.surface.withValues(alpha: 0.72),
-              border: Border.all(color: theme.stroke),
-              boxShadow: theme.shadows.soft,
-            ),
-            child: Center(
-              child: Image.asset(
-                iconAsset,
-                width: 22,
-                height: 22,
-                fit: BoxFit.contain,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// 右侧按钮弹窗：陪伴状态卡（原底部状态卡的内容）
-  Future<void> _showCompanionDialog() {
-    final companionName = Live2DPlugin.instance.selected?.name ?? '小智';
-    return showDSDialog<void>(
-      context: context,
-      builder: (dialogContext) => DSDialog(
-        title: '$companionName状态',
-        content: JellyCompanionCard(controller: _companion),
       ),
     );
   }
