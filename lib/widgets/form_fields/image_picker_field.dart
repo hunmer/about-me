@@ -135,16 +135,6 @@ class _ImagePickerFieldState extends State<ImagePickerField> {
       direction: Axis.horizontal,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (widget.showLabel && widget.labelText != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 12, right: 12),
-            child: Text(
-              widget.labelText!,
-              style: DsTypography.body.copyWith(
-                color: widget.enabled ? theme.text : theme.textSub,
-              ),
-            ),
-          ),
         Expanded(
           flex: widget.flex,
           child: Builder(
