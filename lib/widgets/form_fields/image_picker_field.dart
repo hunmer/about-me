@@ -194,7 +194,9 @@ class _ImagePickerFieldState extends State<ImagePickerField> {
                 );
               }
 
-              return Stack(
+              // Stack 默认左对齐，包一层 Center 使预览图居中
+              return Center(
+                child: Stack(
                 children: [
                   preview,
                   // 上传按钮：叠加在图片右上角
@@ -234,6 +236,7 @@ class _ImagePickerFieldState extends State<ImagePickerField> {
                       ),
                     ),
                 ],
+                ),
               );
             },
           ),

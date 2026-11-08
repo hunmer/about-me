@@ -178,11 +178,16 @@ class GlobalFloatingPetService {
     _applyVisibility();
   }
 
-  /// 按当前隐藏状态刷新悬浮宠物：隐藏时清气泡，并重建宿主
+  /// 按当前隐藏状态刷新悬浮宠物：隐藏时清气泡，并重建宿主。
+  /// suppressPet 可能在编辑器 initState（build 阶段）被调用，
+  /// 此时 OverlayEntry.markNeedsBuild 会抛"build 期间标记重建"异常，
+  /// 因此统一延后到帧结束执行。
   void _applyVisibility() {
-    _log('悬浮宠物 ${_petHidden ? "隐藏" : "恢复"}');
-    if (_petHidden) pendingReply.value = null;
-    _entry?.markNeedsBuild();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _log('悬浮宠物 ${_petHidden ? "隐藏" : "恢复"}');
+      if (_petHidden) pendingReply.value = null;
+      _entry?.markNeedsBuild();
+    });
   }
 
   /// 设置变化后重算挂载状态；导航器未就绪时按帧重试
