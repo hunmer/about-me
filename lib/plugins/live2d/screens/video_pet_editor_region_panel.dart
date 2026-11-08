@@ -274,14 +274,6 @@ extension _VideoPetEditorRegionOps on _VideoPetEditorScreenState {
                   if (_isAddingRegion) _isTestMode = false;
                 }),
               ),
-              DSIconButton(
-                icon: DsIconKind.trash,
-                size: 36,
-                color: DSThemeBridge.resolve(context).surfaceAlt,
-                iconColor: DSThemeBridge.resolve(context).textSub,
-                tooltip: _text('videoPet_deleteRegion', '删除区域'),
-                onPressed: () => _deleteRegion(),
-              ),
             ],
           ),
           if (_isAddingRegion)
@@ -344,6 +336,18 @@ extension _VideoPetEditorRegionOps on _VideoPetEditorScreenState {
                             onPressed: () {
                               _selectedRegionId = region.id;
                               _updateSelectedRegion(enabled: !region.enabled);
+                            },
+                          ),
+                          // 删除按钮：独立删除该区域（先选中再走删除逻辑）
+                          DSIconButton(
+                            icon: DsIconKind.trash,
+                            size: 32,
+                            color: DSThemeBridge.resolve(context).surfaceAlt,
+                            iconColor: DSThemeBridge.resolve(context).danger,
+                            tooltip: _text('videoPet_deleteRegion', '删除区域'),
+                            onPressed: () {
+                              _selectedRegionId = region.id;
+                              _deleteRegion();
                             },
                           ),
                         ],

@@ -75,20 +75,38 @@ void main() {
     expect((snapshot['reminders'] as List).length, 1);
   });
 
-  test('live2d：archives 列表与 selectedId 读写', () async {
+  test('live2d：v2 分文件存储（archives_v2/<id>.json + 元数据）', () async {
+    // saveSnapshot 只落 selectedId
     ok(await data.get('live2d', 'saveSnapshot', {
-      'snapshot': {
-        'selectedId': 'a1',
-        'archives': [
-          {'id': 'a1', 'name': 'hiyori'},
-        ],
-      },
+      'snapshot': {'selectedId': 'a1'},
     }));
+    // 存档走 upsertArchive / deleteArchive 独立文件
+    ok(await data.get('live2d', 'upsertArchive', {
+      'id': 'a1',
+      'archive': {'id': 'a1', 'name': 'hiyori'},
+    }));
+    ok(await data.get('live2d', 'upsertArchive', {
+      'id': 'a2',
+      'archive': {'id': 'a2', 'name': 'haru'},
+    }));
+
     final snapshot = ok(
       await data.get('live2d', 'getSnapshot', {}),
     ) as Map;
     expect(snapshot['selectedId'], 'a1');
-    expect((snapshot['archives'] as List).first['name'], 'hiyori');
+    final names = (snapshot['archives'] as List)
+        .map((e) => (e as Map)['name'])
+        .toSet();
+    expect(names, {'hiyori', 'haru'});
+
+    // 独立文件确实存在
+    expect(File('${root.path}/live2d/archives_v2/a1.json').existsSync(), true);
+
+    // 删除单个存档文件
+    ok(await data.get('live2d', 'deleteArchive', {'id': 'a2'}));
+    final after = ok(await data.get('live2d', 'getSnapshot', {})) as Map;
+    expect((after['archives'] as List).length, 1);
+    expect(File('${root.path}/live2d/archives_v2/a2.json').existsSync(), false);
   });
 
   test('tts：services Map 读写、损坏拒绝', () async {

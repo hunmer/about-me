@@ -569,7 +569,12 @@ class Live2DPlugin extends BasePlugin {
         }),
       );
     selectedId = data is Map ? data['selectedId'] as String? : null;
-    if (relocatedArchives) await save();
+    if (relocatedArchives) {
+      // v2： relocated 的存档逐个回写独立文件
+      for (final archive in archives) {
+        await _saveArchive(archive);
+      }
+    }
 
     // 全局悬浮宠物：订阅转发广播 + 按设置挂载根 Overlay（内部按帧重试）
     GlobalFloatingPetService.instance.ensureInitialized();
@@ -578,13 +583,21 @@ class Live2DPlugin extends BasePlugin {
     _registerDataSelectors();
   }
 
+  /// v2 分文件存储：save 只落选中 ID（archives_v2.json），
+  /// 存档内容走 _saveArchive / _deleteArchiveFile 单文件读写。
   Future<void> save() async =>
       AboutmeDataService.instance.call('live2d', 'saveSnapshot', {
-        'snapshot': {
-          'selectedId': selectedId,
-          'archives': archives.map((a) => a.toJson()).toList(),
-        },
+        'snapshot': {'selectedId': selectedId},
       });
+
+  Future<void> _saveArchive(Live2DArchive archive) async =>
+      AboutmeDataService.instance.call('live2d', 'upsertArchive', {
+        'id': archive.id,
+        'archive': archive.toJson(),
+      });
+
+  Future<void> _deleteArchiveFile(String id) async =>
+      AboutmeDataService.instance.call('live2d', 'deleteArchive', {'id': id});
   Live2DArchive? get selected =>
       archives.where((a) => a.id == selectedId).firstOrNull;
   Future<void> upsert(Live2DArchive archive) async {
@@ -600,6 +613,7 @@ class Live2DPlugin extends BasePlugin {
       archives[i] = archive;
     }
     selectedId = archive.id;
+    await _saveArchive(archive);
     await save();
     _notifyArchiveSelected();
   }
@@ -615,6 +629,7 @@ class Live2DPlugin extends BasePlugin {
     if (conversation != null) {
       await controller!.conversationService.deleteConversation(conversation.id);
     }
+    await _deleteArchiveFile(id);
     await save();
     _notifyArchiveSelected();
   }

@@ -6,7 +6,7 @@ Live2D 桌宠插件（10 个 Dart 文件）：以"存档"为单位管理 Live2D 
 
 ## 约定的规则
 
-- 存档列表持久化在插件 storage 的 `archives.json`；`Live2DArchive` 只存 agentId，用时取最新 Agent 配置。
+- 存档持久化为 v2 分文件存储（2026-11）：`archives_v2.json` 只存 selectedId，每个存档独立 `archives_v2/<id>.json`（SDK `live2d` 域 getSnapshot/saveSnapshot/upsertArchive/deleteArchive）；旧 `archives.json` 不迁移；`Live2DArchive` 只存 agentId，用时取最新 Agent 配置。
 - 无 JS API、无 home_widgets；`/live2d` 路由在外部注册且**指向设置页**（plugin_common_routes.dart:84），主列表走 `PluginManager.openPlugin`。
 - 改内置模型清单要同步三处：jelly_live2d.dart 硬编码定义、根 pubspec.yaml assets、存档表单的模型选择。
 

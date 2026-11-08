@@ -451,6 +451,8 @@ final pluginRouteConfigs = <PluginRouteConfig>[
   PluginRouteConfig(pluginId: 'live2d', routes: [
     PluginRouteDefinition(method: 'get', path: '/snapshot', handler: 'getSnapshot', resourceName: 'archives'),
     PluginRouteDefinition(method: 'put', path: '/snapshot', handler: 'saveSnapshot', resourceName: 'archives'),
+    PluginRouteDefinition(method: 'put', path: '/archives/:id', handler: 'upsertArchive', resourceName: 'archives'),
+    PluginRouteDefinition(method: 'delete', path: '/archives/:id', handler: 'deleteArchive', resourceName: 'archives'),
   ]),
   PluginRouteConfig(pluginId: 'tts', routes: [
     PluginRouteDefinition(method: 'get', path: '/snapshot', handler: 'getSnapshot', resourceName: 'services'),

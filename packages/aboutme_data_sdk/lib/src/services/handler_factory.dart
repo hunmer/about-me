@@ -14,6 +14,7 @@ import 'handlers/database.dart';
 import 'handlers/diary.dart';
 import 'handlers/goods.dart';
 import 'handlers/habits.dart';
+import 'handlers/live2d_domain.dart';
 import 'handlers/media_log.dart';
 import 'handlers/notes.dart';
 import 'handlers/nodes.dart';
@@ -106,12 +107,8 @@ PluginHandlers createHandlersForPlugin(PluginData data, String pluginId) {
         listKeys: {'reminders'},
       );
     case 'live2d':
-      return createSnapshotDomainHandlers(
-        data,
-        pluginId: 'live2d',
-        fileName: 'archives.json',
-        listKeys: {'archives'},
-      );
+      // v2 分文件存储：元数据 archives_v2.json + 每存档 archives_v2/<id>.json
+      return createLive2dHandlers(data);
     case 'tts':
       return createSnapshotDomainHandlers(
         data,
