@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:aboutme/core/widgets/ds_theme_bridge.dart';
 import 'package:aboutme/design_system/design_system.dart';
 import 'package:aboutme/plugins/live2d/video/pet_store_catalog.dart';
+import 'package:aboutme/plugins/live2d/services/global_floating_pet_service.dart';
 import 'package:aboutme/plugins/live2d/video/pet_store_service.dart';
 import 'package:aboutme/plugins/live2d/video/video_pet_import.dart';
 import 'package:aboutme/plugins/live2d/video/video_pet_manifest.dart';
@@ -123,6 +124,8 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen>
       Map<String, dynamic>.from(widget.manifest.toJson()),
     );
     _installedManifest = widget.manifest;
+    // 编辑器全屏占用期间临时隐藏全局悬浮宠物，退出时 dispose 恢复
+    GlobalFloatingPetService.instance.suppressPet();
     _loadNarrowToolsHeight();
     _selectedRegionId = _draft.regions.isEmpty ? null : _draft.regions.first.id;
     // manifest 带商店标记时自动拉取服务端动作列表
@@ -133,6 +136,7 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen>
 
   @override
   void dispose() {
+    GlobalFloatingPetService.instance.unsuppressPet();
     _ownStoreService?.close();
     _narrowTabs.dispose();
     _animationRequest.dispose();
@@ -508,8 +512,10 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen>
           final theme = DSThemeBridge.resolve(context);
           return Scaffold(
             backgroundColor: theme.background,
-            body: Column(
-              children: [
+            // iOS 刘海/灵动岛避让：顶栏与底部工具区均不入安全区
+            body: SafeArea(
+              child: Column(
+                children: [
                 // 编辑页轻量顶栏（design.md §2.1）：返回圆钮 + 居中标题 + 尾部动作。
                 DSLightHeader(
                   title: _text('videoPet_editorTitle', '精灵图宠物编辑器'),
@@ -562,7 +568,8 @@ class _VideoPetEditorScreenState extends State<VideoPetEditorScreen>
                     },
                   ),
                 ),
-              ],
+                ],
+              ),
             ),
           );
         },

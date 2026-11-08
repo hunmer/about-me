@@ -22,6 +22,7 @@ import 'package:aboutme/screens/jelly_home/live2d_zip_import.dart';
 import 'package:aboutme/plugins/openai/aliveness/services/decision_service.dart';
 import 'package:aboutme/plugins/tts/tts_plugin.dart';
 import 'live2d_voice_analyzer.dart';
+import 'live2d_asset_paths.dart';
 import 'services/global_floating_pet_service.dart';
 import 'screens/live2d_main_screen.dart';
 import 'screens/live2d_settings_screen.dart';
@@ -535,6 +536,13 @@ class Live2DPlugin extends BasePlugin {
       'globalPetOpacity': 1.0,
       'forwardAiReplyEnabled': false,
     });
+    final supportPath = (await getApplicationSupportDirectory()).path;
+    final imported = relocateLive2DAssetPaths({
+      'importedModels': settings['importedModels'],
+    }, supportPath);
+    if (imported != null) {
+      await updateSettings({'importedModels': imported['importedModels']});
+    }
     final res = await AboutmeDataService.instance.call(
       'live2d',
       'getSnapshot',
@@ -545,6 +553,7 @@ class Live2DPlugin extends BasePlugin {
     // 迁移：旧全局“随机走动”设置 → 档案级字段（旧档案无该键时按旧全局值填充）
     final legacyWalkEnabled =
         settings['videoRandomWalkEnabled'] as bool? ?? false;
+    var relocatedArchives = false;
     archives
       ..clear()
       ..addAll(
@@ -554,10 +563,13 @@ class Live2DPlugin extends BasePlugin {
             json['randomWalkEnabled'] =
                 json['displayMode'] == 'video' && legacyWalkEnabled;
           }
-          return Live2DArchive.fromJson(json);
+          final relocated = relocateLive2DAssetPaths(json, supportPath);
+          if (relocated != null) relocatedArchives = true;
+          return Live2DArchive.fromJson(relocated ?? json);
         }),
       );
     selectedId = data is Map ? data['selectedId'] as String? : null;
+    if (relocatedArchives) await save();
 
     // 全局悬浮宠物：订阅转发广播 + 按设置挂载根 Overlay（内部按帧重试）
     GlobalFloatingPetService.instance.ensureInitialized();

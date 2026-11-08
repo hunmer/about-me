@@ -48,6 +48,11 @@ class GlobalFloatingPetService {
   bool _stageAttached = false;
   bool _onHomeRoute = false;
 
+  /// 全屏编辑器（视频桌宠编辑器等）占用期间的临时隐藏计数：
+  /// 进编辑器 +1、退出 -1，>0 时隐藏（与首页小屋页签隐藏同一条
+  /// [_applyVisibility] 通路，位置状态保留，退出即恢复）
+  int _suppressed = 0;
+
   /// 首页当前是否停在 Live2D 页签（小屋/JellyTab.cottage，舞台已渲染
   /// 角色）；页签切换不换路由，由 JellyHomeScreen 经
   /// [onJellyHomeTabChanged] 同步。默认 true（保守隐藏，启动即小屋）
@@ -77,8 +82,32 @@ class GlobalFloatingPetService {
   bool get shouldRender => !_petHidden;
 
   /// 首页 Live2D 页签（小屋）隐藏：舞台已渲染角色，悬浮层重复；
-  /// 离开首页或切到首页其余页签（助手/日程/看板/我的）均展示
-  bool get _petHidden => _onHomeRoute && _onLive2dHomeTab;
+  /// 离开首页或切到首页其余页签（助手/日程/看板/我的）均展示；
+  /// 编辑器占用（[_suppressed] > 0）期间也隐藏
+  bool get _petHidden =>
+      (_onHomeRoute && _onLive2dHomeTab) || _suppressed > 0;
+
+  /// 临时隐藏悬浮宠物：进入视频桌宠编辑器等全屏编辑场景时调用，
+  /// 避免悬浮宠物遮挡/抢占编辑器交互；与 [unsuppressPet] 配对使用
+  void suppressPet() {
+    if (_suppressed > 0) {
+      _suppressed++;
+      return;
+    }
+    _suppressed = 1;
+    _log('编辑器占用，临时隐藏');
+    _applyVisibility();
+  }
+
+  /// 结束临时隐藏（与 [suppressPet] 配对，支持嵌套场景）
+  void unsuppressPet() {
+    if (_suppressed <= 0) return;
+    _suppressed--;
+    if (_suppressed == 0) {
+      _log('编辑器退出，恢复展示');
+      _applyVisibility();
+    }
+  }
 
   /// 插件初始化时调用：订阅事件 + 路由 + 按设置挂载
   void ensureInitialized() {
